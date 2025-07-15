@@ -1,4 +1,17 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 function Dashboard() {
+  const navigate = useNavigate();
+
+  // Proteger la ruta: solo si hay token
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+    }
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
       {/* Barra lateral */}
@@ -8,7 +21,9 @@ function Dashboard() {
           <a href="/dashboard" className="hover:text-blue-400">Inicio</a>
           <a href="#" className="hover:text-blue-400">Tareas</a>
           <a href="#" className="hover:text-blue-400">Usuarios</a>
-          <a href="/login" className="mt-10 text-red-400 hover:text-red-500">Cerrar sesión</a>
+          <a href="/login" className="mt-10 text-red-400 hover:text-red-500" onClick={() => localStorage.removeItem("token")}>
+            Cerrar sesión
+          </a>
         </nav>
       </aside>
 
