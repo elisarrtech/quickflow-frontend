@@ -1,16 +1,31 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
-  // Proteger la ruta: solo si hay token
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login");
+    } else {
+      setLoading(false);
     }
   }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <p className="text-lg">Verificando sesión...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
@@ -21,9 +36,12 @@ function Dashboard() {
           <a href="/dashboard" className="hover:text-blue-400">Inicio</a>
           <a href="#" className="hover:text-blue-400">Tareas</a>
           <a href="#" className="hover:text-blue-400">Usuarios</a>
-          <a href="/login" className="mt-10 text-red-400 hover:text-red-500" onClick={() => localStorage.removeItem("token")}>
+          <button
+            onClick={handleLogout}
+            className="mt-10 text-red-400 hover:text-red-500 text-left"
+          >
             Cerrar sesión
-          </a>
+          </button>
         </nav>
       </aside>
 
