@@ -59,11 +59,9 @@ function Login() {
         </button>
         
         <p className="mt-4 text-sm text-center">
-        ¿No tienes cuenta?{" "}
-        <a href="/register" className="text-blue-400 hover:underline">Regístrate</a>
+          ¿No tienes cuenta?{" "}
+          <a href="/register" className="text-blue-400 hover:underline">Regístrate</a>
         </p>
-
-
 
         {token && <p className="text-green-400 mt-4 break-all">Token: {token}</p>}
       </form>
@@ -72,4 +70,3 @@ function Login() {
 }
 
 export default Login;
-
