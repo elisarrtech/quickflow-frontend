@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mensaje, setMensaje] = useState('');
@@ -18,8 +17,13 @@ const Register = () => {
       const response = await fetch('https://quickflow-nxg1.onrender.com/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ email, password }), // ✅ SIN username
       });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('El servidor respondió con un formato no válido');
+      }
 
       const data = await response.json();
 
@@ -28,7 +32,7 @@ const Register = () => {
       }
 
       setMensaje('Registro exitoso ✅');
-      setTimeout(() => navigate('/login'), 2000); // Redirigir al login
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
       setError(err.message);
     }
@@ -42,6 +46,8 @@ const Register = () => {
       >
         <h2 className="text-2xl font-bold mb-6 text-center">Registro</h2>
 
+        {/* Eliminamos username ya que el backend no lo recibe aún */}
+        {/* 
         <input
           type="text"
           placeholder="Nombre de usuario"
@@ -50,6 +56,7 @@ const Register = () => {
           required
           className="w-full p-2 mb-4 rounded bg-gray-700 border border-gray-600 focus:outline-none"
         />
+        */}
 
         <input
           type="email"
