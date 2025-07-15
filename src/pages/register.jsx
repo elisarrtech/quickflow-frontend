@@ -11,13 +11,19 @@ function Register() {
     setError("");
     setSuccess("");
 
-    try {
-  const response = await fetch("https://quickflow-nxg1.onrender.com/api/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-});
+    // Datos que enviamos al backend
+    const formData = {
+      username: email, // temporalmente usamos el email como username
+      email: email,
+      password: password,
+    };
 
+    try {
+      const response = await fetch("https://quickflow-nxg1.onrender.com/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
       const data = await response.json();
 
@@ -29,6 +35,7 @@ function Register() {
         setError(data.message || "Error al registrar");
       }
     } catch (err) {
+      console.error(err);
       setError("Error de conexión con el servidor");
     }
   };
@@ -46,6 +53,7 @@ function Register() {
           className="w-full p-2 mb-4 rounded bg-gray-700 placeholder-gray-400"
           required
         />
+
         <input
           type="password"
           placeholder="Contraseña"
@@ -61,17 +69,16 @@ function Register() {
         <button type="submit" className="w-full bg-green-500 hover:bg-green-600 p-2 rounded">
           Crear Cuenta
         </button>
+
         <p className="mt-4 text-sm">
-        ¿Ya tienes cuenta? <a href="/login" className="text-blue-400 hover:underline">Inicia sesión</a>
+          ¿Ya tienes cuenta?{" "}
+          <a href="/login" className="text-blue-400 hover:underline">
+            Inicia sesión
+          </a>
         </p>
-        
       </form>
     </div>
   );
 }
 
 export default Register;
-
-
-
-
