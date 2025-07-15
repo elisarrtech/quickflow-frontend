@@ -11,11 +11,10 @@ function Register() {
     setError("");
     setSuccess("");
 
-    // Datos que enviamos al backend
     const formData = {
-      username: email, // temporalmente usamos el email como username
-      email: email,
-      password: password,
+      username: email, // se usa el email como username por ahora
+      email,
+      password,
     };
 
     try {
@@ -28,22 +27,22 @@ function Register() {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess("Usuario registrado correctamente");
+        setSuccess("✅ Registro exitoso. ¡Ahora puedes iniciar sesión!");
         setEmail("");
         setPassword("");
       } else {
-        setError(data.message || "Error al registrar");
+        setError(data.message || "❌ Error al registrar el usuario.");
       }
     } catch (err) {
       console.error(err);
-      setError("Error de conexión con el servidor");
+      setError("⚠️ No se pudo conectar con el servidor.");
     }
   };
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-900 text-white">
       <form onSubmit={handleSubmit} className="bg-gray-800 p-8 rounded shadow-md w-80">
-        <h2 className="text-2xl mb-6 text-center font-bold">Registrarse</h2>
+        <h2 className="text-2xl mb-6 text-center font-bold">Crear Cuenta</h2>
 
         <input
           type="email"
@@ -70,7 +69,7 @@ function Register() {
           Crear Cuenta
         </button>
 
-        <p className="mt-4 text-sm">
+        <p className="mt-4 text-sm text-center">
           ¿Ya tienes cuenta?{" "}
           <a href="/login" className="text-blue-400 hover:underline">
             Inicia sesión
