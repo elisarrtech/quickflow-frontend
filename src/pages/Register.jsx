@@ -14,10 +14,10 @@ const Register = () => {
     setMensaje('');
 
     try {
-      const response = await fetch('https://quickflow-nxg1.onrender.com/api/register', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }), // ✅ SIN username
+        body: JSON.stringify({ email, password }),
       });
 
       const contentType = response.headers.get('content-type');
@@ -45,18 +45,6 @@ const Register = () => {
         className="bg-gray-800 p-8 rounded shadow-md w-full max-w-sm"
       >
         <h2 className="text-2xl font-bold mb-6 text-center">Registro</h2>
-
-        {/* Eliminamos username ya que el backend no lo recibe aún */}
-        {/* 
-        <input
-          type="text"
-          placeholder="Nombre de usuario"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          className="w-full p-2 mb-4 rounded bg-gray-700 border border-gray-600 focus:outline-none"
-        />
-        */}
 
         <input
           type="email"
