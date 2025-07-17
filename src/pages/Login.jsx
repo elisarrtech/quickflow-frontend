@@ -8,31 +8,38 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setToken(null);
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setError('');
+  setToken(null);
 
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al iniciar sesión');
-      }
-
-      localStorage.setItem('token', data.token); // Guarda el JWT
-      setToken(data.token);
-      navigate('/dashboard'); // Redirige a dashboard tras login
-    } catch (err) {
-      setError(err.message);
+    // Validar que la respuesta sea JSON
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await response.text();
+      throw new Error("Respuesta inesperada del servidor: " + text.substring(0, 100));
     }
-  };
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Error al iniciar sesión');
+    }
+
+    localStorage.setItem('token', data.token);
+    setToken(data.token);
+    navigate('/dashboard');
+  } catch (err) {
+    setError(err.message);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
