@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Tareas from "./Tareas"; // Asegúrate de la ruta
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -45,10 +46,13 @@ function Dashboard() {
         </nav>
       </aside>
 
-      {/* Contenido principal */}
+{/* Contenido principal */}
+ 
+</main>
       <main className="flex-1 p-10">
         <h1 className="text-3xl font-bold mb-6">Bienvenido a tu Dashboard 🚀</h1>
         <p className="text-lg mb-4">Aquí podrás gestionar tus tareas y productividad.</p>
+       <Tareas />
 
         {/* Tarjetas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
