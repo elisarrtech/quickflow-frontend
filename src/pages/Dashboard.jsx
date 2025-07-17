@@ -34,7 +34,7 @@ function Dashboard() {
         <h2 className="text-2xl font-bold mb-6">Quickflow</h2>
         <nav className="flex flex-col space-y-4">
           <a href="/dashboard" className="hover:text-blue-400">Inicio</a>
-          <a href="#" className="hover:text-blue-400">Tareas</a>
+          <a href="/tareas" className="hover:text-blue-400">Tareas</a>
           <a href="#" className="hover:text-blue-400">Usuarios</a>
           <button
             onClick={handleLogout}
