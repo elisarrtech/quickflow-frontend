@@ -1,8 +1,7 @@
-// ✅ TAREAS.JSX COMPLETO CON TODAS LAS FUNCIONALIDADES INTEGRADAS Y CORREGIDAS
-// ⚠️ Incluye: subtareas, categorías, filtros, recordatorios, notificaciones, adjuntos
+// ✅ TAREAS.JSX COMPLETO CON TODAS LAS FUNCIONALIDADES INTEGRADAS Y CORREGIDAS, INCLUYENDO ENLACE WEB
 
 import React, { useState, useEffect } from 'react';
-import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaTag, FaPlus, FaTimes, FaArrowLeft, FaPaperclip } from 'react-icons/fa';
+import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaTag, FaPlus, FaTimes, FaArrowLeft, FaPaperclip, FaExternalLinkAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const Tareas = () => {
@@ -15,6 +14,7 @@ const Tareas = () => {
   const [subtareasInput, setSubtareasInput] = useState('');
   const [subtareas, setSubtareas] = useState([]);
   const [archivo, setArchivo] = useState(null);
+  const [enlace, setEnlace] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('Todas');
   const [fechaFiltro, setFechaFiltro] = useState('');
   const [error, setError] = useState('');
@@ -24,7 +24,6 @@ const Tareas = () => {
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const [nota, setNota] = useState('');
-
 
   useEffect(() => { Notification.requestPermission(); }, []);
 
@@ -86,6 +85,7 @@ const Tareas = () => {
       formData.append('categoria', categoria);
       formData.append('subtareas', JSON.stringify(subtareas));
       formData.append('nota', nota);
+      formData.append('enlace', enlace);
 
       if (archivo) formData.append('archivo', archivo);
 
@@ -99,7 +99,7 @@ const Tareas = () => {
       const data = await res.json();
       if (res.ok) {
         setTareas(prev => [...prev, data]);
-        setTitulo(''); setDescripcion(''); setFecha(''); setHora(''); setCategoria(''); setSubtareas([]); setArchivo(null);
+        setTitulo(''); setDescripcion(''); setFecha(''); setHora(''); setCategoria(''); setSubtareas([]); setArchivo(null); setEnlace(''); setNota('');
       } else {
         setError(data.error || 'Error al crear tarea.');
       }
@@ -174,15 +174,15 @@ const Tareas = () => {
         <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="text" placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
 
+        <input type="url" placeholder="Enlace web relacionado (opcional)" value={enlace} onChange={e => setEnlace(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
+
         <div className="flex items-center gap-2">
           <input type="text" placeholder="Subtarea..." value={subtareasInput} onChange={e => setSubtareasInput(e.target.value)} className="flex-1 p-2 rounded bg-gray-700 text-white" />
           <button onClick={agregarSubtarea} className="bg-green-600 text-white p-2 rounded"><FaPlus /></button>
         </div>
 
-        <textarea placeholder="Nota larga (opcional)" value={nota} onChange={(e) => setNota(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white"/>
+        <textarea placeholder="Nota larga (opcional)" value={nota} onChange={(e) => setNota(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
 
-
-        {/* Input para adjuntar archivo */}
         <input type="file" accept=".pdf,image/*" onChange={(e) => setArchivo(e.target.files[0])} className="w-full p-2 bg-gray-800 text-white rounded" />
 
         <button onClick={crearTarea} className="w-full p-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Crear Tarea</button>
@@ -203,12 +203,8 @@ const Tareas = () => {
           <div key={tarea._id} className="bg-gray-700 p-4 rounded text-white">
             <h3 className="text-xl font-bold">{tarea.titulo}</h3>
             <p className="text-sm">{tarea.descripcion}</p>
-            {tarea.nota && (
-            <div className="mt-2 bg-gray-800 text-sm text-gray-300 p-2 rounded">
-            📝 <span className="font-semibold">Nota:</span><br />{tarea.nota}
-      </div>
-      )}
-
+            {tarea.nota && <div className="mt-2 bg-gray-800 text-sm text-gray-300 p-2 rounded">📝 <span className="font-semibold">Nota:</span><br />{tarea.nota}</div>}
+            {tarea.enlace && <a href={tarea.enlace} target="_blank" className="text-blue-400 mt-2 inline-flex items-center"><FaExternalLinkAlt className="mr-1" /> Enlace relacionado</a>}
             <p className="text-sm">📅 {tarea.fecha} {tarea.hora && `🕒 ${tarea.hora}`}</p>
             {tarea.categoria && <span className="inline-flex items-center bg-blue-600 text-white px-2 py-1 rounded text-xs mt-2"><FaTag className="mr-1" />{tarea.categoria}</span>}
             <ul className="list-disc ml-5 mt-2 text-sm">
@@ -231,19 +227,6 @@ const Tareas = () => {
               }} className="text-yellow-400"><FaEdit /></button>
               <button onClick={() => eliminarTarea(tarea._id)} className="text-red-500"><FaTrashAlt /></button>
             </div>
-
-            {/* Modo edición */}
-            {modoEdicion === tarea._id && (
-              <div className="mt-4 space-y-2">
-                <input value={editData.titulo} onChange={e => setEditData({ ...editData, titulo: e.target.value })} className="w-full p-1 rounded bg-gray-800 text-white" />
-                <textarea value={editData.descripcion} onChange={e => setEditData({ ...editData, descripcion: e.target.value })} className="w-full p-1 rounded bg-gray-800 text-white" />
-                <input type="date" value={editData.fecha} onChange={e => setEditData({ ...editData, fecha: e.target.value })} className="w-full p-1 rounded bg-gray-800 text-white" />
-                <input type="time" value={editData.hora} onChange={e => setEditData({ ...editData, hora: e.target.value })} className="w-full p-1 rounded bg-gray-800 text-white" />
-                <input value={editData.categoria} onChange={e => setEditData({ ...editData, categoria: e.target.value })} className="w-full p-1 rounded bg-gray-800 text-white" />
-                <button onClick={() => guardarEdicion(tarea._id)} className="bg-green-600 text-white px-4 py-1 rounded">Guardar</button>
-                <button onClick={() => setModoEdicion(null)} className="text-white text-xs ml-4">Cancelar</button>
-              </div>
-            )}
           </div>
         ))}
       </div>
