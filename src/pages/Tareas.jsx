@@ -23,6 +23,8 @@ const Tareas = () => {
   const [editData, setEditData] = useState({ titulo: '', descripcion: '', fecha: '', hora: '', categoria: '', subtareas: [] });
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
+  const [nota, setNota] = useState('');
+
 
   useEffect(() => { Notification.requestPermission(); }, []);
 
@@ -83,6 +85,8 @@ const Tareas = () => {
       formData.append('hora', hora);
       formData.append('categoria', categoria);
       formData.append('subtareas', JSON.stringify(subtareas));
+      formData.append('nota', nota);
+
       if (archivo) formData.append('archivo', archivo);
 
       const res = await fetch(`${API}/api/tasks`, {
@@ -174,6 +178,9 @@ const Tareas = () => {
           <input type="text" placeholder="Subtarea..." value={subtareasInput} onChange={e => setSubtareasInput(e.target.value)} className="flex-1 p-2 rounded bg-gray-700 text-white" />
           <button onClick={agregarSubtarea} className="bg-green-600 text-white p-2 rounded"><FaPlus /></button>
         </div>
+
+        <textarea placeholder="Nota larga (opcional)" value={nota} onChange={(e) => setNota(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white"/>
+
 
         {/* Input para adjuntar archivo */}
         <input type="file" accept=".pdf,image/*" onChange={(e) => setArchivo(e.target.files[0])} className="w-full p-2 bg-gray-800 text-white rounded" />
