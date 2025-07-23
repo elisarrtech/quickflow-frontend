@@ -1,6 +1,7 @@
-// ✅ TAREAS.JSX COMPLETO CON ÍCONOS (sin alterar funcionalidad)
+// ✅ TAREAS.JSX COMPLETO CON ÍCONOS Y MEJORAS VISUALES RESPONSIVAS
 import React, { useState, useEffect } from 'react';
-import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo } from 'react-icons/fa';
+import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaArrowLeft } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const Tareas = () => {
   const [tareas, setTareas] = useState([]);
@@ -11,8 +12,8 @@ const Tareas = () => {
   const [cargando, setCargando] = useState(true);
   const [modoEdicion, setModoEdicion] = useState(null);
   const [editData, setEditData] = useState({ titulo: '', descripcion: '', fecha: '' });
-
   const API = import.meta.env.VITE_API_URL;
+  const navigate = useNavigate();
 
   useEffect(() => {
     const obtenerTareas = async () => {
@@ -105,55 +106,58 @@ const Tareas = () => {
   };
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-md mt-8">
-      <h2 className="text-xl font-bold mb-4 text-white">📋 Tareas</h2>
-      <div className="mb-4 space-y-2">
+    <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md mt-6 max-w-4xl mx-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-white">📋 Tareas</h2>
+        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-sm text-white hover:text-blue-400">
+          <FaArrowLeft /> Volver
+        </button>
+      </div>
+      <div className="mb-6 space-y-3">
         <input type="text" value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Título" className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="text" value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Descripción" className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
-        <button onClick={crearTarea} className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded">Crear Tarea</button>
+        <button onClick={crearTarea} className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-semibold">Crear Tarea</button>
       </div>
-      {error && <p className="text-red-400 mb-4">{error}</p>}
+      {error && <p className="text-red-400 mb-4 font-medium">{error}</p>}
       {cargando ? (
         <p className="text-gray-400">Cargando tareas...</p>
       ) : (
         tareas.map(t => (
-          <div key={t._id} className={`bg-gray-700 p-4 rounded mt-4 ${t.estado === 'completada' ? 'opacity-70' : ''}`}>
+          <div key={t._id} className={`bg-gray-700 p-4 rounded mb-4 ${t.estado === 'completada' ? 'opacity-70' : ''}`}>
             {modoEdicion === t._id ? (
               <>
                 <input value={editData.titulo} onChange={e => setEditData({ ...editData, titulo: e.target.value })} className="w-full mb-1 p-1 bg-gray-600 text-white" />
                 <input value={editData.descripcion} onChange={e => setEditData({ ...editData, descripcion: e.target.value })} className="w-full mb-1 p-1 bg-gray-600 text-white" />
                 <input type="date" value={editData.fecha} onChange={e => setEditData({ ...editData, fecha: e.target.value })} className="w-full mb-2 p-1 bg-gray-600 text-white" />
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button onClick={() => guardarEdicion(t._id)} className="bg-green-600 px-3 py-1 rounded text-white">Guardar</button>
                   <button onClick={() => setModoEdicion(null)} className="bg-gray-500 px-3 py-1 rounded text-white">Cancelar</button>
                 </div>
               </>
             ) : (
-              <>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h4 className="text-lg font-bold text-white">{t.titulo}</h4>
-                    <p className="text-sm text-gray-300">{t.descripcion}</p>
-                    <p className="text-xs text-gray-400 mt-1">Vence: {t.fecha}</p>
-                    <p className={`text-xs font-semibold ${t.estado === 'completada' ? 'text-green-400' : 'text-yellow-400'}`}>{t.estado}</p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <button onClick={() => toggleEstado(t)} className="flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-white text-sm">
-                      {t.estado === 'pendiente' ? <FaCheckCircle /> : <FaRedo />}
-                    </button>
-                    <button onClick={() => {
-                      setModoEdicion(t._id);
-                      setEditData({ titulo: t.titulo, descripcion: t.descripcion, fecha: t.fecha });
-                    }} className="flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-white text-sm">
-                      <FaEdit />
-                    </button>
-                    <button onClick={() => eliminarTarea(t._id)} className="flex items-center justify-center gap-1 bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-white text-sm">
-                      <FaTrashAlt />
-                    </button>
-                  </div>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <div>
+                  <h4 className="text-lg font-bold text-white uppercase">{t.titulo}</h4>
+                  <p className="text-sm text-gray-300">{t.descripcion}</p>
+                  <p className="text-xs text-gray-400 mt-1">Vence: {t.fecha}</p>
+                  <p className={`text-xs font-semibold ${t.estado === 'completada' ? 'text-green-400' : 'text-yellow-400'}`}>{t.estado}</p>
                 </div>
-              </>
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => toggleEstado(t)} className="flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-white text-sm">
+                    {t.estado === 'pendiente' ? <FaCheckCircle /> : <FaRedo />}
+                  </button>
+                  <button onClick={() => {
+                    setModoEdicion(t._id);
+                    setEditData({ titulo: t.titulo, descripcion: t.descripcion, fecha: t.fecha });
+                  }} className="flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-white text-sm">
+                    <FaEdit />
+                  </button>
+                  <button onClick={() => eliminarTarea(t._id)} className="flex items-center justify-center gap-1 bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-white text-sm">
+                    <FaTrashAlt />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         ))
