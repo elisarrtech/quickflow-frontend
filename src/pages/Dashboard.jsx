@@ -36,8 +36,6 @@ function Dashboard() {
         <nav className="flex flex-col space-y-4">
           <Link to="/dashboard" className="hover:text-blue-400">Inicio</Link>
           <Link to="/tareas" className="hover:text-blue-400">Tareas</Link>
-          {/* Puedes agregar esto más adelante si ya existe */}
-          {/* <Link to="/usuarios" className="hover:text-blue-400">Usuarios</Link> */}
           <button
             onClick={handleLogout}
             className="mt-10 text-red-400 hover:text-red-500 text-left"
@@ -57,33 +55,38 @@ function Dashboard() {
 
         {/* Tarjetas visuales */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          <div className="bg-gray-700 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-bold mb-2">Tareas</h3>
-            <p className="text-sm text-gray-300">Gestiona tus tareas diarias.</p>
-          </div>
-          <div className="bg-gray-700 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-bold mb-2">Progreso</h3>
-            <p className="text-sm text-gray-300">Visualiza tu avance.</p>
-          </div>
           <div className="bg-gray-700 rounded-lg p-4 text-white shadow-md flex flex-col justify-between">
-  <div>
-    <h3 className="text-lg font-semibold mb-1">📈 Estadísticas</h3>
-    <p className="text-sm text-gray-300">Consulta informes de productividad.</p>
-  </div>
-  <div className="mt-4">
-    <button
-      onClick={() => navigate('/estadisticas')}
-      className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition duration-200"
-    >
-      <span>Ver estadísticas</span>
-      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M11 17a1 1 0 0 1-.7-1.7l4.3-4.3H3a1 1 0 1 1 0-2h11.6l-4.3-4.3A1 1 0 0 1 11.7 3.3l6 6a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-.7.3z"/>
-      </svg>
-    </button>
-  </div>
-</div>
+            <div>
+              <h3 className="text-lg font-semibold mb-1">📝 Tareas</h3>
+              <p className="text-sm text-gray-300">Gestiona tus tareas diarias.</p>
+            </div>
+          </div>
 
+          <div className="bg-gray-700 rounded-lg p-4 text-white shadow-md flex flex-col justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">📌 Progreso</h3>
+              <p className="text-sm text-gray-300">Visualiza tu avance.</p>
+            </div>
+          </div>
 
+          <div className="bg-gray-700 rounded-lg p-4 text-white shadow-md flex flex-col justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">📈 Estadísticas</h3>
+              <p className="text-sm text-gray-300">Consulta informes de productividad.</p>
+            </div>
+            <div className="mt-4">
+              <button
+                onClick={() => navigate('/estadisticas')}
+                className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition duration-200"
+              >
+                <span>Ver estadísticas</span>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M11 17a1 1 0 0 1-.7-1.7l4.3-4.3H3a1 1 0 1 1 0-2h11.6l-4.3-4.3A1 1 0 0 1 11.7 3.3l6 6a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-.7.3z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );
