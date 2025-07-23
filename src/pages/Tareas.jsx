@@ -1,5 +1,7 @@
 // ✅ TAREAS.JSX COMPLETO
 import React, { useState, useEffect } from 'react';
+import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo } from 'react-icons/fa';
+
 
 const Tareas = () => {
   const [tareas, setTareas] = useState([]);
