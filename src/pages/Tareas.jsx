@@ -1,7 +1,6 @@
-// ✅ TAREAS.JSX COMPLETO
+// ✅ TAREAS.JSX COMPLETO CON ÍCONOS (sin alterar funcionalidad)
 import React, { useState, useEffect } from 'react';
 import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo } from 'react-icons/fa';
-
 
 const Tareas = () => {
   const [tareas, setTareas] = useState([]);
@@ -24,7 +23,6 @@ const Tareas = () => {
         });
         const data = await res.json();
         if (res.ok) {
-          // Ordenar: pendientes primero, luego completadas; dentro de eso, por fecha
           const ordenadas = data.sort((a, b) => {
             if (a.estado !== b.estado) return a.estado === 'pendiente' ? -1 : 1;
             return new Date(a.fecha) - new Date(b.fecha);
@@ -141,12 +139,18 @@ const Tareas = () => {
                     <p className={`text-xs font-semibold ${t.estado === 'completada' ? 'text-green-400' : 'text-yellow-400'}`}>{t.estado}</p>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <button onClick={() => toggleEstado(t)} className="text-sm bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-white">{t.estado === 'pendiente' ? 'Completar' : 'Reabrir'}</button>
+                    <button onClick={() => toggleEstado(t)} className="flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-white text-sm">
+                      {t.estado === 'pendiente' ? <FaCheckCircle /> : <FaRedo />}
+                    </button>
                     <button onClick={() => {
                       setModoEdicion(t._id);
                       setEditData({ titulo: t.titulo, descripcion: t.descripcion, fecha: t.fecha });
-                    }} className="text-sm bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-white">Editar</button>
-                    <button onClick={() => eliminarTarea(t._id)} className="text-sm bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-white">Eliminar</button>
+                    }} className="flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-white text-sm">
+                      <FaEdit />
+                    </button>
+                    <button onClick={() => eliminarTarea(t._id)} className="flex items-center justify-center gap-1 bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-white text-sm">
+                      <FaTrashAlt />
+                    </button>
                   </div>
                 </div>
               </>
