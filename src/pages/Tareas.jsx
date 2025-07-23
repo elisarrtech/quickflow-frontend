@@ -203,6 +203,12 @@ const Tareas = () => {
           <div key={tarea._id} className="bg-gray-700 p-4 rounded text-white">
             <h3 className="text-xl font-bold">{tarea.titulo}</h3>
             <p className="text-sm">{tarea.descripcion}</p>
+            {tarea.nota && (
+            <div className="mt-2 bg-gray-800 text-sm text-gray-300 p-2 rounded">
+            📝 <span className="font-semibold">Nota:</span><br />{tarea.nota}
+      </div>
+      )}
+
             <p className="text-sm">📅 {tarea.fecha} {tarea.hora && `🕒 ${tarea.hora}`}</p>
             {tarea.categoria && <span className="inline-flex items-center bg-blue-600 text-white px-2 py-1 rounded text-xs mt-2"><FaTag className="mr-1" />{tarea.categoria}</span>}
             <ul className="list-disc ml-5 mt-2 text-sm">
