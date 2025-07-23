@@ -65,14 +65,24 @@ function Dashboard() {
             <h3 className="text-xl font-bold mb-2">Progreso</h3>
             <p className="text-sm text-gray-300">Visualiza tu avance.</p>
           </div>
-          <div className="bg-gray-700 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-bold mb-2">Estadísticas</h3>
-            <p className="text-sm text-gray-300">Consulta reportes de productividad.</p>
-          </div>
-        </div>
-        <button onClick={() => navigate('/estadisticas')} className="text-white bg-purple-600 px-4 py-2 rounded">
-        Ver estadísticas 📈
-        </button>
+          <div className="bg-gray-700 rounded-lg p-4 text-white shadow-md flex flex-col justify-between">
+  <div>
+    <h3 className="text-lg font-semibold mb-1">📈 Estadísticas</h3>
+    <p className="text-sm text-gray-300">Consulta informes de productividad.</p>
+  </div>
+  <div className="mt-4">
+    <button
+      onClick={() => navigate('/estadisticas')}
+      className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition duration-200"
+    >
+      <span>Ver estadísticas</span>
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M11 17a1 1 0 0 1-.7-1.7l4.3-4.3H3a1 1 0 1 1 0-2h11.6l-4.3-4.3A1 1 0 0 1 11.7 3.3l6 6a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-.7.3z"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
 
       </main>
     </div>
