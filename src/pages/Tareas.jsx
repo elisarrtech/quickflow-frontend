@@ -143,60 +143,80 @@ const Tareas = () => {
     (!fechaFiltro || t.fecha === fechaFiltro)
   );
 
-   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-md mt-8">
-      <h2 className="text-xl font-bold mb-4 text-white">📋 Tareas</h2>
-      <div className="mb-4 space-y-2">
-        <input type="text" value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Título" className="w-full p-2 rounded bg-gray-700 text-white" />
-        <input type="text" value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Descripción" className="w-full p-2 rounded bg-gray-700 text-white" />
+  return (
+    <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md mt-6 max-w-4xl mx-auto">
+      <button onClick={() => navigate('/dashboard')} className="flex items-center text-sm text-white hover:text-blue-400 mb-4">
+        <FaArrowLeft className="mr-2" /> Volver al Dashboard
+      </button>
+
+      <div className="text-white text-sm mb-2">🔔 Las notificaciones del navegador deben estar activadas.</div>
+
+      {/* Formulario para crear tareas */}
+      <div className="space-y-2">
+        <input type="text" placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
+        <textarea placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
-        <button onClick={crearTarea} className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded">Crear Tarea</button>
+        <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
+        <input type="text" placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
+        <div className="flex items-center gap-2">
+          <input type="text" placeholder="Subtarea..." value={subtareasInput} onChange={e => setSubtareasInput(e.target.value)} className="flex-1 p-2 rounded bg-gray-700 text-white" />
+          <button onClick={agregarSubtarea} className="bg-green-600 text-white p-2 rounded"><FaPlus /></button>
+        </div>
+        <button onClick={crearTarea} className="w-full p-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Crear Tarea</button>
       </div>
-      {error && <p className="text-red-400 mb-4">{error}</p>}
-      {cargando ? (
-        <p className="text-gray-400">Cargando tareas...</p>
-      ) : (
-        tareas.map(t => (
-          <div key={t._id} className={`bg-gray-700 p-4 rounded mt-4 ${t.estado === 'completada' ? 'opacity-70' : ''}`}>
-            {modoEdicion === t._id ? (
-              <>
-                <input value={editData.titulo} onChange={e => setEditData({ ...editData, titulo: e.target.value })} className="w-full mb-1 p-1 bg-gray-600 text-white" />
-                <input value={editData.descripcion} onChange={e => setEditData({ ...editData, descripcion: e.target.value })} className="w-full mb-1 p-1 bg-gray-600 text-white" />
-                <input type="date" value={editData.fecha} onChange={e => setEditData({ ...editData, fecha: e.target.value })} className="w-full mb-2 p-1 bg-gray-600 text-white" />
-                <div className="flex gap-2">
-                  <button onClick={() => guardarEdicion(t._id)} className="bg-green-600 px-3 py-1 rounded text-white">Guardar</button>
-                  <button onClick={() => setModoEdicion(null)} className="bg-gray-500 px-3 py-1 rounded text-white">Cancelar</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h4 className="text-lg font-bold text-white">{t.titulo}</h4>
-                    <p className="text-sm text-gray-300">{t.descripcion}</p>
-                    <p className="text-xs text-gray-400 mt-1">Vence: {t.fecha}</p>
-                    <p className={`text-xs font-semibold ${t.estado === 'completada' ? 'text-green-400' : 'text-yellow-400'}`}>{t.estado}</p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <button onClick={() => toggleEstado(t)} className="flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-white text-sm">
-                      {t.estado === 'pendiente' ? <FaCheckCircle /> : <FaRedo />}
-                    </button>
-                    <button onClick={() => {
-                      setModoEdicion(t._id);
-                      setEditData({ titulo: t.titulo, descripcion: t.descripcion, fecha: t.fecha });
-                    }} className="flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-white text-sm">
-                      <FaEdit />
-                    </button>
-                    <button onClick={() => eliminarTarea(t._id)} className="flex items-center justify-center gap-1 bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-white text-sm">
-                      <FaTrashAlt />
-                    </button>
-                  </div>
-                </div>
-              </>
+
+      {/* Filtros */}
+      <div className="flex gap-4 mt-4">
+        <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="p-2 bg-gray-700 text-white rounded">
+          <option value="Todas">Todas las categorías</option>
+          {categoriasUnicas.map((cat, idx) => <option key={idx} value={cat}>{cat}</option>)}
+        </select>
+        <input type="date" value={fechaFiltro} onChange={e => setFechaFiltro(e.target.value)} className="p-2 bg-gray-700 text-white rounded" />
+      </div>
+
+      {/* Lista de tareas */}
+      <div className="mt-6 space-y-4">
+        {tareasFiltradas.map((tarea) => (
+          <div key={tarea._id} className="bg-gray-700 p-4 rounded text-white">
+            <h3 className="text-xl font-bold">{tarea.titulo}</h3>
+            <p className="text-sm">{tarea.descripcion}</p>
+            <p className="text-sm">📅 {tarea.fecha} {tarea.hora && `🕒 ${tarea.hora}`}</p>
+            {tarea.categoria && <span className="inline-flex items-center bg-blue-600 text-white px-2 py-1 rounded text-xs mt-2"><FaTag className="mr-1" />{tarea.categoria}</span>}
+            <ul className="list-disc ml-5 mt-2 text-sm">
+              {tarea.subtareas && tarea.subtareas.map((sub, i) => <li key={i}>{sub.texto}</li>)}
+            </ul>
+            <p className={`text-xs mt-1 ${tarea.estado === 'pendiente' ? 'text-yellow-400' : 'text-green-400'}`}>{tarea.estado}</p>
+            <div className="flex gap-3 mt-2">
+              <button onClick={() => toggleEstado(tarea)} className="text-blue-400"><FaCheckCircle /></button>
+              <button onClick={() => {
+                setModoEdicion(tarea._id);
+                setEditData({
+                  titulo: tarea.titulo,
+                  descripcion: tarea.descripcion,
+                  fecha: tarea.fecha,
+                  hora: tarea.hora || '',
+                  categoria: tarea.categoria || '',
+                  subtareas: tarea.subtareas || []
+                });
+              }} className="text-yellow-400"><FaEdit /></button>
+              <button onClick={() => eliminarTarea(tarea._id)} className="text-red-500"><FaTrashAlt /></button>
+            </div>
+
+            {/* Modo edición */}
+            {modoEdicion === tarea._id && (
+              <div className="mt-4 space-y-2">
+                <input value={editData.titulo} onChange={e => setEditData({ ...editData, titulo: e.target.value })} className="w-full p-1 rounded bg-gray-800 text-white" />
+                <textarea value={editData.descripcion} onChange={e => setEditData({ ...editData, descripcion: e.target.value })} className="w-full p-1 rounded bg-gray-800 text-white" />
+                <input type="date" value={editData.fecha} onChange={e => setEditData({ ...editData, fecha: e.target.value })} className="w-full p-1 rounded bg-gray-800 text-white" />
+                <input type="time" value={editData.hora} onChange={e => setEditData({ ...editData, hora: e.target.value })} className="w-full p-1 rounded bg-gray-800 text-white" />
+                <input value={editData.categoria} onChange={e => setEditData({ ...editData, categoria: e.target.value })} className="w-full p-1 rounded bg-gray-800 text-white" />
+                <button onClick={() => guardarEdicion(tarea._id)} className="bg-green-600 text-white px-4 py-1 rounded">Guardar</button>
+                <button onClick={() => setModoEdicion(null)} className="text-white text-xs ml-4">Cancelar</button>
+              </div>
             )}
           </div>
-        ))
-      )}
+        ))}
+      </div>
     </div>
   );
 };
