@@ -12,7 +12,7 @@ const Tareas = () => {
     const obtenerTareas = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/tasks`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -46,7 +46,7 @@ const Tareas = () => {
     }
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/tasks`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
