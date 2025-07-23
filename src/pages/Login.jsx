@@ -19,6 +19,7 @@ const handleLogin = async (e) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
+
     
 
     // Validar que la respuesta sea JSON
