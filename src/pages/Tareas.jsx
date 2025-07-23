@@ -1,6 +1,6 @@
-// ✅ TAREAS.JSX CON CATEGORÍA INTEGRADA
+// ✅ TAREAS.JSX CON CATEGORÍA, SUBTAREAS, FILTROS Y CHIPS DE CATEGORÍA
 import React, { useState, useEffect } from 'react';
-import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaArrowLeft } from 'react-icons/fa';
+import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaArrowLeft, FaTag } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const Tareas = () => {
@@ -9,6 +9,8 @@ const Tareas = () => {
   const [descripcion, setDescripcion] = useState('');
   const [fecha, setFecha] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState('Todas');
+  const [fechaFiltro, setFechaFiltro] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(true);
   const [modoEdicion, setModoEdicion] = useState(null);
@@ -52,7 +54,7 @@ const Tareas = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ titulo, descripcion, fecha, categoria }),
+        body: JSON.stringify({ titulo, descripcion, fecha, categoria, subtareas: [] }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -107,6 +109,14 @@ const Tareas = () => {
     setModoEdicion(null);
   };
 
+  const tareasFiltradas = tareas.filter(t => {
+    const coincideCategoria = categoriaFiltro === 'Todas' || t.categoria === categoriaFiltro;
+    const coincideFecha = !fechaFiltro || t.fecha === fechaFiltro;
+    return coincideCategoria && coincideFecha;
+  });
+
+  const coloresCategoria = ['bg-pink-500', 'bg-green-500', 'bg-blue-500', 'bg-yellow-500', 'bg-purple-500', 'bg-red-500'];
+
   return (
     <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md mt-6 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-4">
@@ -121,49 +131,52 @@ const Tareas = () => {
         <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="text" value={categoria} onChange={e => setCategoria(e.target.value)} placeholder="Categoría (opcional)" className="w-full p-2 rounded bg-gray-700 text-white" />
         <button onClick={crearTarea} className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-semibold">Crear Tarea</button>
+
+        <div className="flex flex-wrap gap-2">
+          <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="bg-gray-700 text-white p-2 rounded">
+            <option value="Todas">Todas las categorías</option>
+            {[...new Set(tareas.map(t => t.categoria).filter(Boolean))].map((cat, i) => (
+              <option key={i} value={cat}>{cat}</option>
+            ))}
+          </select>
+
+          <input type="date" value={fechaFiltro} onChange={e => setFechaFiltro(e.target.value)} className="p-2 rounded bg-gray-700 text-white" />
+        </div>
       </div>
+
       {error && <p className="text-red-400 mb-4 font-medium">{error}</p>}
       {cargando ? (
         <p className="text-gray-400">Cargando tareas...</p>
       ) : (
-        tareas.map(t => (
+        tareasFiltradas.map((t, idx) => (
           <div key={t._id} className={`bg-gray-700 p-4 rounded mb-4 ${t.estado === 'completada' ? 'opacity-70' : ''}`}>
-            {modoEdicion === t._id ? (
-              <>
-                <input value={editData.titulo} onChange={e => setEditData({ ...editData, titulo: e.target.value })} className="w-full mb-1 p-1 bg-gray-600 text-white" />
-                <input value={editData.descripcion} onChange={e => setEditData({ ...editData, descripcion: e.target.value })} className="w-full mb-1 p-1 bg-gray-600 text-white" />
-                <input type="date" value={editData.fecha} onChange={e => setEditData({ ...editData, fecha: e.target.value })} className="w-full mb-2 p-1 bg-gray-600 text-white" />
-                <input value={editData.categoria} onChange={e => setEditData({ ...editData, categoria: e.target.value })} placeholder="Categoría" className="w-full mb-2 p-1 bg-gray-600 text-white" />
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={() => guardarEdicion(t._id)} className="bg-green-600 px-3 py-1 rounded text-white">Guardar</button>
-                  <button onClick={() => setModoEdicion(null)} className="bg-gray-500 px-3 py-1 rounded text-white">Cancelar</button>
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                <div>
-                  <h4 className="text-lg font-bold text-white uppercase">{t.titulo}</h4>
-                  <p className="text-sm text-gray-300">{t.descripcion}</p>
-                  <p className="text-xs text-gray-400 mt-1">Vence: {t.fecha}</p>
-                  {t.categoria && <p className="text-xs text-blue-300 font-semibold">Categoría: {t.categoria}</p>}
-                  <p className={`text-xs font-semibold ${t.estado === 'completada' ? 'text-green-400' : 'text-yellow-400'}`}>{t.estado}</p>
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <button onClick={() => toggleEstado(t)} className="flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-white text-sm">
-                    {t.estado === 'pendiente' ? <FaCheckCircle /> : <FaRedo />}
-                  </button>
-                  <button onClick={() => {
-                    setModoEdicion(t._id);
-                    setEditData({ titulo: t.titulo, descripcion: t.descripcion, fecha: t.fecha, categoria: t.categoria || '' });
-                  }} className="flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-white text-sm">
-                    <FaEdit />
-                  </button>
-                  <button onClick={() => eliminarTarea(t._id)} className="flex items-center justify-center gap-1 bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-white text-sm">
-                    <FaTrashAlt />
-                  </button>
-                </div>
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="text-lg font-bold text-white uppercase">{t.titulo}</h4>
+                <p className="text-sm text-gray-300">{t.descripcion}</p>
+                <p className="text-xs text-gray-400 mt-1">Vence: {t.fecha}</p>
+                {t.categoria && (
+                  <span className={`inline-flex items-center gap-1 text-xs font-semibold text-white px-2 py-1 rounded-full ${coloresCategoria[idx % coloresCategoria.length]}`}>
+                    <FaTag /> {t.categoria}
+                  </span>
+                )}
+                <p className={`text-xs font-semibold ${t.estado === 'completada' ? 'text-green-400' : 'text-yellow-400'}`}>{t.estado}</p>
               </div>
-            )}
+              <div className="flex gap-2">
+                <button onClick={() => toggleEstado(t)} className="bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded text-white text-sm">
+                  {t.estado === 'pendiente' ? <FaCheckCircle /> : <FaRedo />}
+                </button>
+                <button onClick={() => {
+                  setModoEdicion(t._id);
+                  setEditData({ titulo: t.titulo, descripcion: t.descripcion, fecha: t.fecha, categoria: t.categoria || '' });
+                }} className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-white text-sm">
+                  <FaEdit />
+                </button>
+                <button onClick={() => eliminarTarea(t._id)} className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-white text-sm">
+                  <FaTrashAlt />
+                </button>
+              </div>
+            </div>
           </div>
         ))
       )}
