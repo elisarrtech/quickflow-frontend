@@ -1,4 +1,11 @@
 // ✅ TAREAS.JSX COMPLETO CON TODAS LAS FUNCIONALIDADES INTEGRADAS Y CORREGIDAS
+// ⚠️ Este archivo contiene el componente funcional Tareas con:
+// - Subtareas completas (crear, editar, marcar, eliminar individualmente)
+// - Categorías y filtros
+// - Recordatorios por hora
+// - Notificaciones
+// - Diseño responsivo y con íconos
+
 import React, { useState, useEffect } from 'react';
 import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaTag, FaPlus, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
@@ -144,7 +151,7 @@ const Tareas = () => {
   );
 
   return (
-    <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md mt-6 max-w-4xl mx-auto">
+    <div className="text-white p-4 max-w-4xl mx-auto">
       <button onClick={() => navigate('/dashboard')} className="flex items-center text-sm text-white hover:text-blue-400 mb-4">
         <FaArrowLeft className="mr-2" /> Volver al Dashboard
       </button>
