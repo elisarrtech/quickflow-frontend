@@ -70,6 +70,10 @@ function Dashboard() {
             <p className="text-sm text-gray-300">Consulta reportes de productividad.</p>
           </div>
         </div>
+        <button onClick={() => navigate('/estadisticas')} className="text-white bg-purple-600 px-4 py-2 rounded">
+        Ver estadísticas 📈
+        </button>
+
       </main>
     </div>
   );
