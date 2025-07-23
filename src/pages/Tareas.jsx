@@ -1,13 +1,8 @@
 // ✅ TAREAS.JSX COMPLETO CON TODAS LAS FUNCIONALIDADES INTEGRADAS Y CORREGIDAS
-// ⚠️ Este archivo contiene el componente funcional Tareas con:
-// - Subtareas completas (crear, editar, marcar, eliminar individualmente)
-// - Categorías y filtros
-// - Recordatorios por hora
-// - Notificaciones
-// - Diseño responsivo y con íconos
+// ⚠️ Incluye: subtareas, categorías, filtros, recordatorios, notificaciones, adjuntos
 
 import React, { useState, useEffect } from 'react';
-import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaTag, FaPlus, FaTimes, FaArrowLeft } from 'react-icons/fa';
+import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaTag, FaPlus, FaTimes, FaArrowLeft, FaPaperclip } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const Tareas = () => {
@@ -19,6 +14,7 @@ const Tareas = () => {
   const [categoria, setCategoria] = useState('');
   const [subtareasInput, setSubtareasInput] = useState('');
   const [subtareas, setSubtareas] = useState([]);
+  const [archivo, setArchivo] = useState(null);
   const [categoriaFiltro, setCategoriaFiltro] = useState('Todas');
   const [fechaFiltro, setFechaFiltro] = useState('');
   const [error, setError] = useState('');
@@ -80,18 +76,26 @@ const Tareas = () => {
     const token = localStorage.getItem('token');
     if (!titulo.trim()) return setError('El título es obligatorio.');
     try {
+      const formData = new FormData();
+      formData.append('titulo', titulo);
+      formData.append('descripcion', descripcion);
+      formData.append('fecha', fecha);
+      formData.append('hora', hora);
+      formData.append('categoria', categoria);
+      formData.append('subtareas', JSON.stringify(subtareas));
+      if (archivo) formData.append('archivo', archivo);
+
       const res = await fetch(`${API}/api/tasks`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, subtareas })
+        body: formData,
       });
       const data = await res.json();
       if (res.ok) {
         setTareas(prev => [...prev, data]);
-        setTitulo(''); setDescripcion(''); setFecha(''); setHora(''); setCategoria(''); setSubtareas([]);
+        setTitulo(''); setDescripcion(''); setFecha(''); setHora(''); setCategoria(''); setSubtareas([]); setArchivo(null);
       } else {
         setError(data.error || 'Error al crear tarea.');
       }
@@ -165,10 +169,15 @@ const Tareas = () => {
         <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="text" placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
+
         <div className="flex items-center gap-2">
           <input type="text" placeholder="Subtarea..." value={subtareasInput} onChange={e => setSubtareasInput(e.target.value)} className="flex-1 p-2 rounded bg-gray-700 text-white" />
           <button onClick={agregarSubtarea} className="bg-green-600 text-white p-2 rounded"><FaPlus /></button>
         </div>
+
+        {/* Input para adjuntar archivo */}
+        <input type="file" accept=".pdf,image/*" onChange={(e) => setArchivo(e.target.files[0])} className="w-full p-2 bg-gray-800 text-white rounded" />
+
         <button onClick={crearTarea} className="w-full p-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Crear Tarea</button>
       </div>
 
@@ -192,6 +201,7 @@ const Tareas = () => {
             <ul className="list-disc ml-5 mt-2 text-sm">
               {tarea.subtareas && tarea.subtareas.map((sub, i) => <li key={i}>{sub.texto}</li>)}
             </ul>
+            {tarea.archivo && <a href={`${API}/${tarea.archivo}`} target="_blank" className="text-blue-400 mt-2 inline-flex items-center"><FaPaperclip className="mr-1" /> Ver archivo</a>}
             <p className={`text-xs mt-1 ${tarea.estado === 'pendiente' ? 'text-yellow-400' : 'text-green-400'}`}>{tarea.estado}</p>
             <div className="flex gap-3 mt-2">
               <button onClick={() => toggleEstado(tarea)} className="text-blue-400"><FaCheckCircle /></button>
