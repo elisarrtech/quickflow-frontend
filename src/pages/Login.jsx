@@ -14,11 +14,12 @@ const handleLogin = async (e) => {
   setToken(null);
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+    
 
     // Validar que la respuesta sea JSON
     const contentType = response.headers.get("content-type");
