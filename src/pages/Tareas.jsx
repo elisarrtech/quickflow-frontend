@@ -113,10 +113,26 @@ const Tareas = () => {
   });
 
   const coloresCategoria = ['bg-pink-500', 'bg-green-500', 'bg-blue-500', 'bg-yellow-500', 'bg-purple-500', 'bg-red-500'];
+  const categoriasUnicas = [...new Set(tareas.map(t => t.categoria).filter(Boolean))];
 
   return (
     <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md mt-6 max-w-4xl mx-auto">
-      {/* Formulario y filtros igual que antes */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-white">📋 Tareas</h2>
+        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-sm text-white hover:text-blue-400">
+          <FaArrowLeft /> Volver
+        </button>
+      </div>
+
+      <div className="mb-4 flex flex-col md:flex-row gap-3">
+        <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="p-2 bg-gray-700 text-white rounded">
+          <option value="Todas">Todas las categorías</option>
+          {categoriasUnicas.map((cat, i) => (
+            <option key={i} value={cat}>{cat}</option>
+          ))}
+        </select>
+        <input type="date" value={fechaFiltro} onChange={e => setFechaFiltro(e.target.value)} className="p-2 bg-gray-700 text-white rounded" />
+      </div>
 
       {modoEdicion && (
         <div className="mb-6 p-4 bg-gray-700 rounded">
@@ -125,14 +141,48 @@ const Tareas = () => {
           <input value={editData.descripcion} onChange={e => setEditData({ ...editData, descripcion: e.target.value })} className="w-full mb-2 p-2 bg-gray-600 text-white" />
           <input type="date" value={editData.fecha} onChange={e => setEditData({ ...editData, fecha: e.target.value })} className="w-full mb-2 p-2 bg-gray-600 text-white" />
           <input value={editData.categoria} onChange={e => setEditData({ ...editData, categoria: e.target.value })} className="w-full mb-2 p-2 bg-gray-600 text-white" />
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
             <button onClick={() => guardarEdicion(modoEdicion)} className="bg-green-600 px-3 py-1 rounded text-white">Guardar</button>
             <button onClick={() => setModoEdicion(null)} className="bg-gray-500 px-3 py-1 rounded text-white">Cancelar</button>
           </div>
         </div>
       )}
 
-      {/* Mostrar tareas como antes */}
+      {error && <p className="text-red-400 mb-4 font-medium">{error}</p>}
+
+      {cargando ? (
+        <p className="text-gray-400">Cargando tareas...</p>
+      ) : (
+        tareasFiltradas.map((t, index) => {
+          const chipColor = coloresCategoria[index % coloresCategoria.length];
+          return (
+            <div key={t._id} className="bg-gray-700 p-4 rounded mb-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <div>
+                  <h4 className="text-lg font-bold text-white uppercase">{t.titulo}</h4>
+                  <p className="text-sm text-gray-300">{t.descripcion}</p>
+                  <p className="text-xs text-gray-400 mt-1">Vence: {t.fecha}</p>
+                  {t.categoria && (
+                    <span className={`inline-flex items-center px-2 py-1 text-xs font-bold text-white ${chipColor} rounded-full mt-1`}>
+                      <FaTag className="mr-1" /> {t.categoria}
+                    </span>
+                  )}
+                  {Array.isArray(t.subtareas) && t.subtareas.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {t.subtareas.map((sub, i) => (
+                        <li key={i} className="flex items-center gap-2 text-sm text-gray-200">
+                          <input type="checkbox" checked={sub.completada} readOnly className="accent-green-500" />
+                          <span className={sub.completada ? 'line-through text-gray-400' : ''}>{sub.titulo}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 };
