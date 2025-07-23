@@ -150,6 +150,7 @@ const Tareas = () => {
       </button>
 
       <div className="text-white text-sm mb-2">🔔 Las notificaciones del navegador deben estar activadas.</div>
+
       {/* Aquí seguiría el resto del formulario y las tareas, igual que antes */}
     </div>
   );
