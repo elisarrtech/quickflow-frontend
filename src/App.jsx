@@ -4,6 +4,9 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Tareas from './pages/Tareas'; // ✅ Importación correcta
 import Estadisticas from './components/Estadisticas';
+import Progreso from './components/Progreso';
+
+
 
 function App() {
   return (
@@ -16,6 +19,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/tareas" element={<Tareas />} /> {/* Página separada */}
         <Route path="/estadisticas" element={<Estadisticas />} />
+        <Route path="/progreso" element={<Progreso />} />
       
       </Routes>
     </BrowserRouter>
