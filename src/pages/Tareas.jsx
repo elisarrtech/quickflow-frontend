@@ -1,4 +1,4 @@
-// ✅ TAREAS.JSX COMPLETO CON ÍCONOS Y MEJORAS VISUALES RESPONSIVAS
+// ✅ TAREAS.JSX CON CATEGORÍA INTEGRADA
 import React, { useState, useEffect } from 'react';
 import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
@@ -8,10 +8,11 @@ const Tareas = () => {
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [fecha, setFecha] = useState('');
+  const [categoria, setCategoria] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(true);
   const [modoEdicion, setModoEdicion] = useState(null);
-  const [editData, setEditData] = useState({ titulo: '', descripcion: '', fecha: '' });
+  const [editData, setEditData] = useState({ titulo: '', descripcion: '', fecha: '', categoria: '' });
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
@@ -51,7 +52,7 @@ const Tareas = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ titulo, descripcion, fecha }),
+        body: JSON.stringify({ titulo, descripcion, fecha, categoria }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -59,6 +60,7 @@ const Tareas = () => {
         setTitulo('');
         setDescripcion('');
         setFecha('');
+        setCategoria('');
         setError('');
       } else {
         setError(data.error || 'Error al crear tarea.');
@@ -117,6 +119,7 @@ const Tareas = () => {
         <input type="text" value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Título" className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="text" value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Descripción" className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
+        <input type="text" value={categoria} onChange={e => setCategoria(e.target.value)} placeholder="Categoría (opcional)" className="w-full p-2 rounded bg-gray-700 text-white" />
         <button onClick={crearTarea} className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-semibold">Crear Tarea</button>
       </div>
       {error && <p className="text-red-400 mb-4 font-medium">{error}</p>}
@@ -130,6 +133,7 @@ const Tareas = () => {
                 <input value={editData.titulo} onChange={e => setEditData({ ...editData, titulo: e.target.value })} className="w-full mb-1 p-1 bg-gray-600 text-white" />
                 <input value={editData.descripcion} onChange={e => setEditData({ ...editData, descripcion: e.target.value })} className="w-full mb-1 p-1 bg-gray-600 text-white" />
                 <input type="date" value={editData.fecha} onChange={e => setEditData({ ...editData, fecha: e.target.value })} className="w-full mb-2 p-1 bg-gray-600 text-white" />
+                <input value={editData.categoria} onChange={e => setEditData({ ...editData, categoria: e.target.value })} placeholder="Categoría" className="w-full mb-2 p-1 bg-gray-600 text-white" />
                 <div className="flex flex-wrap gap-2">
                   <button onClick={() => guardarEdicion(t._id)} className="bg-green-600 px-3 py-1 rounded text-white">Guardar</button>
                   <button onClick={() => setModoEdicion(null)} className="bg-gray-500 px-3 py-1 rounded text-white">Cancelar</button>
@@ -141,6 +145,7 @@ const Tareas = () => {
                   <h4 className="text-lg font-bold text-white uppercase">{t.titulo}</h4>
                   <p className="text-sm text-gray-300">{t.descripcion}</p>
                   <p className="text-xs text-gray-400 mt-1">Vence: {t.fecha}</p>
+                  {t.categoria && <p className="text-xs text-blue-300 font-semibold">Categoría: {t.categoria}</p>}
                   <p className={`text-xs font-semibold ${t.estado === 'completada' ? 'text-green-400' : 'text-yellow-400'}`}>{t.estado}</p>
                 </div>
                 <div className="flex gap-2 justify-end">
@@ -149,7 +154,7 @@ const Tareas = () => {
                   </button>
                   <button onClick={() => {
                     setModoEdicion(t._id);
-                    setEditData({ titulo: t.titulo, descripcion: t.descripcion, fecha: t.fecha });
+                    setEditData({ titulo: t.titulo, descripcion: t.descripcion, fecha: t.fecha, categoria: t.categoria || '' });
                   }} className="flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded text-white text-sm">
                     <FaEdit />
                   </button>
