@@ -1,7 +1,7 @@
-// ✅ TAREAS.JSX COMPLETO CON TODAS LAS FUNCIONALIDADES INTEGRADAS Y CORREGIDAS, INCLUYENDO ENLACE WEB
+// ✅ TAREAS.JSX CON CHECKLIST DINÁMICO Y DISEÑO TIPO NOTION
 
 import React, { useState, useEffect } from 'react';
-import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaTag, FaPlus, FaTimes, FaArrowLeft, FaPaperclip, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaCheckCircle, FaEdit, FaTrashAlt, FaRedo, FaTag, FaPlus, FaTimes, FaArrowLeft, FaPaperclip, FaExternalLinkAlt, FaCheckSquare, FaRegSquare } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const Tareas = () => {
@@ -86,14 +86,11 @@ const Tareas = () => {
       formData.append('subtareas', JSON.stringify(subtareas));
       formData.append('nota', nota);
       formData.append('enlace', enlace);
-
       if (archivo) formData.append('archivo', archivo);
 
       const res = await fetch(`${API}/api/tasks`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
       const data = await res.json();
@@ -108,48 +105,15 @@ const Tareas = () => {
     }
   };
 
-  const eliminarTarea = async (id) => {
-    const token = localStorage.getItem('token');
-    await fetch(`${API}/api/tasks/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setTareas(prev => prev.filter(t => t._id !== id));
-  };
-
-  const toggleEstado = async (tarea) => {
-    const token = localStorage.getItem('token');
-    const nuevoEstado = tarea.estado === 'pendiente' ? 'completada' : 'pendiente';
-    await fetch(`${API}/api/tasks/${tarea._id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ estado: nuevoEstado }),
-    });
-    setTareas(prev => prev.map(t => t._id === tarea._id ? { ...t, estado: nuevoEstado } : t));
-  };
-
-  const guardarEdicion = async (id) => {
-    const token = localStorage.getItem('token');
-    await fetch(`${API}/api/tasks/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(editData),
-    });
-    setTareas(prev => prev.map(t => t._id === id ? { ...t, ...editData } : t));
-    setModoEdicion(null);
-  };
-
-  const agregarSubtarea = () => {
-    if (subtareasInput.trim()) {
-      setSubtareas(prev => [...prev, { texto: subtareasInput, completado: false }]);
-      setSubtareasInput('');
-    }
+  const toggleSubtarea = (tareaId, index) => {
+    setTareas(prev => prev.map(t => {
+      if (t._id === tareaId) {
+        const nuevasSubtareas = [...t.subtareas];
+        nuevasSubtareas[index].completado = !nuevasSubtareas[index].completado;
+        return { ...t, subtareas: nuevasSubtareas };
+      }
+      return t;
+    }));
   };
 
   const categoriasUnicas = [...new Set(tareas.map(t => t.categoria).filter(Boolean))];
@@ -166,29 +130,29 @@ const Tareas = () => {
 
       <div className="text-white text-sm mb-2">🔔 Las notificaciones del navegador deben estar activadas.</div>
 
-      {/* Formulario para crear tareas */}
       <div className="space-y-2">
         <input type="text" placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
         <textarea placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
         <input type="text" placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
-
-        <input type="url" placeholder="Enlace web relacionado (opcional)" value={enlace} onChange={e => setEnlace(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
+        <input type="url" placeholder="Enlace web relacionado" value={enlace} onChange={e => setEnlace(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
+        <textarea placeholder="Nota larga (opcional)" value={nota} onChange={e => setNota(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
 
         <div className="flex items-center gap-2">
           <input type="text" placeholder="Subtarea..." value={subtareasInput} onChange={e => setSubtareasInput(e.target.value)} className="flex-1 p-2 rounded bg-gray-700 text-white" />
-          <button onClick={agregarSubtarea} className="bg-green-600 text-white p-2 rounded"><FaPlus /></button>
+          <button onClick={() => {
+            if (subtareasInput.trim()) {
+              setSubtareas([...subtareas, { texto: subtareasInput, completado: false }]);
+              setSubtareasInput('');
+            }
+          }} className="bg-green-600 text-white p-2 rounded"><FaPlus /></button>
         </div>
 
-        <textarea placeholder="Nota larga (opcional)" value={nota} onChange={(e) => setNota(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
-
         <input type="file" accept=".pdf,image/*" onChange={(e) => setArchivo(e.target.files[0])} className="w-full p-2 bg-gray-800 text-white rounded" />
-
         <button onClick={crearTarea} className="w-full p-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Crear Tarea</button>
       </div>
 
-      {/* Filtros */}
       <div className="flex gap-4 mt-4">
         <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="p-2 bg-gray-700 text-white rounded">
           <option value="Todas">Todas las categorías</option>
@@ -197,34 +161,31 @@ const Tareas = () => {
         <input type="date" value={fechaFiltro} onChange={e => setFechaFiltro(e.target.value)} className="p-2 bg-gray-700 text-white rounded" />
       </div>
 
-      {/* Lista de tareas */}
       <div className="mt-6 space-y-4">
         {tareasFiltradas.map((tarea) => (
-          <div key={tarea._id} className="bg-gray-700 p-4 rounded text-white">
-            <h3 className="text-xl font-bold">{tarea.titulo}</h3>
-            <p className="text-sm">{tarea.descripcion}</p>
-            {tarea.nota && <div className="mt-2 bg-gray-800 text-sm text-gray-300 p-2 rounded">📝 <span className="font-semibold">Nota:</span><br />{tarea.nota}</div>}
-            {tarea.enlace && <a href={tarea.enlace} target="_blank" className="text-blue-400 mt-2 inline-flex items-center"><FaExternalLinkAlt className="mr-1" /> Enlace relacionado</a>}
-            <p className="text-sm">📅 {tarea.fecha} {tarea.hora && `🕒 ${tarea.hora}`}</p>
+          <div key={tarea._id} className="bg-gray-800 p-4 rounded-lg shadow text-white border border-gray-600">
+            <h3 className="text-xl font-bold mb-1">{tarea.titulo}</h3>
+            <p className="text-sm text-gray-300">{tarea.descripcion}</p>
+            {tarea.nota && <div className="mt-2 bg-gray-700 text-sm text-gray-300 p-2 rounded">📝 <strong>Nota:</strong><br />{tarea.nota}</div>}
+            {tarea.enlace && <a href={tarea.enlace} target="_blank" className="text-blue-400 mt-2 inline-flex items-center"><FaExternalLinkAlt className="mr-1" /> Enlace</a>}
+            <p className="text-xs mt-1">📅 {tarea.fecha} {tarea.hora && `🕒 ${tarea.hora}`}</p>
             {tarea.categoria && <span className="inline-flex items-center bg-blue-600 text-white px-2 py-1 rounded text-xs mt-2"><FaTag className="mr-1" />{tarea.categoria}</span>}
-            <ul className="list-disc ml-5 mt-2 text-sm">
-              {tarea.subtareas && tarea.subtareas.map((sub, i) => <li key={i}>{sub.texto}</li>)}
-            </ul>
+            {tarea.subtareas?.length > 0 && (
+              <div className="mt-2">
+                {tarea.subtareas.map((sub, i) => (
+                  <div key={i} className="flex items-center text-sm text-gray-200">
+                    <button onClick={() => toggleSubtarea(tarea._id, i)} className="mr-2">
+                      {sub.completado ? <FaCheckSquare /> : <FaRegSquare />}
+                    </button>
+                    <span className={sub.completado ? 'line-through text-gray-400' : ''}>{sub.texto}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             {tarea.archivo && <a href={`${API}/${tarea.archivo}`} target="_blank" className="text-blue-400 mt-2 inline-flex items-center"><FaPaperclip className="mr-1" /> Ver archivo</a>}
             <p className={`text-xs mt-1 ${tarea.estado === 'pendiente' ? 'text-yellow-400' : 'text-green-400'}`}>{tarea.estado}</p>
             <div className="flex gap-3 mt-2">
               <button onClick={() => toggleEstado(tarea)} className="text-blue-400"><FaCheckCircle /></button>
-              <button onClick={() => {
-                setModoEdicion(tarea._id);
-                setEditData({
-                  titulo: tarea.titulo,
-                  descripcion: tarea.descripcion,
-                  fecha: tarea.fecha,
-                  hora: tarea.hora || '',
-                  categoria: tarea.categoria || '',
-                  subtareas: tarea.subtareas || []
-                });
-              }} className="text-yellow-400"><FaEdit /></button>
               <button onClick={() => eliminarTarea(tarea._id)} className="text-red-500"><FaTrashAlt /></button>
             </div>
           </div>
