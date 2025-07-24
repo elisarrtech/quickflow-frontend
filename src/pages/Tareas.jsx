@@ -75,6 +75,42 @@ const Tareas = () => {
     setTareas(prev => prev.filter(t => t._id !== id));
   };
 
+  const editarTarea = (t) => {
+    setModoEdicion(t._id);
+    setTitulo(t.titulo);
+    setDescripcion(t.descripcion);
+    setFecha(t.fecha);
+    setHora(t.hora);
+    setCategoria(t.categoria);
+    setNota(t.nota || '');
+    setEnlace(t.enlace || '');
+    setSubtareas(t.subtareas || []);
+    setArchivo(null);
+  };
+
+  const actualizarTarea = async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, subtareas })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setTareas(prev => prev.map(t => t._id === modoEdicion ? data : t));
+      setModoEdicion(null);
+      setTitulo('');
+      setDescripcion('');
+      setFecha('');
+      setHora('');
+      setCategoria('');
+      setNota('');
+      setEnlace('');
+      setSubtareas([]);
+      setArchivo(null);
+    }
+  };
+
   const toggleEstado = async (t) => {
     const token = localStorage.getItem('token');
     const res = await fetch(`${API}/api/tasks/${t._id}`, {
@@ -128,7 +164,11 @@ const Tareas = () => {
       </div>
 
       <input type="file" accept=".pdf,image/*" onChange={(e) => setArchivo(e.target.files[0])} className="w-full p-2 bg-gray-800 text-white rounded" />
-      <button onClick={crearTarea} className="w-full bg-blue-600 p-2 mt-2 rounded text-white">Crear tarea</button>
+      {modoEdicion ? (
+        <button onClick={actualizarTarea} className="w-full bg-yellow-500 p-2 mt-2 rounded text-white">Actualizar tarea</button>
+      ) : (
+        <button onClick={crearTarea} className="w-full bg-blue-600 p-2 mt-2 rounded text-white">Crear tarea</button>
+      )}
 
       {/* LISTADO */}
       <div className="mt-6 space-y-4">
