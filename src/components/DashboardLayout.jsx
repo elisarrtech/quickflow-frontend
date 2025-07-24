@@ -1,17 +1,36 @@
-// ✅ COMPONENTE LAYOUT GLOBAL TIPO NOTION
-
+// src/components/DashboardLayout.jsx
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaTasks, FaSignOutAlt, FaPlus } from 'react-icons/fa';
 
 const DashboardLayout = ({ children }) => {
+  const navigate = useNavigate();
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans px-4 py-6">
-      <div className="max-w-5xl mx-auto">
-        <header className="mb-6 pb-3 border-b border-slate-700">
-          <h1 className="text-3xl font-bold tracking-tight">Quickflow</h1>
-          <p className="text-sm text-slate-400">Tu espacio de productividad</p>
-        </header>
+    <div className="min-h-screen flex bg-gray-950 text-white">
+      <aside className="w-64 bg-gray-900 p-6 space-y-6 shadow-md">
+        <h1 className="text-2xl font-bold">Quickflow</h1>
+        <nav className="space-y-3">
+          <Link to="/dashboard" className="flex items-center gap-2 hover:text-blue-400">
+            <FaTasks /> Dashboard
+          </Link>
+          <Link to="/tareas" className="flex items-center gap-2 hover:text-blue-400">
+            <FaPlus /> Nueva Tarea
+          </Link>
+        </nav>
+        <button onClick={logout} className="mt-10 flex items-center gap-2 text-red-400 hover:text-red-600">
+          <FaSignOutAlt /> Cerrar sesión
+        </button>
+      </aside>
+
+      <main className="flex-1 p-8 bg-gray-950 overflow-y-auto">
         {children}
-      </div>
+      </main>
     </div>
   );
 };
