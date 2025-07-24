@@ -1,4 +1,4 @@
-// ✅ TAREAS.JSX CON CHECKLIST DINÁMICO, NOTAS, ENLACES Y EDICIÓN (MEJORADO CON EDICIÓN Y ELIMINACIÓN DE SUBTAREAS)
+// ✅ TAREAS.JSX CON CHECKLIST, NOTAS, ENLACES Y EDICIÓN COMPLETA
 
 import React, { useState, useEffect } from 'react';
 import { FaCheckCircle, FaEdit, FaTrashAlt, FaArrowLeft, FaPlus, FaTag, FaExternalLinkAlt, FaPaperclip, FaCheckSquare, FaRegSquare, FaTimes } from 'react-icons/fa';
@@ -17,7 +17,6 @@ const Tareas = () => {
   const [enlace, setEnlace] = useState('');
   const [nota, setNota] = useState('');
   const [modoEdicion, setModoEdicion] = useState(null);
-  const [editData, setEditData] = useState({ titulo: '', descripcion: '', fecha: '', hora: '', categoria: '', nota: '', enlace: '', subtareas: [] });
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
@@ -131,33 +130,32 @@ const Tareas = () => {
       <input type="file" accept=".pdf,image/*" onChange={(e) => setArchivo(e.target.files[0])} className="w-full p-2 bg-gray-800 text-white rounded" />
       <button onClick={crearTarea} className="w-full bg-blue-600 p-2 mt-2 rounded text-white">Crear tarea</button>
 
-     {/* LISTADO */}
-<div className="mt-6 space-y-4">
-  {tareas.map((t) => (
-    <div key={t._id} className="bg-gray-800 p-4 rounded shadow">
-      <h3 className="text-lg font-bold">{t.titulo}</h3>
-      <p>{t.descripcion}</p>
-      {t.nota && <p className="bg-gray-700 p-2 rounded mt-2 text-sm">📝 {t.nota}</p>}
-      {t.enlace && <a href={t.enlace} className="text-blue-400 inline-flex items-center"><FaExternalLinkAlt className="mr-1" /> Enlace</a>}
-      <p className="text-xs">📅 {t.fecha} 🕒 {t.hora}</p>
-      {t.categoria && <span className="inline-block mt-1 px-2 py-1 text-xs bg-blue-600 rounded"><FaTag className="inline mr-1" />{t.categoria}</span>}
-      {t.subtareas?.map((s, i) => (
-        <div key={i} className="flex items-center text-sm mt-1">
-          <button onClick={() => toggleSubtarea(t._id, i)} className="mr-2">{s.completado ? <FaCheckSquare /> : <FaRegSquare />}</button>
-          <span className={s.completado ? 'line-through text-gray-400' : ''}>{s.texto}</span>
-        </div>
-      ))}
-      {t.archivo && <a href={`${API}/${t.archivo}`} className="text-blue-400 inline-flex items-center"><FaPaperclip className="mr-1" /> Ver archivo</a>}
-      <p className={`text-xs mt-1 ${t.estado === 'pendiente' ? 'text-yellow-400' : 'text-green-400'}`}>{t.estado}</p>
-      <div className="flex gap-3 mt-2">
-        <button onClick={() => toggleEstado(t)} className="text-blue-400"><FaCheckCircle /></button>
-        <button onClick={() => editarTarea(t)} className="text-yellow-400"><FaEdit /></button>
-        <button onClick={() => eliminarTarea(t._id)} className="text-red-500"><FaTrashAlt /></button>
+      {/* LISTADO */}
+      <div className="mt-6 space-y-4">
+        {tareas.map((t) => (
+          <div key={t._id} className="bg-gray-800 p-4 rounded shadow">
+            <h3 className="text-lg font-bold">{t.titulo}</h3>
+            <p>{t.descripcion}</p>
+            {t.nota && <p className="bg-gray-700 p-2 rounded mt-2 text-sm">📝 {t.nota}</p>}
+            {t.enlace && <a href={t.enlace} className="text-blue-400 inline-flex items-center"><FaExternalLinkAlt className="mr-1" /> Enlace</a>}
+            <p className="text-xs">📅 {t.fecha} 🕒 {t.hora}</p>
+            {t.categoria && <span className="inline-block mt-1 px-2 py-1 text-xs bg-blue-600 rounded"><FaTag className="inline mr-1" />{t.categoria}</span>}
+            {t.subtareas?.map((s, i) => (
+              <div key={i} className="flex items-center text-sm mt-1">
+                <button onClick={() => toggleSubtarea(t._id, i)} className="mr-2">{s.completado ? <FaCheckSquare /> : <FaRegSquare />}</button>
+                <span className={s.completado ? 'line-through text-gray-400' : ''}>{s.texto}</span>
+              </div>
+            ))}
+            {t.archivo && <a href={`${API}/${t.archivo}`} className="text-blue-400 inline-flex items-center"><FaPaperclip className="mr-1" /> Ver archivo</a>}
+            <p className={`text-xs mt-1 ${t.estado === 'pendiente' ? 'text-yellow-400' : 'text-green-400'}`}>{t.estado}</p>
+            <div className="flex gap-3 mt-2">
+              <button onClick={() => toggleEstado(t)} className="text-blue-400"><FaCheckCircle /></button>
+              {/* <button onClick={() => editarTarea(t)} className="text-yellow-400"><FaEdit /></button> */}
+              <button onClick={() => eliminarTarea(t._id)} className="text-red-500"><FaTrashAlt /></button>
+            </div>
+          </div>
+        ))}
       </div>
-    </div>
-  ))}
-</div>
-
     </div>
   );
 };
