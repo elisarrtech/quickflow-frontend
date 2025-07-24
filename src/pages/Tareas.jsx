@@ -1,6 +1,6 @@
 // src/pages/Tareas.jsx
 import React, { useState, useEffect } from 'react';
-import { FaCheckCircle, FaEdit, FaTrashAlt, FaArrowLeft, FaPlus, FaTag, FaExternalLinkAlt, FaPaperclip, FaCheckSquare, FaRegSquare, FaTimes } from 'react-icons/fa';
+import { FaCheckCircle, FaEdit, FaTrashAlt, FaPlus, FaTag, FaExternalLinkAlt, FaPaperclip, FaCheckSquare, FaRegSquare, FaTimes } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 
@@ -143,7 +143,84 @@ const Tareas = () => {
 
   return (
     <DashboardLayout>
-      {/* aquí va todo tu return actual, que ya fue reestilizado */}
+      <div className="text-white p-4 max-w-4xl mx-auto">
+        <h2 className="text-2xl font-semibold mb-4">Tareas</h2>
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input type="text" placeholder="Título" className="input" value={titulo} onChange={e => setTitulo(e.target.value)} />
+          <input type="text" placeholder="Descripción" className="input" value={descripcion} onChange={e => setDescripcion(e.target.value)} />
+          <input type="date" className="input" value={fecha} onChange={e => setFecha(e.target.value)} />
+          <input type="time" className="input" value={hora} onChange={e => setHora(e.target.value)} />
+          <input type="text" placeholder="Categoría" className="input" value={categoria} onChange={e => setCategoria(e.target.value)} />
+          <input type="text" placeholder="Enlace" className="input" value={enlace} onChange={e => setEnlace(e.target.value)} />
+          <textarea placeholder="Nota larga..." className="input" value={nota} onChange={e => setNota(e.target.value)} />
+          <input type="file" className="input" onChange={e => setArchivo(e.target.files[0])} />
+          <div className="col-span-2">
+            <div className="flex gap-2 mb-2">
+              <input type="text" className="input flex-1" placeholder="Subtarea" value={subtareasInput} onChange={e => setSubtareasInput(e.target.value)} />
+              <button className="btn" onClick={() => {
+                if (subtareasInput.trim()) {
+                  setSubtareas([...subtareas, { texto: subtareasInput, completado: false }]);
+                  setSubtareasInput('');
+                }
+              }}><FaPlus /></button>
+            </div>
+            {subtareas.map((s, i) => (
+              <div key={i} className="flex items-center gap-2 mb-1">
+                <span onClick={() => setSubtareas(prev => {
+                  const nuevo = [...prev];
+                  nuevo[i].completado = !nuevo[i].completado;
+                  return nuevo;
+                })}>{s.completado ? <FaCheckSquare /> : <FaRegSquare />}</span>
+                <span className={s.completado ? 'line-through' : ''}>{s.texto}</span>
+                <FaTimes className="cursor-pointer" onClick={() => eliminarSubtarea(i)} />
+              </div>
+            ))}
+          </div>
+          <div className="col-span-2 flex justify-end gap-2">
+            {modoEdicion ? (
+              <>
+                <button className="btn" onClick={actualizarTarea}>Actualizar</button>
+                <button className="btn" onClick={limpiarFormulario}>Cancelar</button>
+              </>
+            ) : (
+              <button className="btn" onClick={crearTarea}>Crear</button>
+            )}
+          </div>
+          {error && <p className="text-red-400 col-span-2">{error}</p>}
+        </div>
+
+        <div className="space-y-4">
+          {tareas.map(t => (
+            <div key={t._id} className="bg-gray-800 p-4 rounded border border-gray-700">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-bold">{t.titulo}</h3>
+                <div className="flex gap-2">
+                  <FaCheckCircle onClick={() => toggleEstado(t)} className={`cursor-pointer ${t.estado === 'completada' ? 'text-green-400' : 'text-yellow-400'}`} />
+                  <FaEdit className="cursor-pointer text-blue-400" onClick={() => editarTarea(t)} />
+                  <FaTrashAlt className="cursor-pointer text-red-400" onClick={() => eliminarTarea(t._id)} />
+                </div>
+              </div>
+              <p className="text-sm text-gray-400">{t.descripcion}</p>
+              {t.fecha && <p className="text-xs">📅 {t.fecha} ⏰ {t.hora}</p>}
+              {t.categoria && <p className="text-xs flex items-center gap-1"><FaTag /> {t.categoria}</p>}
+              {t.enlace && <p className="text-xs flex items-center gap-1"><FaExternalLinkAlt /><a href={t.enlace} target="_blank" rel="noopener noreferrer">Enlace</a></p>}
+              {t.nota && <p className="text-sm mt-2">📝 {t.nota}</p>}
+              {t.subtareas?.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {t.subtareas.map((s, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm">
+                      <span onClick={() => toggleSubtarea(t._id, i)} className="cursor-pointer">
+                        {s.completado ? <FaCheckSquare className="text-green-400" /> : <FaRegSquare className="text-gray-400" />}
+                      </span>
+                      <span className={s.completado ? 'line-through text-gray-400' : ''}>{s.texto}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     </DashboardLayout>
   );
 };
