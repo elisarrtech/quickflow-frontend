@@ -4,11 +4,12 @@ import DashboardLayout from '../components/DashboardLayout';
 import { Link } from 'react-router-dom';
 import { FaTasks, FaUserCircle, FaPlusCircle } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { Pie } from 'react-chartjs-2';
+import { Pie, Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({ completadas: 0, pendientes: 0 });
+  const [categoriaStats, setCategoriaStats] = useState({});
 
   useEffect(() => {
     const obtenerStats = async () => {
@@ -21,18 +22,36 @@ const Dashboard = () => {
         const completadas = data.filter(t => t.estado === 'completada').length;
         const pendientes = data.filter(t => t.estado === 'pendiente').length;
         setStats({ completadas, pendientes });
+
+        const categorias = {};
+        data.forEach(t => {
+          if (!categorias[t.categoria]) categorias[t.categoria] = 0;
+          categorias[t.categoria] += 1;
+        });
+        setCategoriaStats(categorias);
       }
     };
     obtenerStats();
   }, []);
 
-  const data = {
+  const dataPie = {
     labels: ['Pendientes', 'Completadas'],
     datasets: [
       {
         data: [stats.pendientes, stats.completadas],
         backgroundColor: ['#facc15', '#4ade80'],
         borderWidth: 1
+      }
+    ]
+  };
+
+  const dataBar = {
+    labels: Object.keys(categoriaStats),
+    datasets: [
+      {
+        label: 'Tareas por categoría',
+        data: Object.values(categoriaStats),
+        backgroundColor: '#60a5fa'
       }
     ]
   };
@@ -87,14 +106,26 @@ const Dashboard = () => {
         </motion.div>
 
         <motion.div
-          className="bg-gray-900 rounded-lg p-6 shadow border border-gray-700"
+          className="bg-gray-900 rounded-lg p-6 shadow border border-gray-700 mb-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
           <h2 className="text-xl font-semibold mb-4">Estado general de tareas</h2>
           <div className="max-w-xs mx-auto">
-            <Pie data={data} />
+            <Pie data={dataPie} />
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="bg-gray-900 rounded-lg p-6 shadow border border-gray-700"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <h2 className="text-xl font-semibold mb-4">Tareas por Categoría</h2>
+          <div className="max-w-3xl mx-auto">
+            <Bar data={dataBar} />
           </div>
         </motion.div>
       </div>
