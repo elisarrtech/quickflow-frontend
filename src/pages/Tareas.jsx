@@ -1,4 +1,4 @@
-// ✅ TAREAS.JSX CON CHECKLIST, NOTAS, ENLACES Y ESTILO NOTION
+// ✅ TAREAS.JSX REESTILIZADO TIPO NOTION + VALIDACIONES
 
 import React, { useState, useEffect } from 'react';
 import { FaCheckCircle, FaEdit, FaTrashAlt, FaArrowLeft, FaPlus, FaTag, FaExternalLinkAlt, FaPaperclip, FaCheckSquare, FaRegSquare, FaTimes } from 'react-icons/fa';
@@ -17,6 +17,7 @@ const Tareas = () => {
   const [enlace, setEnlace] = useState('');
   const [nota, setNota] = useState('');
   const [modoEdicion, setModoEdicion] = useState(null);
+  const [error, setError] = useState('');
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
@@ -53,6 +54,9 @@ const Tareas = () => {
   }, []);
 
   const crearTarea = async () => {
+    if (!titulo.trim()) return setError('El título es obligatorio');
+    if (tareas.some(t => t.titulo.toLowerCase() === titulo.trim().toLowerCase())) return setError('Ya existe una tarea con ese título');
+
     const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('titulo', titulo);
@@ -64,9 +68,17 @@ const Tareas = () => {
     formData.append('enlace', enlace);
     formData.append('subtareas', JSON.stringify(subtareas));
     if (archivo) formData.append('archivo', archivo);
+
     const res = await fetch(`${API}/api/tasks`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData });
     const data = await res.json();
-    if (res.ok) setTareas(prev => [...prev, data]);
+    if (res.ok) {
+      setTareas(prev => [...prev, data]);
+      limpiarFormulario();
+    }
+  };
+
+  const limpiarFormulario = () => {
+    setTitulo(''); setDescripcion(''); setFecha(''); setHora(''); setCategoria(''); setNota(''); setEnlace(''); setSubtareas([]); setArchivo(null); setError('');
   };
 
   const eliminarTarea = async (id) => {
@@ -86,6 +98,7 @@ const Tareas = () => {
     setEnlace(t.enlace || '');
     setSubtareas(t.subtareas || []);
     setArchivo(null);
+    setError('');
   };
 
   const actualizarTarea = async () => {
@@ -99,15 +112,7 @@ const Tareas = () => {
     if (res.ok) {
       setTareas(prev => prev.map(t => t._id === modoEdicion ? data : t));
       setModoEdicion(null);
-      setTitulo('');
-      setDescripcion('');
-      setFecha('');
-      setHora('');
-      setCategoria('');
-      setNota('');
-      setEnlace('');
-      setSubtareas([]);
-      setArchivo(null);
+      limpiarFormulario();
     }
   };
 
@@ -137,19 +142,20 @@ const Tareas = () => {
   };
 
   return (
-    <div className="text-white p-4 max-w-5xl mx-auto font-sans">
+    <div className="text-white p-6 max-w-4xl mx-auto font-sans">
       <button onClick={() => navigate('/dashboard')} className="text-sm mb-4 flex items-center text-white"><FaArrowLeft className="mr-2" /> Volver</button>
 
-      <div className="bg-gray-900 p-6 rounded-lg shadow-lg space-y-3">
-        <input type="text" placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
-        <textarea placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
+      <div className="bg-gray-900 p-6 rounded-lg shadow-md space-y-3 border border-gray-700">
+        {error && <p className="text-red-400 text-sm">⚠ {error}</p>}
+        <input type="text" placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="w-full p-2 rounded bg-gray-800 text-white text-lg font-semibold placeholder-gray-400" />
+        <textarea placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} className="w-full p-2 rounded bg-gray-800 text-white placeholder-gray-400" />
         <div className="grid grid-cols-2 gap-3">
-          <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="p-2 rounded bg-gray-700 text-white" />
-          <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="p-2 rounded bg-gray-700 text-white" />
+          <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="p-2 rounded bg-gray-800 text-white" />
+          <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="p-2 rounded bg-gray-800 text-white" />
         </div>
-        <input type="text" placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
-        <input type="url" placeholder="Enlace web" value={enlace} onChange={e => setEnlace(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
-        <textarea placeholder="Nota larga" value={nota} onChange={e => setNota(e.target.value)} className="w-full p-2 rounded bg-gray-700 text-white" />
+        <input type="text" placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full p-2 rounded bg-gray-800 text-white" />
+        <input type="url" placeholder="Enlace web" value={enlace} onChange={e => setEnlace(e.target.value)} className="w-full p-2 rounded bg-gray-800 text-white" />
+        <textarea placeholder="Nota larga" value={nota} onChange={e => setNota(e.target.value)} className="w-full p-2 rounded bg-gray-800 text-white" />
 
         <div className="bg-gray-800 p-3 rounded">
           <div className="flex gap-2 mb-2">
@@ -179,10 +185,10 @@ const Tareas = () => {
         {tareas.map((t) => (
           <div key={t._id} className="bg-gray-900 p-5 rounded-lg shadow border-l-4 border-blue-500">
             <h3 className="text-xl font-semibold mb-1">{t.titulo}</h3>
-            <p className="mb-1">{t.descripcion}</p>
+            <p className="mb-1 text-gray-300">{t.descripcion}</p>
             {t.nota && <p className="bg-gray-700 p-2 rounded mt-2 text-sm">📝 {t.nota}</p>}
             {t.enlace && <a href={t.enlace} className="text-blue-400 inline-flex items-center"><FaExternalLinkAlt className="mr-1" /> Enlace</a>}
-            <p className="text-xs mt-1">📅 {t.fecha} 🕒 {t.hora}</p>
+            <p className="text-xs mt-1 text-gray-400">📅 {t.fecha} 🕒 {t.hora}</p>
             {t.categoria && <span className="inline-block mt-1 px-2 py-1 text-xs bg-blue-600 rounded"><FaTag className="inline mr-1" />{t.categoria}</span>}
             <div className="mt-2">
               {t.subtareas?.map((s, i) => (
