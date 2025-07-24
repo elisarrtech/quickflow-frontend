@@ -150,7 +150,7 @@ const Tareas = () => {
             <p className={`text-xs mt-1 ${t.estado === 'pendiente' ? 'text-yellow-400' : 'text-green-400'}`}>{t.estado}</p>
             <div className="flex gap-3 mt-2">
               <button onClick={() => toggleEstado(t)} className="text-blue-400"><FaCheckCircle /></button>
-              {/* <button onClick={() => editarTarea(t)} className="text-yellow-400"><FaEdit /></button> */}
+              <button onClick={() => editarTarea(t)} className="text-yellow-400"><FaEdit /></button>
               <button onClick={() => eliminarTarea(t._id)} className="text-red-500"><FaTrashAlt /></button>
             </div>
           </div>
