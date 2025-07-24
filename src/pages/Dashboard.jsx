@@ -75,7 +75,7 @@ const Dashboard = () => {
             </div>
           </Link>
 
-          <Link to="/nueva" className="bg-gray-900 p-6 rounded-lg shadow hover:shadow-lg transition border border-gray-700 hover:border-green-500">
+          <Link to="/tareas" className="bg-gray-900 p-6 rounded-lg shadow hover:shadow-lg transition border border-gray-700 hover:border-green-500">
             <div className="flex items-center gap-4">
               <FaPlusCircle className="text-3xl text-green-400" />
               <div>
