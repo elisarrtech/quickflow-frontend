@@ -1,3 +1,4 @@
+```jsx
 // src/pages/Tareas.jsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -37,11 +38,12 @@ const Tareas = () => {
   const [fechaFin, setFechaFin] = useState('');
   const [menuAbierto, setMenuAbierto] = useState(null);
   const [categoriasExistentes, setCategoriasExistentes] = useState([]);
-
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
-  useEffect(() => { Notification.requestPermission(); }, []);
+  useEffect(() => {
+    Notification.requestPermission();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -62,7 +64,11 @@ const Tareas = () => {
     const obtenerTareas = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await fetch(`${API}/api/tasks`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${API}/api/tasks`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         const data = await res.json();
         if (res.ok) {
           setTareas(data);
@@ -88,7 +94,18 @@ const Tareas = () => {
   const tareasFiltradas = filtrarTareas();
 
   const limpiarFormulario = () => {
-    setTitulo(''); setDescripcion(''); setFecha(''); setHora(''); setCategoria(''); setNota(''); setEnlace(''); setSubtareas([]); setArchivo(null); setError(''); setExito(''); setModoEdicion(null);
+    setTitulo('');
+    setDescripcion('');
+    setFecha('');
+    setHora('');
+    setCategoria('');
+    setNota('');
+    setEnlace('');
+    setSubtareas([]);
+    setArchivo(null);
+    setError('');
+    setExito('');
+    setModoEdicion(null);
   };
 
   const limpiarFiltros = () => {
@@ -100,7 +117,6 @@ const Tareas = () => {
 
   const crearTarea = async () => {
     if (!titulo.trim()) return setError('El título es obligatorio');
-
     const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('titulo', titulo);
@@ -117,7 +133,9 @@ const Tareas = () => {
     try {
       const res = await fetch(`${API}/api/tasks`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         body: formData
       });
       const data = await res.json();
@@ -165,10 +183,15 @@ const Tareas = () => {
     }
   };
 
-
+  // Función para agrupar tareas por estado para la vista Kanban
+  const tareasPorEstado = (estado) => {
+    return tareasFiltradas.filter(tarea => tarea.estado === estado);
+  };
 
   return (
     <DashboardLayout>
+      {exito && <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{exito}</div>}
+      {error && <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{error}</div>}
       <div className="text-white p-6 max-w-5xl mx-auto">
         <h2 className="text-xl font-semibold mb-4">Filtros</h2>
         <div className="grid md:grid-cols-4 gap-4 mb-6">
@@ -185,7 +208,6 @@ const Tareas = () => {
           <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white" />
         </div>
         <button onClick={limpiarFiltros} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded mb-4">Limpiar filtros</button>
-
         {/* Formulario */}
         <div className="bg-gray-900 p-4 rounded mb-8">
           <h2 className="text-xl font-bold mb-4">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
@@ -203,7 +225,9 @@ const Tareas = () => {
           <button
             onClick={modoEdicion ? guardarEdicion : crearTarea}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-          >{modoEdicion ? 'Guardar cambios' : 'Crear tarea'}</button>
+          >
+            {modoEdicion ? 'Guardar cambios' : 'Crear tarea'}
+          </button>
         </div>
 
         {/* Lista de tareas */}
@@ -234,14 +258,19 @@ const Tareas = () => {
                   setNota(t.nota);
                   setEnlace(t.enlace);
                   setSubtareas(t.subtareas || []);
-                }} className="text-yellow-400 hover:text-yellow-200">✏️ Editar</button>
+                }} className="text-yellow-400 hover:text-yellow-200">
+                  ✏️ Editar
+                </button>
                 <button
                   onClick={async () => {
                     const token = localStorage.getItem('token');
                     const nuevoEstado = t.estado === 'pendiente' ? 'completada' : 'pendiente';
                     const res = await fetch(`${API}/api/tasks/${t._id}`, {
                       method: 'PUT',
-                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                      },
                       body: JSON.stringify({ estado: nuevoEstado }),
                     });
                     if (res.ok) {
@@ -249,21 +278,45 @@ const Tareas = () => {
                     }
                   }}
                   className="text-green-400 hover:text-green-200"
-                >{t.estado === 'pendiente' ? '✅ Marcar como completada' : '⏳ Marcar como pendiente'}</button>
+                >
+                  {t.estado === 'pendiente' ? '✅ Marcar como completada' : '⏳ Marcar como pendiente'}
+                </button>
                 <button
                   onClick={async () => {
                     const token = localStorage.getItem('token');
                     const res = await fetch(`${API}/api/tasks/${t._id}`, {
                       method: 'DELETE',
-                      headers: { Authorization: `Bearer ${token}` },
+                      headers: {
+                        Authorization: `Bearer ${token}`
+                      },
                     });
                     if (res.ok) {
                       setTareas(prev => prev.filter(task => task._id !== t._id));
                     }
                   }}
                   className="text-red-500 hover:text-red-300"
-                >🗑️ Eliminar</button>
+                >
+                  🗑️ Eliminar
+                </button>
               </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Vista Kanban */}
+        <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {['pendiente', 'en progreso', 'completada'].map((estado) => (
+            <div key={estado} className="bg-gray-800 rounded-lg p-4 shadow">
+              <h3 className="text-lg font-semibold capitalize text-white mb-2">{estado}</h3>
+              {tareasPorEstado(estado).map(tarea => (
+                <div key={tarea._id} className="bg-gray-700 p-3 rounded mb-2 shadow text-white">
+                  <h4 className="font-bold">{tarea.titulo}</h4>
+                  <p className="text-sm text-gray-300">{tarea.descripcion}</p>
+                  <p className="text-xs text-gray-400">📅 {tarea.fecha} 🕒 {tarea.hora}</p>
+                  {tarea.categoria && <p className="text-xs mt-1"><FaTag className="inline mr-1 text-yellow-400" />{tarea.categoria}</p>}
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -273,3 +326,4 @@ const Tareas = () => {
 };
 
 export default Tareas;
+```
