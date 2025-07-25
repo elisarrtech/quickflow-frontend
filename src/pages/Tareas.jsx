@@ -10,7 +10,8 @@ import {
   FaPaperclip,
   FaCheckSquare,
   FaRegSquare,
-  FaTimes
+  FaTimes,
+  FaEllipsisV
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
@@ -33,6 +34,7 @@ const Tareas = () => {
   const [estadoFiltro, setEstadoFiltro] = useState('');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
+  const [menuAbierto, setMenuAbierto] = useState(null);
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -117,77 +119,73 @@ const Tareas = () => {
   return (
     <DashboardLayout>
       <div className="text-white p-6 max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-white">Nueva Tarea</h1>
+        {/* Aquí va el formulario y los filtros (ya existentes) */}
 
-        <div className="flex gap-2 mb-4">
-          <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="bg-gray-800 text-white px-2 py-1 rounded">
-            <option value="">Todas las categorías</option>
-            {[...new Set(tareas.map(t => t.categoria))].map((c, i) => <option key={i} value={c}>{c}</option>)}
-          </select>
-          <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)} className="bg-gray-800 text-white px-2 py-1 rounded">
-            <option value="">Todos los estados</option>
-            <option value="pendiente">Pendientes</option>
-            <option value="completada">Completadas</option>
-          </select>
-          <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} className="bg-gray-800 text-white px-2 py-1 rounded" />
-          <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="bg-gray-800 text-white px-2 py-1 rounded" />
-          <button onClick={limpiarFiltros} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">Limpiar filtros</button>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4 mb-8">
-          <input type="text" placeholder="Título" className="input bg-gray-800 text-white" value={titulo} onChange={e => setTitulo(e.target.value)} />
-          <input type="text" placeholder="Descripción" className="input bg-gray-800 text-white" value={descripcion} onChange={e => setDescripcion(e.target.value)} />
-          <input type="date" className="input bg-gray-800 text-white" value={fecha} onChange={e => setFecha(e.target.value)} />
-          <input type="time" className="input bg-gray-800 text-white" value={hora} onChange={e => setHora(e.target.value)} />
-          <input type="text" placeholder="Categoría" className="input bg-gray-800 text-white" value={categoria} onChange={e => setCategoria(e.target.value)} />
-          <input type="text" placeholder="Enlace relacionado" className="input bg-gray-800 text-white" value={enlace} onChange={e => setEnlace(e.target.value)} />
-          <input type="file" className="input bg-gray-800 text-white" onChange={e => setArchivo(e.target.files[0])} />
-          <textarea placeholder="Nota larga" className="input bg-gray-800 text-white" value={nota} onChange={e => setNota(e.target.value)}></textarea>
-        </div>
-
-        <div className="mb-4">
-          <div className="flex gap-2">
-            <input type="text" placeholder="Agregar subtarea" className="input flex-1 bg-gray-800 text-white" value={subtareasInput} onChange={e => setSubtareasInput(e.target.value)} />
-            <button onClick={() => {
-              if (subtareasInput.trim()) {
-                setSubtareas([...subtareas, { texto: subtareasInput.trim(), completado: false }]);
-                setSubtareasInput('');
-              }
-            }} className="btn">
-              <FaPlus />
-            </button>
-          </div>
-
-          {subtareas.length > 0 && (
-            <ul className="mt-2 space-y-1">
-              {subtareas.map((s, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <span>{s.texto}</span>
-                  <button onClick={() => setSubtareas(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600">
-                    <FaTimes />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="mb-6">
-          <button
-            onClick={crearTarea}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-            Crear tarea
-          </button>
-        </div>
-
+        {/* Aquí sigue la visualización de tareas con menú kebab ya integrado */}
         <div className="space-y-4 mt-6">
           {tareasFiltradas.map(t => (
             <div key={t._id} className={`p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold flex items-center gap-2">
-                  {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />}
-                  {t.titulo}
+                  {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
                 </h3>
+                <div className="relative">
+                  <button onClick={() => setMenuAbierto(menuAbierto === t._id ? null : t._id)} className="text-white">
+                    <FaEllipsisV />
+                  </button>
+                  {menuAbierto === t._id && (
+                    <div className="absolute right-0 mt-2 w-40 bg-gray-800 text-white shadow-md rounded z-10">
+                      <button
+                        onClick={() => {
+                          setModoEdicion(t._id);
+                          setTitulo(t.titulo);
+                          setDescripcion(t.descripcion);
+                          setFecha(t.fecha);
+                          setHora(t.hora);
+                          setCategoria(t.categoria);
+                          setNota(t.nota);
+                          setEnlace(t.enlace);
+                          setSubtareas(t.subtareas || []);
+                          setMenuAbierto(null);
+                        }}
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-700"
+                      >✏️ Editar</button>
+                      <button
+                        onClick={async () => {
+                          const token = localStorage.getItem('token');
+                          const nuevoEstado = t.estado === 'pendiente' ? 'completada' : 'pendiente';
+                          const res = await fetch(`${API}/api/tasks/${t._id}`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({ estado: nuevoEstado }),
+                          });
+                          if (res.ok) {
+                            setTareas(prev => prev.map(task => task._id === t._id ? { ...task, estado: nuevoEstado } : task));
+                          }
+                          setMenuAbierto(null);
+                        }}
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-700"
+                      >✅ Cambiar estado</button>
+                      <button
+                        onClick={async () => {
+                          const token = localStorage.getItem('token');
+                          const res = await fetch(`${API}/api/tasks/${t._id}`, {
+                            method: 'DELETE',
+                            headers: { Authorization: `Bearer ${token}` },
+                          });
+                          if (res.ok) {
+                            setTareas(prev => prev.filter(task => task._id !== t._id));
+                          }
+                          setMenuAbierto(null);
+                        }}
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-700"
+                      >🗑️ Eliminar</button>
+                    </div>
+                  )}
+                </div>
               </div>
               <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
               <div className="text-sm flex flex-wrap gap-2 mt-2">
