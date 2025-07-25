@@ -68,7 +68,9 @@ const Tareas = () => {
           const categorias = [...new Set(data.map(t => t.categoria).filter(Boolean))];
           setCategoriasExistentes(categorias);
         }
-      } catch {}
+      } catch (error) {
+        console.error('Error al obtener tareas:', error);
+      }
     };
     obtenerTareas();
   }, []);
@@ -85,7 +87,7 @@ const Tareas = () => {
   const tareasFiltradas = filtrarTareas();
 
   const limpiarFormulario = () => {
-    setTitulo(''); setDescripcion(''); setFecha(''); setHora(''); setCategoria(''); setNota(''); setEnlace(''); setSubtareas([]); setArchivo(null); setError('');
+    setTitulo(''); setDescripcion(''); setFecha(''); setHora(''); setCategoria(''); setNota(''); setEnlace(''); setSubtareas([]); setArchivo(null); setError(''); setModoEdicion(null);
   };
 
   const limpiarFiltros = () => {
@@ -111,35 +113,48 @@ const Tareas = () => {
     formData.append('subtareas', JSON.stringify(subtareas));
     if (archivo) formData.append('archivo', archivo);
 
-    const res = await fetch(`${API}/api/tasks`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData });
-    const data = await res.json();
-    if (res.ok) {
-      setTareas(prev => [...prev, data]);
-      limpiarFormulario();
-      if (!categoriasExistentes.includes(data.categoria)) {
-        setCategoriasExistentes(prev => [...prev, data.categoria]);
+    try {
+      const res = await fetch(`${API}/api/tasks`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setTareas(prev => [...prev, data]);
+        limpiarFormulario();
+        if (!categoriasExistentes.includes(data.categoria)) {
+          setCategoriasExistentes(prev => [...prev, data.categoria]);
+        }
+      } else {
+        console.error('Error al crear tarea:', data);
       }
+    } catch (error) {
+      console.error('Error de red al crear tarea:', error);
     }
   };
 
   const guardarEdicion = async () => {
     if (!modoEdicion) return;
     const token = localStorage.getItem('token');
-    const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, subtareas }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setTareas(prev => prev.map(t => (t._id === modoEdicion ? data : t)));
-      limpiarFormulario();
-      setModoEdicion(null);
+    try {
+      const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, subtareas }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setTareas(prev => prev.map(t => (t._id === modoEdicion ? { ...t, ...updated } : t)));
+        limpiarFormulario();
+      } else {
+        const error = await res.json();
+        console.error('Error al editar tarea:', error);
+      }
+    } catch (error) {
+      console.error('Error de red al editar tarea:', error);
     }
   };
+
 
   return (
     <DashboardLayout>
