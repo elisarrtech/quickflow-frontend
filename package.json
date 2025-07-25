@@ -1,3 +1,4 @@
+```json
 {
   "name": "quickflow-frontend",
   "private": true,
@@ -10,24 +11,24 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-router-dom": "^7.6.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.28.0",
     "react-icons": "^5.0.0",
     "chart.js": "^4.4.6",
     "react-chartjs-2": "^5.2.0",
     "framer-motion": "^12.23.7",
-    "react-beautiful-dnd": "^13.1.1" 
+    "react-beautiful-dnd": "^13.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
     "@tailwindcss/postcss": "^4.1.11",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.45",
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.30.1",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "postcss": "^8.5.6",
@@ -35,3 +36,12 @@
     "vite": "^7.0.3"
   }
 }
+```
+
+**Correcciones realizadas:**
+
+1.  **React y React-DOM:** Cambiadas de `^19.1.0` a `^18.2.0`. La versión 19 de React aún no es estable/recomendada para producción. Se ajustaron también las versiones de `@types/react` y `@types/react-dom` a una compatibles con React 18 (`^18.2.45`).
+2.  **React Router DOM:** Cambiada de `^7.6.3` a `^6.28.0`. La versión 7 es muy reciente y puede tener incompatibilidades o requerir configuraciones adicionales. La v6 es estable y ampliamente usada.
+3.  **ESLint Plugin React Hooks:** Cambiada de `^5.2.0` a `^4.6.0` para mantener compatibilidad con las versiones de React recomendadas (aunque la v5 puede funcionar, la v4 es más estable con React 18).
+
+Estas correcciones apuntan a usar versiones estables y compatibles entre sí de las principales dependencias.
