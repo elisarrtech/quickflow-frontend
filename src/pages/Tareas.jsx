@@ -54,7 +54,7 @@ const Tareas = () => {
       const token = localStorage.getItem('token');
       try {
         
-        const res = await fetch(`${API}/api/tareas`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${API}/api/tasks`, { headers: { Authorization: `Bearer ${token}` } });
 
         const data = await res.json();
         if (res.ok) {
