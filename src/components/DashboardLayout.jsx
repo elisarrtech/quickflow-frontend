@@ -1,7 +1,8 @@
 // src/components/DashboardLayout.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaHome } from 'react-icons/fa';
+import { FaHome, FaCheckCircle, FaEdit, FaTrashAlt, FaPlus, FaTag, FaExternalLinkAlt, FaPaperclip, FaCheckSquare, FaRegSquare, FaTimes, FaEllipsisV, FaUser } from 'react-icons/fa';
+
 
 
 const DashboardLayout = ({ children }) => {
