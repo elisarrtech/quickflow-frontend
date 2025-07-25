@@ -1,4 +1,3 @@
-```jsx
 // src/pages/Tareas.jsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -418,4 +417,4 @@ const Tareas = () => {
 };
 
 export default Tareas;
-```
+
