@@ -35,6 +35,7 @@ const Tareas = () => {
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const [menuAbierto, setMenuAbierto] = useState(null);
+  const [categoriasExistentes, setCategoriasExistentes] = useState([]);
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -64,6 +65,8 @@ const Tareas = () => {
         const data = await res.json();
         if (res.ok) {
           setTareas(data);
+          const categorias = [...new Set(data.map(t => t.categoria).filter(Boolean))];
+          setCategoriasExistentes(categorias);
         }
       } catch {}
     };
@@ -113,6 +116,9 @@ const Tareas = () => {
     if (res.ok) {
       setTareas(prev => [...prev, data]);
       limpiarFormulario();
+      if (!categoriasExistentes.includes(data.categoria)) {
+        setCategoriasExistentes(prev => [...prev, data.categoria]);
+      }
     }
   };
 
@@ -121,7 +127,10 @@ const Tareas = () => {
       <div className="text-white p-6 max-w-5xl mx-auto">
         <h2 className="text-xl font-semibold mb-4">Filtros</h2>
         <div className="grid md:grid-cols-4 gap-4 mb-6">
-          <input type="text" placeholder="Filtrar por categoría" value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white" />
+          <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white">
+            <option value="">Todas las categorías</option>
+            {categoriasExistentes.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          </select>
           <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)} className="input bg-gray-800 text-white">
             <option value="">Todos los estados</option>
             <option value="pendiente">Pendiente</option>
