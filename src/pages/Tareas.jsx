@@ -99,7 +99,6 @@ const Tareas = () => {
 
   const crearTarea = async () => {
     if (!titulo.trim()) return setError('El título es obligatorio');
-    if (tareas.some(t => t.titulo.toLowerCase() === titulo.trim().toLowerCase())) return setError('Ya existe una tarea con ese título');
 
     const token = localStorage.getItem('token');
     const formData = new FormData();
@@ -110,11 +109,16 @@ const Tareas = () => {
     formData.append('categoria', categoria);
     formData.append('nota', nota);
     formData.append('enlace', enlace);
+    formData.append('estado', 'pendiente');
     formData.append('subtareas', JSON.stringify(subtareas));
     if (archivo) formData.append('archivo', archivo);
 
     try {
-      const res = await fetch(`${API}/api/tasks`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData });
+      const res = await fetch(`${API}/api/tasks`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
       const data = await res.json();
       if (res.ok) {
         setTareas(prev => [...prev, data]);
@@ -124,6 +128,7 @@ const Tareas = () => {
         }
       } else {
         console.error('Error al crear tarea:', data);
+        setError(data?.error || 'Error desconocido');
       }
     } catch (error) {
       console.error('Error de red al crear tarea:', error);
