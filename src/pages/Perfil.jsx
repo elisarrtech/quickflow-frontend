@@ -41,15 +41,19 @@ const actualizarPerfil = async () => {
     });
     const data = await res.json();
     if (res.ok) {
-      setMensaje(data.mensaje); // Muestra tanto "Nombre actualizado" como "No se realizaron cambios"
+      setMensaje(data.mensaje);
+      setMensajeTipo('exito');
     } else {
       setMensaje('Error al actualizar el perfil');
+      setMensajeTipo('error');
     }
   } catch (error) {
     console.error('Error de red:', error);
     setMensaje('Error de red o del servidor');
+    setMensajeTipo('error');
   }
 };
+
 
 
   const cerrarSesion = () => {
@@ -92,7 +96,16 @@ const actualizarPerfil = async () => {
           Cerrar sesión
         </button>
 
-        {mensaje && <p className="mt-4 text-green-400">{mensaje}</p>}
+        {mensaje && (
+  <div
+    className={`mt-4 px-4 py-2 rounded ${
+      mensajeTipo === 'exito' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+    }`}
+  >
+    {mensaje}
+  </div>
+)}
+}
       </div>
     </DashboardLayout>
   );
