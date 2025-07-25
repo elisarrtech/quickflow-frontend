@@ -1,14 +1,13 @@
+// src/App.js
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Tareas from './pages/Tareas'; // ✅ Importación correcta
+import Tareas from './pages/Tareas';
+import Eventos from './components/Eventos'; // ✅ Nueva importación
 import Estadisticas from './components/Estadisticas';
 import Progreso from './components/Progreso';
 import Perfil from './pages/Perfil';
-
-
-
 
 function App() {
   return (
@@ -19,12 +18,11 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/tareas" element={<Tareas />} /> {/* Página separada */}
+        <Route path="/tareas" element={<Tareas />} />
+        <Route path="/eventos" element={<Eventos />} /> {/* ✅ Nueva ruta para Eventos */}
         <Route path="/estadisticas" element={<Estadisticas />} />
         <Route path="/progreso" element={<Progreso />} />
         <Route path="/perfil" element={<Perfil />} />
-
-      
       </Routes>
     </BrowserRouter>
   );
