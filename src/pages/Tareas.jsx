@@ -190,7 +190,7 @@ const Tareas = () => {
     if (archivo) formData.append('archivo', archivo);
 
     try {
-      const res = await fetch(`${API}/api/tasks`, {
+      const res = await fetch(API + '/api/tasks', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
