@@ -60,7 +60,7 @@ const Tareas = () => {
     const interval = setInterval(() => {
       const ahora = new Date();
       tareas.forEach(t => {
-        if (t.estado === 'pendiente' && t.fecha === ahora.toISOString().split('T')[0] && t.hora && new Date(`${t.fecha}T${t.hora}`) <= ahora) {
+        if (t.estado === 'pendiente' && t.fecha === ahora.toISOString().split('T')[0] && t.hora && new Date(t.fecha + 'T' + t.hora) <= ahora) {
           new Notification('⏰ Recordatorio programado', {
             body: `${t.titulo} está programada para esta hora`,
             icon: '/favicon.ico'
