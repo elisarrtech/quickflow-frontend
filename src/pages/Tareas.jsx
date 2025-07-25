@@ -1,3 +1,4 @@
+```jsx
 // src/pages/Tareas.jsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -11,7 +12,8 @@ import {
   FaCheckSquare,
   FaRegSquare,
   FaTimes,
-  FaEllipsisV
+  FaEllipsisV,
+  FaUser
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
@@ -46,6 +48,7 @@ const Tareas = () => {
   const [fechaFin, setFechaFin] = useState('');
   const [menuAbierto, setMenuAbierto] = useState(null);
   const [categoriasExistentes, setCategoriasExistentes] = useState([]);
+  const [asignadoA, setAsignadoA] = useState(''); // Nuevo estado para asignación
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -130,6 +133,7 @@ const Tareas = () => {
     setEnlace('');
     setSubtareas([]);
     setArchivo(null);
+    setAsignadoA(''); // Limpiar asignación
     setError('');
     setExito('');
     setModoEdicion(null);
@@ -153,6 +157,7 @@ const Tareas = () => {
     formData.append('categoria', categoria);
     formData.append('nota', nota);
     formData.append('enlace', enlace);
+    formData.append('asignadoA', asignadoA); // Agregar asignación
     formData.append('estado', 'pendiente');
     formData.append('subtareas', JSON.stringify(subtareas));
     if (archivo) formData.append('archivo', archivo);
@@ -193,7 +198,7 @@ const Tareas = () => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, subtareas }),
+        body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas }), // Incluir asignación
       });
       const data = await res.json();
       if (res.ok) {
@@ -243,6 +248,7 @@ const Tareas = () => {
             <input className="input bg-gray-800 text-white" placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} />
             <input className="input bg-gray-800 text-white" placeholder="Enlace relacionado" value={enlace} onChange={e => setEnlace(e.target.value)} />
           </div>
+          <input className="input w-full mb-2 bg-gray-800 text-white" placeholder="Asignar a (nombre o email)" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} /> {/* Campo de asignación */}
           <textarea className="input w-full mb-2 bg-gray-800 text-white" placeholder="Nota larga" value={nota} onChange={e => setNota(e.target.value)} />
           <input type="file" onChange={e => setArchivo(e.target.files[0])} className="input w-full mb-2 bg-gray-800 text-white" />
           {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
@@ -266,6 +272,7 @@ const Tareas = () => {
                 {t.fecha && <span className="bg-gray-700 px-2 py-0.5 rounded">📅 {t.fecha}</span>}
                 {t.hora && <span className="bg-gray-700 px-2 py-0.5 rounded">⏰ {t.hora}</span>}
                 {t.categoria && <span className="bg-blue-700 px-2 py-0.5 rounded flex items-center gap-1"><FaTag /> {t.categoria}</span>}
+                {t.asignadoA && <span className="bg-indigo-700 px-2 py-0.5 rounded flex items-center gap-1"><FaUser /> {t.asignadoA}</span>} {/* Mostrar asignación */}
                 {t.nota && <span className="bg-purple-700 px-2 py-0.5 rounded">📝 Nota</span>}
                 {t.enlace && <a href={t.enlace} target="_blank" rel="noopener noreferrer" className="bg-cyan-700 px-2 py-0.5 rounded flex items-center gap-1"><FaExternalLinkAlt /> Enlace</a>}
                 {t.archivoUrl && <a href={t.archivoUrl} target="_blank" rel="noopener noreferrer" className="bg-teal-700 px-2 py-0.5 rounded flex items-center gap-1"><FaPaperclip /> Archivo</a>}
@@ -281,6 +288,7 @@ const Tareas = () => {
                   setCategoria(t.categoria);
                   setNota(t.nota);
                   setEnlace(t.enlace);
+                  setAsignadoA(t.asignadoA || ''); // Cargar asignación
                   setSubtareas(t.subtareas || []);
                 }} className="text-yellow-400 hover:text-yellow-200">
                   ✏️ Editar
@@ -347,6 +355,11 @@ const Tareas = () => {
                           >
                             <h4 className="font-bold">{tarea.titulo}</h4>
                             <p className="text-sm text-white/90">{tarea.descripcion}</p>
+                            {tarea.asignadoA && ( // Mostrar asignación en Kanban
+                              <p className="text-xs text-white/80 flex items-center gap-1 mt-1">
+                                <FaUser className="text-xs" /> {tarea.asignadoA}
+                              </p>
+                            )}
                             <p className="text-xs text-white/70">📅 {tarea.fecha} 🕒 {tarea.hora}</p>
                             {tarea.categoria && <p className="text-xs mt-1 flex items-center gap-1"><FaTag /> {tarea.categoria}</p>}
                           </div>
@@ -366,3 +379,4 @@ const Tareas = () => {
 };
 
 export default Tareas;
+```
