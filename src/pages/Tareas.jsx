@@ -15,6 +15,15 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+
+const coloresPorCategoria = {
+  trabajo: 'bg-blue-600',
+  personal: 'bg-green-600',
+  urgente: 'bg-red-600',
+  estudio: 'bg-purple-600',
+  otros: 'bg-gray-600'
+};
 
 const Tareas = () => {
   const [tareas, setTareas] = useState([]);
@@ -37,12 +46,11 @@ const Tareas = () => {
   const [fechaFin, setFechaFin] = useState('');
   const [menuAbierto, setMenuAbierto] = useState(null);
   const [categoriasExistentes, setCategoriasExistentes] = useState([]);
+
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
-  useEffect(() => {
-    Notification.requestPermission();
-  }, []);
+  useEffect(() => { Notification.requestPermission(); }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -63,11 +71,7 @@ const Tareas = () => {
     const obtenerTareas = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await fetch(`${API}/api/tasks`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        const res = await fetch(`${API}/api/tasks`, { headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json();
         if (res.ok) {
           setTareas(data);
@@ -80,6 +84,30 @@ const Tareas = () => {
     };
     obtenerTareas();
   }, []);
+
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    const { source, destination } = result;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    const items = Array.from(tareas);
+    const [moved] = items.splice(source.index, 1);
+    moved.estado = destination.droppableId;
+    items.splice(destination.index, 0, moved);
+    setTareas(items);
+
+    // Lógica para actualizar en backend
+    const token = localStorage.getItem('token');
+    fetch(`${API}/api/tasks/${moved._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ estado: moved.estado }),
+    });
+  };
+
+  const tareasPorEstado = (estado) => tareas.filter(t => t.estado === estado);
+
+  const colorCategoria = (cat) => coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
 
   const filtrarTareas = () => {
     let filtradas = [...tareas];
@@ -182,15 +210,11 @@ const Tareas = () => {
     }
   };
 
-  // Función para agrupar tareas por estado para la vista Kanban
-  const tareasPorEstado = (estado) => {
-    return tareasFiltradas.filter(tarea => tarea.estado === estado);
-  };
-
   return (
     <DashboardLayout>
       {exito && <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{exito}</div>}
       {error && <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{error}</div>}
+
       <div className="text-white p-6 max-w-5xl mx-auto">
         <h2 className="text-xl font-semibold mb-4">Filtros</h2>
         <div className="grid md:grid-cols-4 gap-4 mb-6">
@@ -207,6 +231,7 @@ const Tareas = () => {
           <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white" />
         </div>
         <button onClick={limpiarFiltros} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded mb-4">Limpiar filtros</button>
+        
         {/* Formulario */}
         <div className="bg-gray-900 p-4 rounded mb-8">
           <h2 className="text-xl font-bold mb-4">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
@@ -302,27 +327,42 @@ const Tareas = () => {
           ))}
         </div>
 
-        {/* Vista Kanban */}
+        {/* Vista Kanban con drag & drop */}
         <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {['pendiente', 'en progreso', 'completada'].map((estado) => (
-            <div key={estado} className="bg-gray-800 rounded-lg p-4 shadow">
-              <h3 className="text-lg font-semibold capitalize text-white mb-2">{estado}</h3>
-              {tareasPorEstado(estado).map(tarea => (
-                <div key={tarea._id} className="bg-gray-700 p-3 rounded mb-2 shadow text-white">
-                  <h4 className="font-bold">{tarea.titulo}</h4>
-                  <p className="text-sm text-gray-300">{tarea.descripcion}</p>
-                  <p className="text-xs text-gray-400">📅 {tarea.fecha} 🕒 {tarea.hora}</p>
-                  {tarea.categoria && <p className="text-xs mt-1"><FaTag className="inline mr-1 text-yellow-400" />{tarea.categoria}</p>}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {['pendiente', 'en progreso', 'completada'].map((estado) => (
+              <Droppable droppableId={estado} key={estado}>
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps} className="bg-gray-800 rounded-lg p-4 shadow min-h-[200px]">
+                    <h3 className="text-lg font-semibold capitalize text-white mb-2">{estado}</h3>
+                    {tareasPorEstado(estado).map((tarea, index) => (
+                      <Draggable draggableId={tarea._id} index={index} key={tarea._id}>
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(tarea.categoria)}`}
+                          >
+                            <h4 className="font-bold">{tarea.titulo}</h4>
+                            <p className="text-sm text-white/90">{tarea.descripcion}</p>
+                            <p className="text-xs text-white/70">📅 {tarea.fecha} 🕒 {tarea.hora}</p>
+                            {tarea.categoria && <p className="text-xs mt-1 flex items-center gap-1"><FaTag /> {tarea.categoria}</p>}
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            ))}
+          </div>
+        </DragDropContext>
       </div>
     </DashboardLayout>
   );
 };
 
 export default Tareas;
-
