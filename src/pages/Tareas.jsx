@@ -122,6 +122,25 @@ const Tareas = () => {
     }
   };
 
+  const guardarEdicion = async () => {
+    if (!modoEdicion) return;
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, subtareas }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setTareas(prev => prev.map(t => (t._id === modoEdicion ? data : t)));
+      limpiarFormulario();
+      setModoEdicion(null);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="text-white p-6 max-w-5xl mx-auto">
@@ -140,6 +159,26 @@ const Tareas = () => {
           <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white" />
         </div>
         <button onClick={limpiarFiltros} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded mb-4">Limpiar filtros</button>
+
+        {/* Formulario */}
+        <div className="bg-gray-900 p-4 rounded mb-8">
+          <h2 className="text-xl font-bold mb-4">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
+          <input className="input w-full mb-2 bg-gray-800 text-white" placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} />
+          <input className="input w-full mb-2 bg-gray-800 text-white" placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+            <input type="date" className="input bg-gray-800 text-white" value={fecha} onChange={e => setFecha(e.target.value)} />
+            <input type="time" className="input bg-gray-800 text-white" value={hora} onChange={e => setHora(e.target.value)} />
+            <input className="input bg-gray-800 text-white" placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} />
+            <input className="input bg-gray-800 text-white" placeholder="Enlace relacionado" value={enlace} onChange={e => setEnlace(e.target.value)} />
+          </div>
+          <textarea className="input w-full mb-2 bg-gray-800 text-white" placeholder="Nota larga" value={nota} onChange={e => setNota(e.target.value)} />
+          <input type="file" onChange={e => setArchivo(e.target.files[0])} className="input w-full mb-2 bg-gray-800 text-white" />
+          {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+          <button
+            onClick={modoEdicion ? guardarEdicion : crearTarea}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+          >{modoEdicion ? 'Guardar cambios' : 'Crear tarea'}</button>
+        </div>
 
         {/* Lista de tareas */}
         <div className="space-y-4 mt-6">
