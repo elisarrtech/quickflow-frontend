@@ -110,11 +110,11 @@ const Tareas = () => {
     // Actualizar en el backend
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API}/api/tasks/${movedItem._id}`, {
+      const response = await fetch(API + '/api/tasks/' + movedItem._id, { // Corrección 7: Usar concatenación
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json', 
-          Authorization: `Bearer ${token}` 
+          Authorization: 'Bearer ' + token  // Corrección 7: Usar concatenación
         },
         body: JSON.stringify({ estado: destination.droppableId }),
       });
@@ -190,10 +190,10 @@ const Tareas = () => {
     if (archivo) formData.append('archivo', archivo);
 
     try {
-      const res = await fetch(API + '/api/tasks', {
+      const res = await fetch(API + '/api/tasks', { // Corrección 4: Usar concatenación
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: 'Bearer ' + token, // Corrección 4: Usar concatenación
         },
         body: formData
       });
@@ -219,10 +219,10 @@ const Tareas = () => {
     if (!modoEdicion) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
+      const res = await fetch(API + '/api/tasks/' + modoEdicion, { // Corrección 5: Usar concatenación
         method: 'PUT',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: 'Bearer ' + token, // Corrección 5: Usar concatenación
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas }), // Incluir asignación
@@ -331,11 +331,11 @@ const Tareas = () => {
                   onClick={async () => {
                     const token = localStorage.getItem('token');
                     const nuevoEstado = t.estado === 'pendiente' ? 'completada' : 'pendiente';
-                    const res = await fetch(`${API}/api/tasks/${t._id}`, {
+                    const res = await fetch(API + '/api/tasks/' + t._id, { // Corrección 6: Usar concatenación
                       method: 'PUT',
                       headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
+                        Authorization: 'Bearer ' + token // Corrección 6: Usar concatenación
                       },
                       body: JSON.stringify({ estado: nuevoEstado }),
                     });
@@ -350,10 +350,10 @@ const Tareas = () => {
                 <button
                   onClick={async () => {
                     const token = localStorage.getItem('token');
-                    const res = await fetch(`${API}/api/tasks/${t._id}`, {
+                    const res = await fetch(API + '/api/tasks/' + t._id, { // Corrección 7: Usar concatenación
                       method: 'DELETE',
                       headers: {
-                        Authorization: `Bearer ${token}`
+                        Authorization: 'Bearer ' + token // Corrección 7: Usar concatenación
                       },
                     });
                     if (res.ok) {
@@ -417,4 +417,3 @@ const Tareas = () => {
 };
 
 export default Tareas;
-```
