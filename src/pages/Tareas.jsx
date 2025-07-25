@@ -480,8 +480,15 @@ const Tareas = () => {
                               <div className="relative">
                                 <button
                                   onClick={(e) => {
-                                    e.preventDefault(); // Evitar que el enlace se active
-                                    setCompartirMenuAbierto(compartirMenuAbierto === `kanban-${tarea._id} ? null : `kanban-${tarea._id}`)}
+                                   e.preventDefault();
+                                    setCompartirMenuAbierto(
+                                      compartirMenuAbierto === `kanban-${tarea._id}` 
+                                       ? null 
+                                       : `kanban-${tarea._id}`
+                                    );
+                                }}
+
+
                                   className="text-blue-300 hover:text-blue-100"
                                 >
                                   <FaShareAlt size={14} />
