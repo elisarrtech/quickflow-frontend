@@ -12,7 +12,10 @@ import {
   FaRegSquare,
   FaTimes,
   FaEllipsisV,
-  FaUser
+  FaUser,
+  FaShareAlt,
+  FaEnvelope,
+  FaWhatsapp
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
@@ -49,6 +52,7 @@ const Tareas = () => {
   const [categoriasExistentes, setCategoriasExistentes] = useState([]);
   const [asignadoAFiltro, setAsignadoAFiltro] = useState(''); // Nuevo estado para filtro de asignación
   const [asignadoA, setAsignadoA] = useState(''); // Estado para asignación en formulario
+  const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null); // Para controlar menús de compartir
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -89,38 +93,44 @@ const Tareas = () => {
   }, []);
 
   const onDragEnd = async (result) => {
+    // Corrección: Agregar await y manejo de errores
     if (!result.destination) return;
-
+    
     const { source, destination } = result;
-
+    
+    // Si no hay cambio real, no hacer nada
     if (source.droppableId === destination.droppableId && source.index === destination.index) {
       return;
     }
 
     const items = Array.from(tareas);
     const [movedItem] = items.splice(source.index, 1);
-
+    
+    // Actualizar estado local inmediatamente para una mejor UX
     const updatedItem = { ...movedItem, estado: destination.droppableId };
     items.splice(destination.index, 0, updatedItem);
     setTareas(items);
 
+    // Actualizar en el backend
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(API + '/api/tasks/' + movedItem._id, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token
+        headers: { 
+          'Content-Type': 'application/json', 
+          Authorization: 'Bearer ' + token 
         },
         body: JSON.stringify({ estado: destination.droppableId }),
       });
 
       if (!response.ok) {
+        // Si falla, revertir el cambio local
         const originalItems = Array.from(tareas);
         setTareas(originalItems);
         console.error('Error al actualizar el estado de la tarea');
       }
     } catch (error) {
+      // Si hay error de red, revertir el cambio local
       const originalItems = Array.from(tareas);
       setTareas(originalItems);
       console.error('Error de red al actualizar la tarea:', error);
@@ -236,6 +246,41 @@ const Tareas = () => {
     }
   };
 
+  // Función para compartir por correo
+  const compartirPorCorreo = (tarea) => {
+    const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
+    const cuerpo = encodeURIComponent(
+      `Hola,\n\nTe comparto la siguiente tarea:\n\n` +
+      `Título: ${tarea.titulo}\n` +
+      `Descripción: ${tarea.descripcion || 'Sin descripción'}\n` +
+      `Fecha: ${tarea.fecha || 'Sin fecha'}\n` +
+      `Hora: ${tarea.hora || 'Sin hora'}\n` +
+      `Categoría: ${tarea.categoria || 'Sin categoría'}\n` +
+      `Asignado a: ${tarea.asignadoA || 'No asignado'}\n` +
+      `${tarea.enlace ? `\nEnlace relacionado: ${tarea.enlace}\n` : ''}` +
+      `${tarea.nota ? `\nNota: ${tarea.nota}\n` : ''}`
+    );
+    
+    window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
+  };
+
+  // Función para compartir por WhatsApp
+  const compartirPorWhatsApp = (tarea) => {
+    const texto = encodeURIComponent(
+      `*Tarea: ${tarea.titulo}*\n\n` +
+      `Descripción: ${tarea.descripcion || 'Sin descripción'}\n` +
+      `Fecha: ${tarea.fecha || 'Sin fecha'}\n` +
+      `Hora: ${tarea.hora || 'Sin hora'}\n` +
+      `Categoría: ${tarea.categoria || 'Sin categoría'}\n` +
+      `Asignado a: ${tarea.asignadoA || 'No asignado'}\n` +
+      `${tarea.enlace ? `\nEnlace: ${tarea.enlace}\n` : ''}` +
+      `${tarea.nota ? `\nNota: ${tarea.nota}\n` : ''}`
+    );
+    
+    window.open(`https://wa.me/?text=${texto}`, '_blank');
+  };
+
+  // Obtener lista única de personas asignadas para el filtro
   const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
 
   return (
@@ -263,7 +308,7 @@ const Tareas = () => {
           <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white" />
         </div>
         <button onClick={limpiarFiltros} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded mb-4">Limpiar filtros</button>
-
+        
         {/* Formulario */}
         <div className="bg-gray-900 p-4 rounded mb-8">
           <h2 className="text-xl font-bold mb-4">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
@@ -306,6 +351,39 @@ const Tareas = () => {
               </div>
               {/* Acciones al pie */}
               <div className="flex justify-end gap-3 mt-4">
+                {/* Botón de compartir */}
+                <div className="relative">
+                  <button
+                    onClick={() => setCompartirMenuAbierto(compartirMenuAbierto === t._id ? null : t._id)}
+                    className="text-blue-400 hover:text-blue-200"
+                  >
+                    <FaShareAlt />
+                  </button>
+                  
+                  {compartirMenuAbierto === t._id && (
+                    <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
+                      <button
+                        onClick={() => {
+                          compartirPorCorreo(t);
+                          setCompartirMenuAbierto(null);
+                        }}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"
+                      >
+                        <FaEnvelope className="text-blue-400" /> Correo electrónico
+                      </button>
+                      <button
+                        onClick={() => {
+                          compartirPorWhatsApp(t);
+                          setCompartirMenuAbierto(null);
+                        }}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"
+                      >
+                        <FaWhatsapp className="text-green-400" /> WhatsApp
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
                 <button onClick={() => {
                   setModoEdicion(t._id);
                   setTitulo(t.titulo);
@@ -365,8 +443,8 @@ const Tareas = () => {
         {/* Vista Kanban con drag & drop */}
         <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {['pendiente', 'completada'].map((estado) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Cambiado a 2 columnas (sin "en progreso") */}
+            {['pendiente', 'completada'].map((estado) => ( // Solo pendiente y completada
               <Droppable droppableId={estado} key={estado}>
                 {(provided, snapshot) => (
                   <div 
@@ -396,6 +474,45 @@ const Tareas = () => {
                               <p className="text-xs text-white/70">📅 {tarea.fecha} 🕒 {tarea.hora}</p>
                               {tarea.categoria && <p className="text-xs mt-1 flex items-center gap-1"><FaTag /> {tarea.categoria}</p>}
                             </a>
+                            
+                            {/* Botón de compartir en Kanban */}
+                            <div className="mt-2 flex justify-end">
+                              <div className="relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault(); // Evitar que el enlace se active
+                                    setCompartirMenuAbierto(compartirMenuAbierto === `kanban-${tarea._id} ? null : `kanban-${tarea._id}`)}
+                                  className="text-blue-300 hover:text-blue-100"
+                                >
+                                  <FaShareAlt size={14} />
+                                </button>
+                                
+                                {compartirMenuAbierto === `kanban-${tarea._id}` && (
+                                  <div className="absolute right-0 mt-1 w-48 bg-gray-700 rounded-md shadow-lg py-1 z-10">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        compartirPorCorreo(tarea);
+                                        setCompartirMenuAbierto(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left text-white hover:bg-gray-600"
+                                    >
+                                      <FaEnvelope className="text-blue-300" size={12} /> Correo
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        compartirPorWhatsApp(tarea);
+                                        setCompartirMenuAbierto(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left text-white hover:bg-gray-600"
+                                    >
+                                      <FaWhatsapp className="text-green-300" size={12} /> WhatsApp
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         )}
                       </Draggable>
