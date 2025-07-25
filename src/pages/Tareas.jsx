@@ -1,3 +1,4 @@
+```jsx
 // src/pages/Tareas.jsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -369,11 +370,11 @@ const Tareas = () => {
           ))}
         </div>
 
-        {/* Vista Kanban con drag & drop */}
+        {/* Vista Kanban con drag & drop (solo Pendiente y Completada) */}
         <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {['pendiente', 'en progreso', 'completada'].map((estado) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Cambiado a 2 columnas */}
+            {['pendiente', 'completada'].map((estado) => ( // Solo pendiente y completada
               <Droppable droppableId={estado} key={estado}>
                 {(provided, snapshot) => (
                   <div 
@@ -417,3 +418,4 @@ const Tareas = () => {
 };
 
 export default Tareas;
+```
