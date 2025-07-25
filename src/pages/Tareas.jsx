@@ -89,44 +89,38 @@ const Tareas = () => {
   }, []);
 
   const onDragEnd = async (result) => {
-    // Corrección: Agregar await y manejo de errores
     if (!result.destination) return;
-    
+
     const { source, destination } = result;
-    
-    // Si no hay cambio real, no hacer nada
+
     if (source.droppableId === destination.droppableId && source.index === destination.index) {
       return;
     }
 
     const items = Array.from(tareas);
     const [movedItem] = items.splice(source.index, 1);
-    
-    // Actualizar estado local inmediatamente para una mejor UX
+
     const updatedItem = { ...movedItem, estado: destination.droppableId };
     items.splice(destination.index, 0, updatedItem);
     setTareas(items);
 
-    // Actualizar en el backend
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(API + '/api/tasks/' + movedItem._id, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json', 
-          Authorization: 'Bearer ' + token 
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
         },
         body: JSON.stringify({ estado: destination.droppableId }),
       });
 
       if (!response.ok) {
-        // Si falla, revertir el cambio local
         const originalItems = Array.from(tareas);
         setTareas(originalItems);
         console.error('Error al actualizar el estado de la tarea');
       }
     } catch (error) {
-      // Si hay error de red, revertir el cambio local
       const originalItems = Array.from(tareas);
       setTareas(originalItems);
       console.error('Error de red al actualizar la tarea:', error);
@@ -242,7 +236,6 @@ const Tareas = () => {
     }
   };
 
-  // Obtener lista única de personas asignadas para el filtro
   const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
 
   return (
@@ -270,7 +263,7 @@ const Tareas = () => {
           <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white" />
         </div>
         <button onClick={limpiarFiltros} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded mb-4">Limpiar filtros</button>
-        
+
         {/* Formulario */}
         <div className="bg-gray-900 p-4 rounded mb-8">
           <h2 className="text-xl font-bold mb-4">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
@@ -369,11 +362,11 @@ const Tareas = () => {
           ))}
         </div>
 
-        {/* Vista Kanban con drag & drop (solo Pendiente y Completada) */}
+        {/* Vista Kanban con drag & drop */}
         <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Cambiado a 2 columnas */}
-            {['pendiente', 'completada'].map((estado) => ( // Solo pendiente y completada
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {['pendiente', 'completada'].map((estado) => (
               <Droppable droppableId={estado} key={estado}>
                 {(provided, snapshot) => (
                   <div 
@@ -391,15 +384,18 @@ const Tareas = () => {
                             {...provided.dragHandleProps}
                             className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(tarea.categoria)} ${snapshot.isDragging ? 'opacity-90' : ''}`}
                           >
-                            <h4 className="font-bold">{tarea.titulo}</h4>
-                            <p className="text-sm text-white/90">{tarea.descripcion}</p>
-                            {tarea.asignadoA && ( // Mostrar asignación en Kanban
-                              <p className="text-xs text-white/80 flex items-center gap-1 mt-1">
-                                <FaUser className="text-xs" /> {tarea.asignadoA}
-                              </p>
-                            )}
-                            <p className="text-xs text-white/70">📅 {tarea.fecha} 🕒 {tarea.hora}</p>
-                            {tarea.categoria && <p className="text-xs mt-1 flex items-center gap-1"><FaTag /> {tarea.categoria}</p>}
+                            {/* Hacer clic en toda la tarjeta para ir a la tarea */}
+                            <a href={`/task/${tarea._id}`} className="block w-full h-full">
+                              <h4 className="font-bold">{tarea.titulo}</h4>
+                              <p className="text-sm text-white/90">{tarea.descripcion}</p>
+                              {tarea.asignadoA && ( // Mostrar asignación en Kanban
+                                <p className="text-xs text-white/80 flex items-center gap-1 mt-1">
+                                  <FaUser className="text-xs" /> {tarea.asignadoA}
+                                </p>
+                              )}
+                              <p className="text-xs text-white/70">📅 {tarea.fecha} 🕒 {tarea.hora}</p>
+                              {tarea.categoria && <p className="text-xs mt-1 flex items-center gap-1"><FaTag /> {tarea.categoria}</p>}
+                            </a>
                           </div>
                         )}
                       </Draggable>
@@ -417,4 +413,3 @@ const Tareas = () => {
 };
 
 export default Tareas;
-
