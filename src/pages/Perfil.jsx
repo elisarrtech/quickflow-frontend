@@ -105,7 +105,7 @@ const actualizarPerfil = async () => {
     {mensaje}
   </div>
 )}
-}
+</p>}
       </div>
     </DashboardLayout>
   );
