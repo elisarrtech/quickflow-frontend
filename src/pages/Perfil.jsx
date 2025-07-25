@@ -6,9 +6,12 @@ import { useNavigate } from 'react-router-dom';
 const Perfil = () => {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
+  const [mensajeTipo, setMensajeTipo] = useState(''); // 'exito' o 'error'
   const [mensaje, setMensaje] = useState('');
   const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL;
+ 
+
 
   useEffect(() => {
     const obtenerPerfil = async () => {
