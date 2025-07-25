@@ -1,6 +1,6 @@
 // src/components/Eventos.jsx
 import React, { useState, useEffect } from 'react';
-import { FaCalendarAlt, FaClock, FaUsers, FaVideo, FaTrash, FaPlus, FaCalendar, FaBell } from 'react-icons/fa';
+import { FaCalendarAlt, FaClock, FaUsers, FaVideo, FaTrash, FaPlus, FaCalendar, FaBell, FaShareAlt, FaEnvelope, FaWhatsapp } from 'react-icons/fa';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 
@@ -11,9 +11,13 @@ const Eventos = () => {
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [tipo, setTipo] = useState('reunion'); // reunion, cita, junta, videollamada
-  const [participantes, setParticipantes] = useState('');
+  const [participantesInput, setParticipantesInput] = useState(''); // Para ingresar correos separados por coma
+  const [participantes, setParticipantes] = useState([]); // Array de objetos {email: '...'}
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
+  const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null); // Para controlar menús de compartir
+  const [error, setError] = useState('');
+  const [exito, setExito] = useState('');
 
   // Solicitar permisos para notificaciones
   useEffect(() => {
@@ -56,7 +60,13 @@ const Eventos = () => {
 
   const crearEvento = (e) => {
     e.preventDefault();
-    if (!titulo || !fecha || !hora) return;
+    if (!titulo.trim()) return setError('El título es obligatorio');
+    
+    // Parsear participantes del input (correos separados por coma)
+    let participantesArray = [];
+    if (participantesInput.trim()) {
+      participantesArray = participantesInput.split(',').map(email => ({ email: email.trim() })).filter(p => p.email);
+    }
 
     const nuevoEvento = {
       id: Date.now(),
@@ -64,10 +74,12 @@ const Eventos = () => {
       fecha,
       hora,
       tipo,
-      participantes
+      participantes: participantesArray // Guardar el array de participantes
     };
 
     setEventos([...eventos, nuevoEvento]);
+    setExito('✅ Evento creado exitosamente.');
+    setTimeout(() => setExito(''), 3000);
     limpiarFormulario();
     setMostrarFormulario(false);
   };
@@ -81,7 +93,45 @@ const Eventos = () => {
     setFecha('');
     setHora('');
     setTipo('reunion');
-    setParticipantes('');
+    setParticipantesInput(''); // Limpiar input de participantes
+    setParticipantes([]); // Limpiar array de participantes
+    setError('');
+  };
+
+  // Función para compartir evento por correo
+  const compartirEventoPorCorreo = (evento) => {
+    const asunto = encodeURIComponent(`Invitación: ${evento.titulo}`);
+    
+    let cuerpo = `Hola,\n\nHas sido invitado al siguiente evento:\n\n`;
+    cuerpo += `Título: ${evento.titulo}\n`;
+    cuerpo += `Fecha: ${evento.fecha}\n`;
+    cuerpo += `Hora: ${evento.hora}\n`;
+    cuerpo += `Tipo: ${evento.tipo}\n`;
+    
+    if (evento.participantes && evento.participantes.length > 0) {
+      const listaParticipantes = evento.participantes.map(p => p.email).join(', ');
+      cuerpo += `Participantes: ${listaParticipantes}\n`;
+    }
+    
+    cuerpo = encodeURIComponent(cuerpo);
+    
+    window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
+  };
+
+  // Función para compartir evento por WhatsApp
+  const compartirEventoPorWhatsApp = (evento) => {
+    let texto = `*Invitación: ${evento.titulo}*\n\n`;
+    texto += `Fecha: ${evento.fecha}\n`;
+    texto += `Hora: ${evento.hora}\n`;
+    texto += `Tipo: ${evento.tipo}\n`;
+    
+    if (evento.participantes && evento.participantes.length > 0) {
+      const listaParticipantes = evento.participantes.map(p => p.email).join(', ');
+      texto += `Participantes: ${listaParticipantes}\n`;
+    }
+    
+    const textoCodificado = encodeURIComponent(texto);
+    window.open(`https://wa.me/?text=${textoCodificado}`, '_blank');
   };
 
   // Filtrar eventos según el tipo seleccionado
@@ -116,6 +166,10 @@ const Eventos = () => {
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 h-full flex flex-col">
+      {/* Mensajes de éxito y error */}
+      {exito && <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{exito}</div>}
+      {error && <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{error}</div>}
+
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-white flex items-center gap-2">
           <FaCalendarAlt className="text-blue-400" />
@@ -167,11 +221,12 @@ const Eventos = () => {
           </select>
           <input
             type="text"
-            placeholder="Participantes (opcional)"
-            value={participantes}
-            onChange={(e) => setParticipantes(e.target.value)}
+            placeholder="Participantes (correos separados por coma)"
+            value={participantesInput}
+            onChange={(e) => setParticipantesInput(e.target.value)}
             className="w-full mb-2 p-2 bg-gray-600 text-white rounded"
           />
+          {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
           <div className="flex gap-2">
             <button
               type="submit"
@@ -244,18 +299,68 @@ const Eventos = () => {
                       {iconosTipo[evento.tipo]}
                       <span className="capitalize">{evento.tipo}</span>
                     </div>
-                    {evento.participantes && (
+                    {/* Mostrar participantes si existen */}
+                    {evento.participantes && evento.participantes.length > 0 && (
                       <div className="text-xs text-gray-400 mt-1">
-                        Participantes: {evento.participantes}
+                        Invitados: {evento.participantes.map(p => p.email).join(', ')}
                       </div>
                     )}
                   </div>
-                  <button
-                    onClick={() => eliminarEvento(evento.id)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <FaTrash size={14} />
-                  </button>
+                  <div className="flex gap-2">
+                    {/* Botones de compartir */}
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCompartirMenuAbierto(
+                            compartirMenuAbierto === `evento-${evento.id}` 
+                              ? null 
+                              : `evento-${evento.id}`
+                          );
+                        }}
+                        className="text-blue-400 hover:text-blue-300"
+                        title="Compartir evento"
+                      >
+                        <FaShareAlt size={14} />
+                      </button>
+                      
+                      {compartirMenuAbierto === `evento-${evento.id}` && (
+                        <div className="absolute right-0 mt-1 w-48 bg-gray-700 rounded-md shadow-lg py-1 z-10">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              compartirEventoPorCorreo(evento);
+                              setCompartirMenuAbierto(null);
+                            }}
+                            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left text-white hover:bg-gray-600"
+                          >
+                            <FaEnvelope className="text-blue-300" size={12} /> Correo
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              compartirEventoPorWhatsApp(evento);
+                              setCompartirMenuAbierto(null);
+                            }}
+                            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left text-white hover:bg-gray-600"
+                          >
+                            <FaWhatsapp className="text-green-300" size={12} /> WhatsApp
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Botón de eliminar */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        eliminarEvento(evento.id);
+                      }}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      <FaTrash size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
