@@ -25,8 +25,9 @@ const Perfil = () => {
     obtenerPerfil();
   }, []);
 
-  const actualizarPerfil = async () => {
-    const token = localStorage.getItem('token');
+const actualizarPerfil = async () => {
+  const token = localStorage.getItem('token');
+  try {
     const res = await fetch(`${API}/api/perfil`, {
       method: 'PUT',
       headers: {
@@ -35,8 +36,18 @@ const Perfil = () => {
       },
       body: JSON.stringify({ nombre })
     });
-    if (res.ok) setMensaje('Nombre actualizado correctamente');
-  };
+    const data = await res.json();
+    if (res.ok) {
+      setMensaje(data.mensaje); // Muestra tanto "Nombre actualizado" como "No se realizaron cambios"
+    } else {
+      setMensaje('Error al actualizar el perfil');
+    }
+  } catch (error) {
+    console.error('Error de red:', error);
+    setMensaje('Error de red o del servidor');
+  }
+};
+
 
   const cerrarSesion = () => {
     localStorage.removeItem('token');
