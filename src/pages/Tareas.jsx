@@ -31,6 +31,11 @@ const Tareas = () => {
   const [error, setError] = useState('');
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
+  const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroDesde, setFiltroDesde] = useState('');
+  const [filtroHasta, setFiltroHasta] = useState('');
+
 
   useEffect(() => { Notification.requestPermission(); }, []);
 
@@ -65,6 +70,19 @@ const Tareas = () => {
     };
     obtenerTareas();
   }, []);
+
+  const categoriasUnicas = [...new Set(tareaFiltradas.map(t => t.categoria).filter(c => c))];
+ 
+
+
+const tareasFiltradas = tareas.filter(t => {
+  const cumpleCategoria = !filtroCategoria || t.categoria === filtroCategoria;
+  const cumpleEstado = !filtroEstado || t.estado === filtroEstado;
+  const cumpleDesde = !filtroDesde || new Date(t.fecha) >= new Date(filtroDesde);
+  const cumpleHasta = !filtroHasta || new Date(t.fecha) <= new Date(filtroHasta);
+  return cumpleCategoria && cumpleEstado && cumpleDesde && cumpleHasta;
+});
+
 
   const crearTarea = async () => {
     if (!titulo.trim()) return setError('El título es obligatorio');
@@ -206,6 +224,32 @@ const Tareas = () => {
             {modoEdicion ? 'Actualizar' : 'Crear'} tarea
           </button>
         </div>
+<div className="grid md:grid-cols-4 gap-4 mb-4 text-white">
+  <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} className="input bg-gray-800 text-white">
+    <option value="">Todas las categorías</option>
+    {categoriasUnicas.map((cat, i) => (
+      <option key={i} value={cat}>{cat}</option>
+    ))}
+  </select>
+
+  <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} className="input bg-gray-800 text-white">
+    <option value="">Todos los estados</option>
+    <option value="pendiente">Pendientes</option>
+    <option value="completada">Completadas</option>
+  </select>
+
+  <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} className="input bg-gray-800 text-white" />
+  <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} className="input bg-gray-800 text-white" />
+</div>
+
+<button onClick={() => {
+  setFiltroCategoria('');
+  setFiltroEstado('');
+  setFiltroDesde('');
+  setFiltroHasta('');
+}} className="mb-6 bg-blue-700 hover:bg-blue-600 text-white px-4 py-1 rounded">
+  Limpiar filtros
+</button>
 
         <h2 className="text-xl font-semibold mb-4">Tus tareas</h2>
 
