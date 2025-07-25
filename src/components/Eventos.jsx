@@ -25,6 +25,27 @@ const Eventos = () => {
     localStorage.setItem('eventos', JSON.stringify(eventos));
   }, [eventos]);
 
+  // En el componente Eventos.jsx, agrega este useEffect:
+useEffect(() => {
+  const interval = setInterval(() => {
+    const ahora = new Date();
+    eventos.forEach(evento => {
+      const tiempoEvento = new Date(`${evento.fecha}T${evento.hora}`);
+      const diferencia = tiempoEvento - ahora;
+      
+      // Notificar 10 minutos antes del evento
+      if (diferencia > 0 && diferencia <= 600000) { // 10 minutos en ms
+        new Notification('⏰ Evento próximo', {
+          body: `${evento.titulo} comienza en 10 minutos`,
+          icon: '/favicon.ico'
+        });
+      }
+    });
+  }, 60000); // Verificar cada minuto
+
+  return () => clearInterval(interval);
+}, [eventos]);
+
   const crearEvento = (e) => {
     e.preventDefault();
     if (!titulo || !fecha || !hora) return;
