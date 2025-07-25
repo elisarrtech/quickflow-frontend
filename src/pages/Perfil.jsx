@@ -10,8 +10,6 @@ const Perfil = () => {
   const [mensaje, setMensaje] = useState('');
   const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL;
- 
-
 
   useEffect(() => {
     const obtenerPerfil = async () => {
@@ -28,33 +26,31 @@ const Perfil = () => {
     obtenerPerfil();
   }, []);
 
-const actualizarPerfil = async () => {
-  const token = localStorage.getItem('token');
-  try {
-    const res = await fetch(`${API}/api/perfil`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ nombre })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setMensaje(data.mensaje);
-      setMensajeTipo('exito');
-    } else {
-      setMensaje('Error al actualizar el perfil');
+  const actualizarPerfil = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/api/perfil`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ nombre })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMensaje(data.mensaje);
+        setMensajeTipo('exito');
+      } else {
+        setMensaje('Error al actualizar el perfil');
+        setMensajeTipo('error');
+      }
+    } catch (error) {
+      console.error('Error de red:', error);
+      setMensaje('Error de red o del servidor');
       setMensajeTipo('error');
     }
-  } catch (error) {
-    console.error('Error de red:', error);
-    setMensaje('Error de red o del servidor');
-    setMensajeTipo('error');
-  }
-};
-
-
+  };
 
   const cerrarSesion = () => {
     localStorage.removeItem('token');
@@ -97,15 +93,14 @@ const actualizarPerfil = async () => {
         </button>
 
         {mensaje && (
-  <div
-    className={`mt-4 px-4 py-2 rounded ${
-      mensajeTipo === 'exito' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-    }`}
-  >
-    {mensaje}
-  </div>
-)}
-</p>}
+          <div
+            className={`mt-4 px-4 py-2 rounded ${
+              mensajeTipo === 'exito' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+            }`}
+          >
+            {mensaje}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
