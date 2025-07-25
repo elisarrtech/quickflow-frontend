@@ -1,4 +1,3 @@
-```jsx
 // src/pages/Tareas.jsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -48,7 +47,8 @@ const Tareas = () => {
   const [fechaFin, setFechaFin] = useState('');
   const [menuAbierto, setMenuAbierto] = useState(null);
   const [categoriasExistentes, setCategoriasExistentes] = useState([]);
-  const [asignadoA, setAsignadoA] = useState(''); // Nuevo estado para asignación
+  const [asignadoAFiltro, setAsignadoAFiltro] = useState(''); // Nuevo estado para filtro de asignación
+  const [asignadoA, setAsignadoA] = useState(''); // Estado para asignación en formulario
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -88,24 +88,49 @@ const Tareas = () => {
     obtenerTareas();
   }, []);
 
-  const onDragEnd = (result) => {
+  const onDragEnd = async (result) => {
+    // Corrección: Agregar await y manejo de errores
     if (!result.destination) return;
+    
     const { source, destination } = result;
-    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+    
+    // Si no hay cambio real, no hacer nada
+    if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      return;
+    }
 
     const items = Array.from(tareas);
-    const [moved] = items.splice(source.index, 1);
-    moved.estado = destination.droppableId;
-    items.splice(destination.index, 0, moved);
+    const [movedItem] = items.splice(source.index, 1);
+    
+    // Actualizar estado local inmediatamente para una mejor UX
+    const updatedItem = { ...movedItem, estado: destination.droppableId };
+    items.splice(destination.index, 0, updatedItem);
     setTareas(items);
 
-    // Lógica para actualizar en backend
-    const token = localStorage.getItem('token');
-    fetch(`${API}/api/tasks/${moved._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ estado: moved.estado }),
-    });
+    // Actualizar en el backend
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API}/api/tasks/${movedItem._id}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json', 
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ estado: destination.droppableId }),
+      });
+
+      if (!response.ok) {
+        // Si falla, revertir el cambio local
+        const originalItems = Array.from(tareas);
+        setTareas(originalItems);
+        console.error('Error al actualizar el estado de la tarea');
+      }
+    } catch (error) {
+      // Si hay error de red, revertir el cambio local
+      const originalItems = Array.from(tareas);
+      setTareas(originalItems);
+      console.error('Error de red al actualizar la tarea:', error);
+    }
   };
 
   const tareasPorEstado = (estado) => tareas.filter(t => t.estado === estado);
@@ -116,6 +141,7 @@ const Tareas = () => {
     let filtradas = [...tareas];
     if (categoriaFiltro) filtradas = filtradas.filter(t => t.categoria === categoriaFiltro);
     if (estadoFiltro) filtradas = filtradas.filter(t => t.estado === estadoFiltro);
+    if (asignadoAFiltro) filtradas = filtradas.filter(t => t.asignadoA && t.asignadoA.toLowerCase().includes(asignadoAFiltro.toLowerCase())); // Filtro por asignación
     if (fechaInicio && !fechaFin) filtradas = filtradas.filter(t => new Date(t.fecha).toISOString().split('T')[0] === fechaInicio);
     if (fechaInicio && fechaFin) filtradas = filtradas.filter(t => new Date(t.fecha) >= new Date(fechaInicio) && new Date(t.fecha) <= new Date(fechaFin));
     return filtradas.sort((a, b) => a.estado !== b.estado ? (a.estado === 'pendiente' ? -1 : 1) : new Date(a.fecha) - new Date(b.fecha));
@@ -144,6 +170,7 @@ const Tareas = () => {
     setEstadoFiltro('');
     setFechaInicio('');
     setFechaFin('');
+    setAsignadoAFiltro(''); // Limpiar filtro de asignación
   };
 
   const crearTarea = async () => {
@@ -215,6 +242,9 @@ const Tareas = () => {
     }
   };
 
+  // Obtener lista única de personas asignadas para el filtro
+  const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
+
   return (
     <DashboardLayout>
       {exito && <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{exito}</div>}
@@ -222,7 +252,7 @@ const Tareas = () => {
 
       <div className="text-white p-6 max-w-5xl mx-auto">
         <h2 className="text-xl font-semibold mb-4">Filtros</h2>
-        <div className="grid md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white">
             <option value="">Todas las categorías</option>
             {categoriasExistentes.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -231,6 +261,10 @@ const Tareas = () => {
             <option value="">Todos los estados</option>
             <option value="pendiente">Pendiente</option>
             <option value="completada">Completada</option>
+          </select>
+          <select value={asignadoAFiltro} onChange={e => setAsignadoAFiltro(e.target.value)} className="input bg-gray-800 text-white">
+            <option value="">Todas las asignaciones</option>
+            {personasAsignadas.map(persona => <option key={persona} value={persona}>{persona}</option>)}
           </select>
           <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} className="input bg-gray-800 text-white" />
           <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white" />
@@ -341,17 +375,21 @@ const Tareas = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {['pendiente', 'en progreso', 'completada'].map((estado) => (
               <Droppable droppableId={estado} key={estado}>
-                {(provided) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps} className="bg-gray-800 rounded-lg p-4 shadow min-h-[200px]">
+                {(provided, snapshot) => (
+                  <div 
+                    ref={provided.innerRef} 
+                    {...provided.droppableProps} 
+                    className={`bg-gray-800 rounded-lg p-4 shadow min-h-[200px] ${snapshot.isDraggingOver ? 'bg-gray-700' : ''}`}
+                  >
                     <h3 className="text-lg font-semibold capitalize text-white mb-2">{estado}</h3>
                     {tareasPorEstado(estado).map((tarea, index) => (
                       <Draggable draggableId={tarea._id} index={index} key={tarea._id}>
-                        {(provided) => (
+                        {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(tarea.categoria)}`}
+                            className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(tarea.categoria)} ${snapshot.isDragging ? 'opacity-90' : ''}`}
                           >
                             <h4 className="font-bold">{tarea.titulo}</h4>
                             <p className="text-sm text-white/90">{tarea.descripcion}</p>
@@ -379,4 +417,3 @@ const Tareas = () => {
 };
 
 export default Tareas;
-```
