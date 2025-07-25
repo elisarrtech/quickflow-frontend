@@ -119,7 +119,18 @@ const Tareas = () => {
   return (
     <DashboardLayout>
       <div className="text-white p-6 max-w-5xl mx-auto">
-        {/* ...Formulario y Filtros ya existentes arriba... */}
+        <h2 className="text-xl font-semibold mb-4">Filtros</h2>
+        <div className="grid md:grid-cols-4 gap-4 mb-6">
+          <input type="text" placeholder="Filtrar por categoría" value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white" />
+          <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)} className="input bg-gray-800 text-white">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="completada">Completada</option>
+          </select>
+          <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} className="input bg-gray-800 text-white" />
+          <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white" />
+        </div>
+        <button onClick={limpiarFiltros} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded mb-4">Limpiar filtros</button>
 
         {/* Lista de tareas */}
         <div className="space-y-4 mt-6">
