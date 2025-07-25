@@ -1,4 +1,5 @@
 // src/components/Eventos.jsx
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { 
   FaCalendarAlt, 
@@ -31,6 +32,9 @@ const Eventos = () => {
   const [eventoEditando, setEventoEditando] = useState(null);
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
+
+  const navigate = useNavigate();
+
 
   // Solicitar permisos para notificaciones
   useEffect(() => {
@@ -205,21 +209,32 @@ const Eventos = () => {
       {error && <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{error}</div>}
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-          <FaCalendarAlt className="text-indigo-400" />
-          Gestión de Eventos
-        </h2>
-        <button 
-          onClick={() => {
-            limpiarFormulario();
-            setMostrarFormulario(!mostrarFormulario);
-          }}
-          className="mt-4 md:mt-0 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
-          <FaPlus />
-          {mostrarFormulario ? 'Cancelar' : 'Nuevo Evento'}
-        </button>
-      </div>
+  <div className="flex items-center gap-3">
+    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+      <FaCalendarAlt className="text-indigo-400" />
+      Gestión de Eventos
+    </h2>
+  </div>
+  <div className="flex items-center gap-3 mt-4 md:mt-0">
+    <button
+      onClick={() => navigate('/dashboard')}
+      className="flex items-center gap-2 text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg transition-colors"
+    >
+      <FaTimes />
+      Volver al Dashboard
+    </button>
+    <button
+      onClick={() => {
+        limpiarFormulario();
+        setMostrarFormulario(!mostrarFormulario);
+      }}
+      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+    >
+      <FaPlus />
+      {mostrarFormulario ? 'Cancelar' : 'Nuevo Evento'}
+    </button>
+  </div>
+</div>
 
       {mostrarFormulario && (
         <div className="mb-8 bg-gray-700 rounded-xl p-6 shadow-lg">
