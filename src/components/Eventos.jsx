@@ -11,6 +11,12 @@ const Eventos = () => {
   const [hora, setHora] = useState('');
   const [tipo, setTipo] = useState('reunion'); // reunion, cita, junta, videollamada
   const [participantes, setParticipantes] = useState('');
+  // En Eventos.jsx, agrega estado para filtro:
+  const [filtroTipo, setFiltroTipo] = useState('todos');
+  // Filtrar eventos según el tipo seleccionado
+  const eventosFiltrados = filtroTipo === 'todos' 
+  ? eventosOrdenados 
+  : eventosOrdenados.filter(e => e.tipo === filtroTipo);
 
   // Cargar eventos del localStorage
   useEffect(() => {
