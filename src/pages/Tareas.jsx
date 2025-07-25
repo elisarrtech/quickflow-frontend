@@ -30,6 +30,7 @@ const Tareas = () => {
   const [nota, setNota] = useState('');
   const [modoEdicion, setModoEdicion] = useState(null);
   const [error, setError] = useState('');
+  const [exito, setExito] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('');
   const [estadoFiltro, setEstadoFiltro] = useState('');
   const [fechaInicio, setFechaInicio] = useState('');
@@ -87,7 +88,7 @@ const Tareas = () => {
   const tareasFiltradas = filtrarTareas();
 
   const limpiarFormulario = () => {
-    setTitulo(''); setDescripcion(''); setFecha(''); setHora(''); setCategoria(''); setNota(''); setEnlace(''); setSubtareas([]); setArchivo(null); setError(''); setModoEdicion(null);
+    setTitulo(''); setDescripcion(''); setFecha(''); setHora(''); setCategoria(''); setNota(''); setEnlace(''); setSubtareas([]); setArchivo(null); setError(''); setExito(''); setModoEdicion(null);
   };
 
   const limpiarFiltros = () => {
@@ -122,7 +123,9 @@ const Tareas = () => {
       const data = await res.json();
       if (res.ok) {
         setTareas(prev => [...prev, data]);
+        setExito('✅ Tarea agregada exitosamente.');
         limpiarFormulario();
+        setTimeout(() => setExito(''), 3000);
         if (!categoriasExistentes.includes(data.categoria)) {
           setCategoriasExistentes(prev => [...prev, data.categoria]);
         }
@@ -147,13 +150,15 @@ const Tareas = () => {
         },
         body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, subtareas }),
       });
+      const data = await res.json();
       if (res.ok) {
-        const updated = await res.json();
-        setTareas(prev => prev.map(t => (t._id === modoEdicion ? { ...t, ...updated } : t)));
+        setTareas(prev => prev.map(t => (t._id === modoEdicion ? { ...t, ...data } : t)));
+        setExito('✅ Tarea actualizada correctamente.');
         limpiarFormulario();
+        setTimeout(() => setExito(''), 3000);
       } else {
-        const error = await res.json();
-        console.error('Error al editar tarea:', error);
+        console.error('Error al editar tarea:', data);
+        setError(data?.error || 'Error al editar');
       }
     } catch (error) {
       console.error('Error de red al editar tarea:', error);
