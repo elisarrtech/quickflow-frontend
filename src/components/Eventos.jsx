@@ -1,5 +1,4 @@
 // src/components/Eventos.jsx
-import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { 
   FaCalendarAlt, 
@@ -13,7 +12,8 @@ import {
   FaShareAlt,
   FaEnvelope,
   FaWhatsapp,
-  FaTimes
+  FaTimes,
+  FaEdit
 } from 'react-icons/fa';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -25,16 +25,13 @@ const Eventos = () => {
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [tipo, setTipo] = useState('reunion');
-  const [participantesInput, setParticipantesInput] = useState('');
+  const [participantesInput, setParticipantesInput] = useState(''); // String para entrada de correos
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
-  const [eventoEditando, setEventoEditando] = useState(null);
+  const [eventoEditando, setEventoEditando] = useState(null); // Para edición
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
-
-  const navigate = useNavigate();
-
 
   // Solicitar permisos para notificaciones
   useEffect(() => {
@@ -45,7 +42,12 @@ const Eventos = () => {
   useEffect(() => {
     const eventosGuardados = localStorage.getItem('eventos');
     if (eventosGuardados) {
-      setEventos(JSON.parse(eventosGuardados));
+      try {
+        setEventos(JSON.parse(eventosGuardados));
+      } catch (e) {
+        console.error("Error parsing eventos from localStorage", e);
+        setEventos([]);
+      }
     }
   }, []);
 
@@ -62,26 +64,60 @@ const Eventos = () => {
         const tiempoEvento = new Date(`${evento.fecha}T${evento.hora}`);
         const diferencia = tiempoEvento - ahora;
         
-        if (diferencia > 0 && diferencia <= 600000) {
+        if (diferencia > 0 && diferencia <= 600000) { // 10 minutos antes
           new Notification('⏰ Evento próximo', {
             body: `${evento.titulo} comienza en 10 minutos`,
             icon: '/favicon.ico'
           });
         }
       });
-    }, 60000);
+    }, 60000); // Verificar cada minuto
+
     return () => clearInterval(interval);
   }, [eventos]);
 
+  // Función para simular el envío de invitaciones
+  const enviarInvitaciones = (evento, nuevosParticipantes) => {
+    // En una aplicación real, aquí se haría una llamada al backend
+    // para enviar correos electrónicos a los participantes.
+    // Por ahora, solo mostramos un mensaje en consola.
+    console.log(`Simulando envío de invitaciones para el evento: ${evento.titulo}`);
+    nuevosParticipantes.forEach(participante => {
+      console.log(`  - Invitación enviada a: ${participante.email}`);
+      // Aquí se podría usar una API de correo como Nodemailer, SendGrid, etc.
+    });
+    
+    // Para propósitos de demostración, mostramos un mensaje de éxito
+    setExito(`✅ Invitaciones enviadas a ${nuevosParticipantes.length} participante(s).`);
+    setTimeout(() => setExito(''), 3000);
+  };
+
   const crearEvento = (e) => {
     e.preventDefault();
-    if (!titulo.trim()) return setError('El título es obligatorio');
     
-    const participantesArray = participantesInput
-      .split(',')
-      .map(email => email.trim())
-      .filter(email => email)
-      .map(email => ({ email }));
+    // Validaciones básicas
+    if (!titulo.trim()) {
+      setError('El título es obligatorio');
+      return;
+    }
+    if (!fecha) {
+      setError('La fecha es obligatoria');
+      return;
+    }
+    if (!hora) {
+      setError('La hora es obligatoria');
+      return;
+    }
+
+    // Parsear participantes del input (correos separados por coma o punto y coma)
+    let participantesArray = [];
+    if (participantesInput.trim()) {
+      participantesArray = participantesInput
+        .split(/[,;]/) // Separar por coma o punto y coma
+        .map(email => email.trim())
+        .filter(email => email && /\S+@\S+\.\S+/.test(email)) // Validar formato de email básico
+        .map(email => ({ email: email.toLowerCase() }));
+    }
 
     const nuevoEvento = {
       id: eventoEditando ? eventoEditando.id : Date.now(),
@@ -93,13 +129,30 @@ const Eventos = () => {
     };
 
     if (eventoEditando) {
+      // Actualizar evento existente
       setEventos(eventos.map(e => e.id === eventoEditando.id ? nuevoEvento : e));
       setExito('✅ Evento actualizado exitosamente.');
+      
+      // Comparar participantes anteriores y nuevos para enviar invitaciones solo a los nuevos
+      const participantesAnteriores = eventoEditando.participantes || [];
+      const nuevosParticipantes = participantesArray.filter(
+        np => !participantesAnteriores.some(op => op.email === np.email)
+      );
+      
+      if (nuevosParticipantes.length > 0) {
+        enviarInvitaciones(nuevoEvento, nuevosParticipantes);
+      }
     } else {
+      // Crear nuevo evento
       setEventos([...eventos, nuevoEvento]);
       setExito('✅ Evento creado exitosamente.');
+      
+      // Enviar invitaciones a todos los participantes
+      if (participantesArray.length > 0) {
+        enviarInvitaciones(nuevoEvento, participantesArray);
+      }
     }
-    
+
     setTimeout(() => setExito(''), 3000);
     limpiarFormulario();
     setMostrarFormulario(false);
@@ -115,7 +168,8 @@ const Eventos = () => {
     setFecha(evento.fecha);
     setHora(evento.hora);
     setTipo(evento.tipo);
-    setParticipantesInput(evento.participantes.map(p => p.email).join(', '));
+    // Convertir array de participantes de vuelta a string para el input
+    setParticipantesInput(evento.participantes ? evento.participantes.map(p => p.email).join(', ') : '');
     setMostrarFormulario(true);
   };
 
@@ -186,7 +240,7 @@ const Eventos = () => {
     e.fecha === new Date().toISOString().split('T')[0]
   );
 
-  // Iconos para tipos de eventos
+  // Iconos y colores para tipos de eventos
   const iconosTipo = {
     reunion: <FaUsers className="text-blue-400" />,
     cita: <FaClock className="text-green-400" />,
@@ -194,12 +248,11 @@ const Eventos = () => {
     videollamada: <FaVideo className="text-red-400" />
   };
 
-  // Colores para tipos de eventos
   const coloresTipo = {
-    reunion: 'bg-blue-500/20 border-blue-500',
-    cita: 'bg-green-500/20 border-green-500',
-    junta: 'bg-purple-500/20 border-purple-500',
-    videollamada: 'bg-red-500/20 border-red-500'
+    reunion: 'border-l-4 border-blue-500 bg-blue-500/10',
+    cita: 'border-l-4 border-green-500 bg-green-500/10',
+    junta: 'border-l-4 border-purple-500 bg-purple-500/10',
+    videollamada: 'border-l-4 border-red-500 bg-red-500/10'
   };
 
   return (
@@ -209,32 +262,21 @@ const Eventos = () => {
       {error && <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{error}</div>}
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-  <div className="flex items-center gap-3">
-    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-      <FaCalendarAlt className="text-indigo-400" />
-      Gestión de Eventos
-    </h2>
-  </div>
-  <div className="flex items-center gap-3 mt-4 md:mt-0">
-    <button
-      onClick={() => navigate('/dashboard')}
-      className="flex items-center gap-2 text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg transition-colors"
-    >
-      <FaTimes />
-      Volver al Dashboard
-    </button>
-    <button
-      onClick={() => {
-        limpiarFormulario();
-        setMostrarFormulario(!mostrarFormulario);
-      }}
-      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
-    >
-      <FaPlus />
-      {mostrarFormulario ? 'Cancelar' : 'Nuevo Evento'}
-    </button>
-  </div>
-</div>
+        <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+          <FaCalendarAlt className="text-indigo-400" />
+          Gestión de Eventos
+        </h2>
+        <button 
+          onClick={() => {
+            limpiarFormulario();
+            setMostrarFormulario(!mostrarFormulario);
+          }}
+          className="mt-4 md:mt-0 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+          <FaPlus />
+          {mostrarFormulario ? 'Cancelar' : 'Nuevo Evento'}
+        </button>
+      </div>
 
       {mostrarFormulario && (
         <div className="mb-8 bg-gray-700 rounded-xl p-6 shadow-lg">
@@ -255,7 +297,7 @@ const Eventos = () => {
           
           <form onSubmit={crearEvento} className="space-y-4">
             <div>
-              <label className="block text-gray-300 mb-2">Título del evento</label>
+              <label className="block text-gray-300 mb-2">Título del evento *</label>
               <input
                 type="text"
                 value={titulo}
@@ -268,7 +310,7 @@ const Eventos = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-300 mb-2">Fecha</label>
+                <label className="block text-gray-300 mb-2">Fecha *</label>
                 <input
                   type="date"
                   value={fecha}
@@ -279,7 +321,7 @@ const Eventos = () => {
               </div>
               
               <div>
-                <label className="block text-gray-300 mb-2">Hora</label>
+                <label className="block text-gray-300 mb-2">Hora *</label>
                 <input
                   type="time"
                   value={hora}
@@ -305,14 +347,19 @@ const Eventos = () => {
             </div>
             
             <div>
-              <label className="block text-gray-300 mb-2">Participantes (correos separados por coma)</label>
+              <label className="block text-gray-300 mb-2">
+                Participantes (correos separados por coma o punto y coma)
+              </label>
               <input
                 type="text"
                 value={participantesInput}
                 onChange={(e) => setParticipantesInput(e.target.value)}
                 className="w-full p-3 bg-gray-600 text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                placeholder="juan@ejemplo.com, maria@ejemplo.com"
+                placeholder="juan@ejemplo.com, maria@ejemplo.com; pedro@ejemplo.com"
               />
+              <p className="text-xs text-gray-400 mt-1">
+                Los participantes recibirán una invitación automática.
+              </p>
             </div>
             
             {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -369,7 +416,9 @@ const Eventos = () => {
                 const eventosEnFecha = eventos.filter(e => 
                   e.fecha === date.toISOString().split('T')[0]
                 );
-                return eventosEnFecha.length > 0 ? 'bg-indigo-900 text-white hover:bg-indigo-800' : 'hover:bg-gray-500';
+                return eventosEnFecha.length > 0 
+                  ? 'bg-indigo-900 text-white hover:bg-indigo-800' 
+                  : 'hover:bg-gray-500';
               }}
             />
           </div>
@@ -408,7 +457,7 @@ const Eventos = () => {
                 eventosDelDia.map(evento => (
                   <div 
                     key={evento.id} 
-                    className={`border-l-4 ${coloresTipo[evento.tipo]} bg-gray-600 rounded-lg p-4 transition-all hover:shadow-lg`}
+                    className={`${coloresTipo[evento.tipo]} bg-gray-600 rounded-lg p-4 transition-all hover:shadow-lg`}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -539,7 +588,7 @@ const Eventos = () => {
                         <div className="font-medium text-white">{evento.titulo}</div>
                         <div className="text-gray-400 text-sm">{evento.fecha} a las {evento.hora}</div>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs ${coloresTipo[evento.tipo]}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs ${coloresTipo[evento.tipo].replace('border-l-4 ', '')}`}>
                         {evento.tipo}
                       </span>
                     </div>
