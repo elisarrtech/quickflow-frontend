@@ -1,22 +1,14 @@
-// src/components/Eventos.jsx
+
+// src/pages/Eventos.jsx
 import React, { useState, useEffect } from 'react';
-import { 
-  FaCalendarAlt, 
-  FaClock, 
-  FaUsers, 
-  FaVideo, 
-  FaTrash, 
-  FaPlus, 
-  FaCalendar, 
-  FaBell,
-  FaShareAlt,
-  FaEnvelope,
-  FaWhatsapp,
-  FaTimes,
-  FaEdit
+import {
+  FaCalendarAlt, FaClock, FaUsers, FaVideo, FaTrash, FaPlus,
+  FaCalendar, FaBell, FaShareAlt, FaEnvelope, FaWhatsapp, FaTimes, FaEdit
 } from 'react-icons/fa';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
+
+const API_URL = "https://quickflow-api.onrender.com"; // ✅ Cambia esta URL si es necesario
 
 const Eventos = () => {
   const [eventos, setEventos] = useState([]);
@@ -25,153 +17,54 @@ const Eventos = () => {
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [tipo, setTipo] = useState('reunion');
-  const [participantesInput, setParticipantesInput] = useState(''); // String para entrada de correos
+  const [participantesInput, setParticipantesInput] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
-  const [eventoEditando, setEventoEditando] = useState(null); // Para edición
+  const [eventoEditando, setEventoEditando] = useState(null);
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
 
-  // Solicitar permisos para notificaciones
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
     Notification.requestPermission();
   }, []);
 
-  // Cargar eventos del localStorage
+  // 🔁 GET: cargar eventos desde backend
   useEffect(() => {
-    const eventosGuardados = localStorage.getItem('eventos');
-    if (eventosGuardados) {
+    const fetchEventos = async () => {
       try {
-        setEventos(JSON.parse(eventosGuardados));
-      } catch (e) {
-        console.error("Error parsing eventos from localStorage", e);
-        setEventos([]);
+        const res = await fetch(\`\${API_URL}/api/eventos\`, {
+          headers: { Authorization: \`Bearer \${token}\` }
+        });
+        const data = await res.json();
+        setEventos(data);
+      } catch (err) {
+        console.error(err);
+        setError("No se pudieron cargar los eventos");
       }
-    }
+    };
+    fetchEventos();
   }, []);
 
-  // Guardar eventos en localStorage cuando cambian
-  useEffect(() => {
-    localStorage.setItem('eventos', JSON.stringify(eventos));
-  }, [eventos]);
-
-  // Notificaciones de eventos próximos
+  // ⏰ Notificaciones de eventos próximos
   useEffect(() => {
     const interval = setInterval(() => {
       const ahora = new Date();
       eventos.forEach(evento => {
-        const tiempoEvento = new Date(`${evento.fecha}T${evento.hora}`);
+        const tiempoEvento = new Date(\`\${evento.fecha}T\${evento.hora}\`);
         const diferencia = tiempoEvento - ahora;
-        
-        if (diferencia > 0 && diferencia <= 600000) { // 10 minutos antes
-          new Notification('⏰ Evento próximo', {
-            body: `${evento.titulo} comienza en 10 minutos`,
-            icon: '/favicon.ico'
+        if (diferencia > 0 && diferencia <= 600000) {
+          new Notification("⏰ Evento próximo", {
+            body: \`\${evento.titulo} comienza en 10 minutos\`,
+            icon: "/favicon.ico"
           });
         }
       });
-    }, 60000); // Verificar cada minuto
-
+    }, 60000);
     return () => clearInterval(interval);
   }, [eventos]);
-
-  // Función para simular el envío de invitaciones
-  const enviarInvitaciones = (evento, nuevosParticipantes) => {
-    // En una aplicación real, aquí se haría una llamada al backend
-    // para enviar correos electrónicos a los participantes.
-    // Por ahora, solo mostramos un mensaje en consola.
-    console.log(`Simulando envío de invitaciones para el evento: ${evento.titulo}`);
-    nuevosParticipantes.forEach(participante => {
-      console.log(`  - Invitación enviada a: ${participante.email}`);
-      // Aquí se podría usar una API de correo como Nodemailer, SendGrid, etc.
-    });
-    
-    // Para propósitos de demostración, mostramos un mensaje de éxito
-    setExito(`✅ Invitaciones enviadas a ${nuevosParticipantes.length} participante(s).`);
-    setTimeout(() => setExito(''), 3000);
-  };
-
-  const crearEvento = (e) => {
-    e.preventDefault();
-    
-    // Validaciones básicas
-    if (!titulo.trim()) {
-      setError('El título es obligatorio');
-      return;
-    }
-    if (!fecha) {
-      setError('La fecha es obligatoria');
-      return;
-    }
-    if (!hora) {
-      setError('La hora es obligatoria');
-      return;
-    }
-
-    // Parsear participantes del input (correos separados por coma o punto y coma)
-    let participantesArray = [];
-    if (participantesInput.trim()) {
-      participantesArray = participantesInput
-        .split(/[,;]/) // Separar por coma o punto y coma
-        .map(email => email.trim())
-        .filter(email => email && /\S+@\S+\.\S+/.test(email)) // Validar formato de email básico
-        .map(email => ({ email: email.toLowerCase() }));
-    }
-
-    const nuevoEvento = {
-      id: eventoEditando ? eventoEditando.id : Date.now(),
-      titulo,
-      fecha,
-      hora,
-      tipo,
-      participantes: participantesArray
-    };
-
-    if (eventoEditando) {
-      // Actualizar evento existente
-      setEventos(eventos.map(e => e.id === eventoEditando.id ? nuevoEvento : e));
-      setExito('✅ Evento actualizado exitosamente.');
-      
-      // Comparar participantes anteriores y nuevos para enviar invitaciones solo a los nuevos
-      const participantesAnteriores = eventoEditando.participantes || [];
-      const nuevosParticipantes = participantesArray.filter(
-        np => !participantesAnteriores.some(op => op.email === np.email)
-      );
-      
-      if (nuevosParticipantes.length > 0) {
-        enviarInvitaciones(nuevoEvento, nuevosParticipantes);
-      }
-    } else {
-      // Crear nuevo evento
-      setEventos([...eventos, nuevoEvento]);
-      setExito('✅ Evento creado exitosamente.');
-      
-      // Enviar invitaciones a todos los participantes
-      if (participantesArray.length > 0) {
-        enviarInvitaciones(nuevoEvento, participantesArray);
-      }
-    }
-
-    setTimeout(() => setExito(''), 3000);
-    limpiarFormulario();
-    setMostrarFormulario(false);
-  };
-
-  const eliminarEvento = (id) => {
-    setEventos(eventos.filter(e => e.id !== id));
-  };
-
-  const editarEvento = (evento) => {
-    setEventoEditando(evento);
-    setTitulo(evento.titulo);
-    setFecha(evento.fecha);
-    setHora(evento.hora);
-    setTipo(evento.tipo);
-    // Convertir array de participantes de vuelta a string para el input
-    setParticipantesInput(evento.participantes ? evento.participantes.map(p => p.email).join(', ') : '');
-    setMostrarFormulario(true);
-  };
 
   const limpiarFormulario = () => {
     setTitulo('');
@@ -183,64 +76,116 @@ const Eventos = () => {
     setError('');
   };
 
-  // Función para compartir evento por correo
+  // ✅ POST y PUT: crear o actualizar evento
+  const crearEvento = async (e) => {
+    e.preventDefault();
+    if (!titulo.trim() || !fecha || !hora) return setError('Faltan campos obligatorios');
+
+    const participantesArray = participantesInput
+      .split(/[,;]/)
+      .map(email => email.trim())
+      .filter(email => email && /\S+@\S+\.\S+/.test(email))
+      .map(email => ({ email: email.toLowerCase() }));
+
+    const eventoData = {
+      titulo, fecha, hora, tipo, participantes: participantesArray
+    };
+
+    try {
+      let res, mensaje;
+      if (eventoEditando) {
+        res = await fetch(\`\${API_URL}/api/eventos/\${eventoEditando._id}\`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: \`Bearer \${token}\`
+          },
+          body: JSON.stringify(eventoData)
+        });
+        mensaje = "Evento actualizado correctamente.";
+      } else {
+        res = await fetch(\`\${API_URL}/api/eventos\`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: \`Bearer \${token}\`
+          },
+          body: JSON.stringify(eventoData)
+        });
+        mensaje = "Evento creado correctamente.";
+      }
+
+      if (!res.ok) throw new Error("Error en la solicitud");
+      const data = await res.json();
+
+      if (eventoEditando) {
+        setEventos(prev => prev.map(e => e._id === eventoEditando._id ? data : e));
+      } else {
+        setEventos(prev => [...prev, data]);
+      }
+
+      setExito("✅ " + mensaje);
+      limpiarFormulario();
+      setMostrarFormulario(false);
+      setTimeout(() => setExito(""), 3000);
+    } catch (err) {
+      console.error(err);
+      setError("❌ Error al guardar el evento");
+    }
+  };
+
+  // 🗑 DELETE: eliminar evento
+  const eliminarEvento = async (id) => {
+    try {
+      const res = await fetch(\`\${API_URL}/api/eventos/\${id}\`, {
+        method: "DELETE",
+        headers: { Authorization: \`Bearer \${token}\` }
+      });
+      if (!res.ok) throw new Error();
+      setEventos(prev => prev.filter(e => e._id !== id));
+    } catch (err) {
+      console.error(err);
+      setError("No se pudo eliminar el evento");
+    }
+  };
+
+  const editarEvento = (evento) => {
+    setEventoEditando(evento);
+    setTitulo(evento.titulo);
+    setFecha(evento.fecha);
+    setHora(evento.hora);
+    setTipo(evento.tipo);
+    setParticipantesInput(evento.participantes?.map(p => p.email).join(', ') || '');
+    setMostrarFormulario(true);
+  };
+
   const compartirEventoPorCorreo = (evento) => {
-    const asunto = encodeURIComponent(`Invitación: ${evento.titulo}`);
-    
-    let cuerpo = `Hola,\n\nHas sido invitado al siguiente evento:\n\n`;
-    cuerpo += `Título: ${evento.titulo}\n`;
-    cuerpo += `Fecha: ${evento.fecha}\n`;
-    cuerpo += `Hora: ${evento.hora}\n`;
-    cuerpo += `Tipo: ${evento.tipo}\n`;
-    
-    if (evento.participantes && evento.participantes.length > 0) {
-      const listaParticipantes = evento.participantes.map(p => p.email).join(', ');
-      cuerpo += `Participantes: ${listaParticipantes}\n`;
+    const asunto = encodeURIComponent(\`Invitación: \${evento.titulo}\`);
+    let cuerpo = \`Hola,\n\nHas sido invitado al siguiente evento:\n\n\`;
+    cuerpo += \`Título: \${evento.titulo}\nFecha: \${evento.fecha}\nHora: \${evento.hora}\nTipo: \${evento.tipo}\n\`;
+    if (evento.participantes?.length) {
+      cuerpo += \`Participantes: \${evento.participantes.map(p => p.email).join(', ')}\n\`;
     }
-    
     cuerpo = encodeURIComponent(cuerpo);
-    window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
+    window.location.href = \`mailto:?subject=\${asunto}&body=\${cuerpo}\`;
   };
 
-  // Función para compartir evento por WhatsApp
   const compartirEventoPorWhatsApp = (evento) => {
-    let texto = `*Invitación: ${evento.titulo}*\n\n`;
-    texto += `Fecha: ${evento.fecha}\n`;
-    texto += `Hora: ${evento.hora}\n`;
-    texto += `Tipo: ${evento.tipo}\n`;
-    
-    if (evento.participantes && evento.participantes.length > 0) {
-      const listaParticipantes = evento.participantes.map(p => p.email).join(', ');
-      texto += `Participantes: ${listaParticipantes}\n`;
+    let texto = \`*Invitación: \${evento.titulo}*\n\nFecha: \${evento.fecha}\nHora: \${evento.hora}\nTipo: \${evento.tipo}\n\`;
+    if (evento.participantes?.length) {
+      texto += \`Participantes: \${evento.participantes.map(p => p.email).join(', ')}\n\`;
     }
-    
     const textoCodificado = encodeURIComponent(texto);
-    window.open(`https://wa.me/?text=${textoCodificado}`, '_blank');
+    window.open(\`https://wa.me/?text=\${textoCodificado}\`, '_blank');
   };
 
-  // Filtrar eventos según el tipo seleccionado
-  const eventosFiltrados = filtroTipo === 'todos' 
-    ? eventos 
-    : eventos.filter(e => e.tipo === filtroTipo);
+  // 🔍 Filtros y ordenamiento
+  const eventosFiltrados = filtroTipo === 'todos' ? eventos : eventos.filter(e => e.tipo === filtroTipo);
+  const eventosOrdenados = [...eventosFiltrados].sort((a, b) => new Date(\`\${a.fecha}T\${a.hora}\`) - new Date(\`\${b.fecha}T\${b.hora}\`));
+  const eventosDelDia = eventosOrdenados.filter(e => e.fecha === fechaSeleccionada.toISOString().split('T')[0]);
+  const eventosHoy = eventosOrdenados.filter(e => e.fecha === new Date().toISOString().split('T')[0]);
 
-  // Ordenar eventos por fecha y hora
-  const eventosOrdenados = [...eventosFiltrados].sort((a, b) => {
-    const fechaA = new Date(`${a.fecha}T${a.hora}`);
-    const fechaB = new Date(`${b.fecha}T${b.hora}`);
-    return fechaA - fechaB;
-  });
-
-  // Obtener eventos del día seleccionado
-  const eventosDelDia = eventosOrdenados.filter(e => 
-    e.fecha === fechaSeleccionada.toISOString().split('T')[0]
-  );
-
-  // Obtener eventos de hoy
-  const eventosHoy = eventosOrdenados.filter(e => 
-    e.fecha === new Date().toISOString().split('T')[0]
-  );
-
-  // Iconos y colores para tipos de eventos
+  // Iconos y colores
   const iconosTipo = {
     reunion: <FaUsers className="text-blue-400" />,
     cita: <FaClock className="text-green-400" />,
@@ -254,6 +199,7 @@ const Eventos = () => {
     junta: 'border-l-4 border-purple-500 bg-purple-500/10',
     videollamada: 'border-l-4 border-red-500 bg-red-500/10'
   };
+
 
   return (
     <div className="bg-gray-800 rounded-xl p-6 h-full">
