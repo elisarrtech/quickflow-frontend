@@ -1,6 +1,6 @@
 // src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; // Importa Navigate
 import DashboardLayout from './components/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Tareas from './pages/Tareas';
@@ -13,6 +13,10 @@ function App() {
     <Router>
       <DashboardLayout>
         <Routes>
+          {/* Redirige la raíz al dashboard o muestra el Dashboard directamente */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Alternativa: <Route path="/" element={<Dashboard />} /> */}
+          
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tareas" element={<Tareas />} />
           <Route path="/eventos" element={<Eventos />} />
