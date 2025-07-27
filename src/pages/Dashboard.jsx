@@ -17,7 +17,7 @@ const Dashboard = () => {
       
       try {
         // Obtener tareas
-        const resTareas = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks`, {
+        const resTareas = await fetch(`${import.meta.env.VITE_API_URL}/tasks`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
