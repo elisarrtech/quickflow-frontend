@@ -24,19 +24,19 @@ const Estadisticas = () => {
       }
     };
 
-    const fetchEventos = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/eventos`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        const data = await res.json();
-        setEventos(data);
-      } catch (error) {
-        console.error("Error al cargar eventos:", error);
+   const fetchEventos = async () => {
+  try {
+    const res = await fetch(`${API_URL}/eventos`, {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-    };
+    });
+    const data = await res.json();
+    setEventos(data);
+  } catch (error) {
+    console.error("Error al cargar eventos:", error);
+  }
+};
 
     fetchTareas();
     fetchEventos();
