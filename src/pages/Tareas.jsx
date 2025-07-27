@@ -492,16 +492,15 @@ const Tareas = () => {
                       )}
                     </Draggable>
                   ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          ))}
-        </div>
-      </DragDropContext>
-    </div>
-  );
-};
+                   {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+    ))}
+  </div>
+</DragDropContext>
+</div> {/* <- Cierre del contenedor principal */}
+); // <- Cierre del return
+}; // <- Cierre de la función Tareas
 
 export default Tareas;
-
