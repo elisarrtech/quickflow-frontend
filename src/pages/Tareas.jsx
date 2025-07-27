@@ -52,7 +52,6 @@ const Tareas = () => {
   const [asignadoAFiltro, setAsignadoAFiltro] = useState('');
   const [asignadoA, setAsignadoA] = useState('');
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
-
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
@@ -94,34 +93,28 @@ const Tareas = () => {
   const onDragEnd = async (result) => {
     // Corrección: Agregar await y manejo de errores
     if (!result.destination) return;
-    
     const { source, destination } = result;
-    
     // Si no hay cambio real, no hacer nada
     if (source.droppableId === destination.droppableId && source.index === destination.index) {
       return;
     }
-
     const items = Array.from(tareas);
     const [movedItem] = items.splice(source.index, 1);
-    
     // Actualizar estado local inmediatamente para una mejor UX
     const updatedItem = { ...movedItem, estado: destination.droppableId };
     items.splice(destination.index, 0, updatedItem);
     setTareas(items);
-
     // Actualizar en el backend
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(API + '/api/tasks/' + movedItem._id, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json', 
-          Authorization: 'Bearer ' + token 
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
         },
         body: JSON.stringify({ estado: destination.droppableId }),
       });
-
       if (!response.ok) {
         // Si falla, revertir el cambio local
         const originalItems = Array.from(tareas);
@@ -137,7 +130,6 @@ const Tareas = () => {
   };
 
   const tareasPorEstado = (estado) => tareas.filter(t => t.estado === estado);
-
   const colorCategoria = (cat) => coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
 
   const filtrarTareas = () => {
@@ -191,7 +183,6 @@ const Tareas = () => {
     formData.append('estado', 'pendiente');
     formData.append('subtareas', JSON.stringify(subtareas));
     if (archivo) formData.append('archivo', archivo);
-
     try {
       const res = await fetch(API + '/api/tasks', {
         method: 'POST',
@@ -249,58 +240,60 @@ const Tareas = () => {
   const compartirPorCorreo = (tarea) => {
     const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
     const cuerpo = encodeURIComponent(
-      `Hola,\n\nTe comparto la siguiente tarea:\n\n` +
-      `Título: ${tarea.titulo}\n` +
-      `Descripción: ${tarea.descripcion || 'Sin descripción'}\n` +
-      `Fecha: ${tarea.fecha || 'Sin fecha'}\n` +
-      `Hora: ${tarea.hora || 'Sin hora'}\n` +
-      `Categoría: ${tarea.categoria || 'Sin categoría'}\n` +
-      `Asignado a: ${tarea.asignadoA || 'No asignado'}\n` +
-      `${tarea.enlace ? `\nEnlace relacionado: ${tarea.enlace}\n` : ''}` +
-      `${tarea.nota ? `\nNota: ${tarea.nota}\n` : ''}`
+      `Hola,
+Te comparto la siguiente tarea:
+` +
+      `Título: ${tarea.titulo}
+` +
+      `Descripción: ${tarea.descripcion || 'Sin descripción'}
+` +
+      `Fecha: ${tarea.fecha || 'Sin fecha'}
+` +
+      `Hora: ${tarea.hora || 'Sin hora'}
+` +
+      `Categoría: ${tarea.categoria || 'Sin categoría'}
+` +
+      `Asignado a: ${tarea.asignadoA || 'No asignado'}
+` +
+      `${tarea.enlace ? `
+Enlace relacionado: ${tarea.enlace}
+` : ''}` +
+      `${tarea.nota ? `
+Nota: ${tarea.nota}
+` : ''}`
     );
-    
     window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
   };
 
   // Función para compartir por WhatsApp
   const compartirPorWhatsApp = (tarea) => {
     const texto = encodeURIComponent(
-      `*Tarea: ${tarea.titulo}*\n\n` +
-      `Descripción: ${tarea.descripcion || 'Sin descripción'}\n` +
-      `Fecha: ${tarea.fecha || 'Sin fecha'}\n` +
-      `Hora: ${tarea.hora || 'Sin hora'}\n` +
-      `Categoría: ${tarea.categoria || 'Sin categoría'}\n` +
-      `Asignado a: ${tarea.asignadoA || 'No asignado'}\n` +
-      `${tarea.enlace ? `\nEnlace: ${tarea.enlace}\n` : ''}` +
-      `${tarea.nota ? `\nNota: ${tarea.nota}\n` : ''}`
+      `*Tarea: ${tarea.titulo}*
+` +
+      `Descripción: ${tarea.descripcion || 'Sin descripción'}
+` +
+      `Fecha: ${tarea.fecha || 'Sin fecha'}
+` +
+      `Hora: ${tarea.hora || 'Sin hora'}
+` +
+      `Categoría: ${tarea.categoria || 'Sin categoría'}
+` +
+      `Asignado a: ${tarea.asignadoA || 'No asignado'}
+` +
+      `${tarea.enlace ? `
+Enlace: ${tarea.enlace}
+` : ''}` +
+      `${tarea.nota ? `
+Nota: ${tarea.nota}
+` : ''}`
     );
-    
     window.open(`https://wa.me/?text=${texto}`, '_blank');
   };
 
   // Obtener lista única de personas asignadas para el filtro
   const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
 
-   return (
-    <div className="text-white p-6 max-w-5xl mx-auto">
-      <input className="input w-full mb-2 bg-gray-800 text-white" placeholder="Asignar a (nombre o email)" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} />
-
-      {tareas.map(t => (
-        <div key={t._id} className={`p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
-          <h3 className="text-lg font-bold flex items-center gap-2">
-            {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
-          </h3>
-          <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
-          <div className="text-sm flex flex-wrap gap-2 mt-2">
-            {t.asignadoA && <span className="bg-indigo-700 px-2 py-0.5 rounded flex items-center gap-1"><FaUser /> {t.asignadoA}</span>}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
+  return (
     <div className="text-white p-6 max-w-5xl mx-auto">
       {/* Mostrar mensajes de éxito y error */}
       {exito && <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{exito}</div>}
@@ -325,7 +318,7 @@ const Tareas = () => {
         <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white" />
       </div>
       <button onClick={limpiarFiltros} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded mb-4">Limpiar filtros</button>
-      
+
       {/* Formulario */}
       <div className="bg-gray-900 p-4 rounded mb-8">
         <h2 className="text-xl font-bold mb-4">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
@@ -376,7 +369,6 @@ const Tareas = () => {
                 >
                   <FaShareAlt />
                 </button>
-                
                 {compartirMenuAbierto === t._id && (
                   <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
                     <button
@@ -400,7 +392,6 @@ const Tareas = () => {
                   </div>
                 )}
               </div>
-              
               <button onClick={() => {
                 setModoEdicion(t._id);
                 setTitulo(t.titulo);
@@ -464,9 +455,9 @@ const Tareas = () => {
           {['pendiente', 'completada'].map((estado) => ( // Solo pendiente y completada
             <Droppable droppableId={estado} key={estado}>
               {(provided, snapshot) => (
-                <div 
-                  ref={provided.innerRef} 
-                  {...provided.droppableProps} 
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
                   className={`bg-gray-800 rounded-lg p-4 shadow min-h-[200px] ${snapshot.isDraggingOver ? 'bg-gray-700' : ''}`}
                 >
                   <h3 className="text-lg font-semibold capitalize text-white mb-2">{estado}</h3>
@@ -492,15 +483,15 @@ const Tareas = () => {
                       )}
                     </Draggable>
                   ))}
-                   {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-    ))}
-  </div>
-</DragDropContext>
-</div> {/* <- Cierre del contenedor principal */}
-); // <- Cierre del return
-}; // <- Cierre de la función Tareas
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          ))}
+        </div>
+      </DragDropContext>
+    </div>
+  );
+};
 
 export default Tareas;
