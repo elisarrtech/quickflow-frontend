@@ -1,121 +1,73 @@
-// src/pages/Eventos.jsx
-import React, { useState, useEffect } from "react";
-import {
-  FaCalendarAlt, FaClock, FaUsers, FaVideo, FaTrash, FaPlus,
-  FaCalendar, FaBell, FaShareAlt, FaEnvelope, FaWhatsapp, FaTimes, FaEdit
-} from "react-icons/fa";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
+import React, { useEffect, useState } from "react";
+import { FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const Eventos = () => {
+  const navigate = useNavigate();
   const [eventos, setEventos] = useState([]);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [titulo, setTitulo] = useState("");
-  const [fecha, setFecha] = useState("");
-  const [hora, setHora] = useState("");
-  const [tipo, setTipo] = useState("reunion");
-  const [participantesInput, setParticipantesInput] = useState("");
-  const [eventoEditando, setEventoEditando] = useState(null);
-  const [error, setError] = useState("");
-  const [exito, setExito] = useState("");
+  const [nuevoEvento, setNuevoEvento] = useState({
+    titulo: "",
+    descripcion: "",
+    fecha: "",
+    hora: "",
+    tipo: ""
+  });
+  const [filtroFecha, setFiltroFecha] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState('');
 
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    Notification.requestPermission();
-  }, []);
+  const fetchEventos = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/eventos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setEventos(data.eventos || []);
+    } catch (error) {
+      console.error("Error al obtener eventos:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchEventos = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/eventos`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setEventos(data);
-      } catch (err) {
-        setError("Error al cargar eventos");
-      }
-    };
     fetchEventos();
   }, []);
 
-  const limpiarFormulario = () => {
-    setTitulo("");
-    setFecha("");
-    setHora("");
-    setTipo("reunion");
-    setParticipantesInput("");
-    setEventoEditando(null);
-    setError("");
+  const handleInputChange = (e) => {
+    setNuevoEvento({ ...nuevoEvento, [e.target.name]: e.target.value });
   };
 
-  const crearEvento = async (e) => {
-    e.preventDefault();
-    if (!titulo || !fecha || !hora) return setError("Faltan campos obligatorios");
-
-    const participantes = participantesInput.split(/[,;]/).map(email => ({ email: email.trim() }));
-    const nuevoEvento = { titulo, fecha, hora, tipo, participantes };
-
+  const agregarEvento = async () => {
     try {
-      const url = eventoEditando
-        ? `${API_URL}/api/eventos/${eventoEditando._id}`
-        : `${API_URL}/api/eventos`;
-      const method = eventoEditando ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
+      const res = await fetch(`${API_URL}/api/eventos`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(nuevoEvento)
       });
-
-      if (!res.ok) throw new Error("Error al guardar");
-
       const data = await res.json();
-      if (eventoEditando) {
-        setEventos(eventos.map(e => (e._id === data._id ? data : e)));
+      if (res.ok) {
+        setNuevoEvento({ titulo: "", descripcion: "", fecha: "", hora: "", tipo: "" });
+        fetchEventos();
       } else {
-        setEventos([...eventos, data]);
+        console.error("Error:", data);
       }
-
-      setExito("Evento guardado");
-      limpiarFormulario();
-      setMostrarFormulario(false);
-      setTimeout(() => setExito(""), 3000);
-    } catch (err) {
-      setError("No se pudo guardar");
+    } catch (error) {
+      console.error("Error al agregar evento:", error);
     }
   };
 
-  const eliminarEvento = async (id) => {
-    try {
-      const res = await fetch(`${API_URL}/api/eventos/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error();
-      setEventos(eventos.filter(e => e._id !== id));
-    } catch {
-      setError("No se pudo eliminar");
-    }
-  };
+  const eventosFiltrados = eventos.filter(
+    (ev) =>
+      (!filtroFecha || ev.fecha.startsWith(filtroFecha)) &&
+      (!filtroTipo || ev.tipo === filtroTipo)
+  );
 
-  const editarEvento = (evento) => {
-    setEventoEditando(evento);
-    setTitulo(evento.titulo);
-    setFecha(evento.fecha);
-    setHora(evento.hora);
-    setTipo(evento.tipo);
-    setParticipantesInput(evento.participantes?.map(p => p.email).join(", ") || "");
-    setMostrarFormulario(true);
-  };
-
-  return (
+ return (
     <div className="bg-gray-800 rounded-xl p-6 h-full">
       {/* Mensajes de éxito y error */}
       {exito && <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{exito}</div>}
