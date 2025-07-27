@@ -49,9 +49,9 @@ const Tareas = () => {
   const [fechaFin, setFechaFin] = useState('');
   const [menuAbierto, setMenuAbierto] = useState(null);
   const [categoriasExistentes, setCategoriasExistentes] = useState([]);
-  const [asignadoAFiltro, setAsignadoAFiltro] = useState(''); // Nuevo estado para filtro de asignación
-  const [asignadoA, setAsignadoA] = useState(''); // Estado para asignación en formulario
-  const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null); // Para controlar menús de compartir
+  const [asignadoAFiltro, setAsignadoAFiltro] = useState('');
+  const [asignadoA, setAsignadoA] = useState('');
+  const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -282,7 +282,25 @@ const Tareas = () => {
   // Obtener lista única de personas asignadas para el filtro
   const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
 
-  return (
+   return (
+    <div className="text-white p-6 max-w-5xl mx-auto">
+      <input className="input w-full mb-2 bg-gray-800 text-white" placeholder="Asignar a (nombre o email)" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} />
+
+      {tareas.map(t => (
+        <div key={t._id} className={`p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
+          </h3>
+          <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
+          <div className="text-sm flex flex-wrap gap-2 mt-2">
+            {t.asignadoA && <span className="bg-indigo-700 px-2 py-0.5 rounded flex items-center gap-1"><FaUser /> {t.asignadoA}</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
     <div className="text-white p-6 max-w-5xl mx-auto">
       {/* Mostrar mensajes de éxito y error */}
       {exito && <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{exito}</div>}
