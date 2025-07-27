@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaTasks, FaUserCircle, FaPlusCircle, FaCalendarAlt, FaChartBar } from 'react-icons/fa';
@@ -14,13 +13,14 @@ const Dashboard = () => {
   useEffect(() => {
     const obtenerStats = async () => {
       const token = localStorage.getItem('token');
-      
+      const API = import.meta.env.VITE_API_URL;
+
       try {
-        // Obtener tareas
-        const resTareas = await fetch(`${import.meta.env.VITE_API_URL}/tasks`, {
+        // ✅ Obtener tareas desde backend real
+        const resTareas = await fetch(`${API}/tasks`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
+
         if (resTareas.ok) {
           const tareas = await resTareas.json();
           const completadas = tareas.filter(t => t.estado === 'completada').length;
@@ -30,16 +30,18 @@ const Dashboard = () => {
           const categorias = {};
           tareas.forEach(t => {
             const cat = t.categoria || 'Sin categoría';
-            if (!categorias[cat]) categorias[cat] = 0;
-            categorias[cat] += 1;
+            categorias[cat] = (categorias[cat] || 0) + 1;
           });
           setCategoriaStats(categorias);
         }
 
-        // Obtener eventos
-        const eventosGuardados = localStorage.getItem('eventos');
-        if (eventosGuardados) {
-          const eventos = JSON.parse(eventosGuardados);
+        // ✅ Obtener eventos del backend real
+        const resEventos = await fetch(`${API}/api/eventos`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (resEventos.ok) {
+          const eventos = await resEventos.json();
           const hoy = new Date().toISOString().split('T')[0];
           const eventosHoyCount = eventos.filter(e => e.fecha === hoy).length;
           setEventosHoy(eventosHoyCount);
@@ -48,7 +50,7 @@ const Dashboard = () => {
         console.error('Error al obtener estadísticas:', error);
       }
     };
-    
+
     obtenerStats();
   }, []);
 
