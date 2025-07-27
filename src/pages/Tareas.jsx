@@ -18,7 +18,7 @@ import {
   FaWhatsapp
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '../components/DashboardLayout';
+//import DashboardLayout from '../components/DashboardLayout';//
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const coloresPorCategoria = {
@@ -284,7 +284,6 @@ const Tareas = () => {
   const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
 
   return (
-    <DashboardLayout>
       {exito && <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{exito}</div>}
       {error && <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{error}</div>}
 
@@ -530,7 +529,6 @@ const Tareas = () => {
           </div>
         </DragDropContext>
       </div>
-    </DashboardLayout>
   );
 };
 
