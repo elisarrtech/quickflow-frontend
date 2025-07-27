@@ -24,9 +24,9 @@ const Estadisticas = () => {
       }
     };
 
-   const fetchEventos = async () => {
-  try {
-    const res = await fetch(`${API_URL}/eventos`, {
+      const fetchEventos = async () => {
+      try {
+      const res = await fetch(`${API_URL}/eventos`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -37,6 +37,7 @@ const Estadisticas = () => {
     console.error("Error al cargar eventos:", error);
   }
 };
+
 
     fetchTareas();
     fetchEventos();
