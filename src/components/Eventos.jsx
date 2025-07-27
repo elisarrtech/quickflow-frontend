@@ -1,73 +1,261 @@
-import React, { useEffect, useState } from "react";
-import { FaArrowLeft } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-
-const API_URL = import.meta.env.VITE_API_URL;
+// src/components/Eventos.jsx
+import React, { useState, useEffect } from 'react';
+import { 
+  FaCalendarAlt, 
+  FaClock, 
+  FaUsers, 
+  FaVideo, 
+  FaTrash, 
+  FaPlus, 
+  FaCalendar, 
+  FaBell,
+  FaShareAlt,
+  FaEnvelope,
+  FaWhatsapp,
+  FaTimes,
+  FaEdit
+} from 'react-icons/fa';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 
 const Eventos = () => {
-  const navigate = useNavigate();
   const [eventos, setEventos] = useState([]);
-  const [nuevoEvento, setNuevoEvento] = useState({
-    titulo: "",
-    descripcion: "",
-    fecha: "",
-    hora: "",
-    tipo: ""
-  });
-  const [filtroFecha, setFiltroFecha] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState('');
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [titulo, setTitulo] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [hora, setHora] = useState('');
+  const [tipo, setTipo] = useState('reunion');
+  const [participantesInput, setParticipantesInput] = useState(''); // String para entrada de correos
+  const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
+  const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
+  const [eventoEditando, setEventoEditando] = useState(null); // Para edición
+  const [error, setError] = useState('');
+  const [exito, setExito] = useState('');
 
-  const token = localStorage.getItem("token");
-
-  const fetchEventos = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/eventos`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setEventos(data.eventos || []);
-    } catch (error) {
-      console.error("Error al obtener eventos:", error);
-    }
-  };
-
+  // Solicitar permisos para notificaciones
   useEffect(() => {
-    fetchEventos();
+    Notification.requestPermission();
   }, []);
 
-  const handleInputChange = (e) => {
-    setNuevoEvento({ ...nuevoEvento, [e.target.name]: e.target.value });
-  };
-
-  const agregarEvento = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/eventos`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(nuevoEvento)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setNuevoEvento({ titulo: "", descripcion: "", fecha: "", hora: "", tipo: "" });
-        fetchEventos();
-      } else {
-        console.error("Error:", data);
+  // Cargar eventos del localStorage
+  useEffect(() => {
+    const eventosGuardados = localStorage.getItem('eventos');
+    if (eventosGuardados) {
+      try {
+        setEventos(JSON.parse(eventosGuardados));
+      } catch (e) {
+        console.error("Error parsing eventos from localStorage", e);
+        setEventos([]);
       }
-    } catch (error) {
-      console.error("Error al agregar evento:", error);
     }
+  }, []);
+
+  // Guardar eventos en localStorage cuando cambian
+  useEffect(() => {
+    localStorage.setItem('eventos', JSON.stringify(eventos));
+  }, [eventos]);
+
+  // Notificaciones de eventos próximos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const ahora = new Date();
+      eventos.forEach(evento => {
+        const tiempoEvento = new Date(`${evento.fecha}T${evento.hora}`);
+        const diferencia = tiempoEvento - ahora;
+        
+        if (diferencia > 0 && diferencia <= 600000) { // 10 minutos antes
+          new Notification('⏰ Evento próximo', {
+            body: `${evento.titulo} comienza en 10 minutos`,
+            icon: '/favicon.ico'
+          });
+        }
+      });
+    }, 60000); // Verificar cada minuto
+
+    return () => clearInterval(interval);
+  }, [eventos]);
+
+  // Función para simular el envío de invitaciones
+  const enviarInvitaciones = (evento, nuevosParticipantes) => {
+    // En una aplicación real, aquí se haría una llamada al backend
+    // para enviar correos electrónicos a los participantes.
+    // Por ahora, solo mostramos un mensaje en consola.
+    console.log(`Simulando envío de invitaciones para el evento: ${evento.titulo}`);
+    nuevosParticipantes.forEach(participante => {
+      console.log(`  - Invitación enviada a: ${participante.email}`);
+      // Aquí se podría usar una API de correo como Nodemailer, SendGrid, etc.
+    });
+    
+    // Para propósitos de demostración, mostramos un mensaje de éxito
+    setExito(`✅ Invitaciones enviadas a ${nuevosParticipantes.length} participante(s).`);
+    setTimeout(() => setExito(''), 3000);
   };
 
-  const eventosFiltrados = eventos.filter(
-    (ev) =>
-      (!filtroFecha || ev.fecha.startsWith(filtroFecha)) &&
-      (!filtroTipo || ev.tipo === filtroTipo)
+  const crearEvento = (e) => {
+    e.preventDefault();
+    
+    // Validaciones básicas
+    if (!titulo.trim()) {
+      setError('El título es obligatorio');
+      return;
+    }
+    if (!fecha) {
+      setError('La fecha es obligatoria');
+      return;
+    }
+    if (!hora) {
+      setError('La hora es obligatoria');
+      return;
+    }
+
+    // Parsear participantes del input (correos separados por coma o punto y coma)
+    let participantesArray = [];
+    if (participantesInput.trim()) {
+      participantesArray = participantesInput
+        .split(/[,;]/) // Separar por coma o punto y coma
+        .map(email => email.trim())
+        .filter(email => email && /\S+@\S+\.\S+/.test(email)) // Validar formato de email básico
+        .map(email => ({ email: email.toLowerCase() }));
+    }
+
+    const nuevoEvento = {
+      id: eventoEditando ? eventoEditando.id : Date.now(),
+      titulo,
+      fecha,
+      hora,
+      tipo,
+      participantes: participantesArray
+    };
+
+    if (eventoEditando) {
+      // Actualizar evento existente
+      setEventos(eventos.map(e => e.id === eventoEditando.id ? nuevoEvento : e));
+      setExito('✅ Evento actualizado exitosamente.');
+      
+      // Comparar participantes anteriores y nuevos para enviar invitaciones solo a los nuevos
+      const participantesAnteriores = eventoEditando.participantes || [];
+      const nuevosParticipantes = participantesArray.filter(
+        np => !participantesAnteriores.some(op => op.email === np.email)
+      );
+      
+      if (nuevosParticipantes.length > 0) {
+        enviarInvitaciones(nuevoEvento, nuevosParticipantes);
+      }
+    } else {
+      // Crear nuevo evento
+      setEventos([...eventos, nuevoEvento]);
+      setExito('✅ Evento creado exitosamente.');
+      
+      // Enviar invitaciones a todos los participantes
+      if (participantesArray.length > 0) {
+        enviarInvitaciones(nuevoEvento, participantesArray);
+      }
+    }
+
+    setTimeout(() => setExito(''), 3000);
+    limpiarFormulario();
+    setMostrarFormulario(false);
+  };
+
+  const eliminarEvento = (id) => {
+    setEventos(eventos.filter(e => e.id !== id));
+  };
+
+  const editarEvento = (evento) => {
+    setEventoEditando(evento);
+    setTitulo(evento.titulo);
+    setFecha(evento.fecha);
+    setHora(evento.hora);
+    setTipo(evento.tipo);
+    // Convertir array de participantes de vuelta a string para el input
+    setParticipantesInput(evento.participantes ? evento.participantes.map(p => p.email).join(', ') : '');
+    setMostrarFormulario(true);
+  };
+
+  const limpiarFormulario = () => {
+    setTitulo('');
+    setFecha('');
+    setHora('');
+    setTipo('reunion');
+    setParticipantesInput('');
+    setEventoEditando(null);
+    setError('');
+  };
+
+  // Función para compartir evento por correo
+  const compartirEventoPorCorreo = (evento) => {
+    const asunto = encodeURIComponent(`Invitación: ${evento.titulo}`);
+    
+    let cuerpo = `Hola,\n\nHas sido invitado al siguiente evento:\n\n`;
+    cuerpo += `Título: ${evento.titulo}\n`;
+    cuerpo += `Fecha: ${evento.fecha}\n`;
+    cuerpo += `Hora: ${evento.hora}\n`;
+    cuerpo += `Tipo: ${evento.tipo}\n`;
+    
+    if (evento.participantes && evento.participantes.length > 0) {
+      const listaParticipantes = evento.participantes.map(p => p.email).join(', ');
+      cuerpo += `Participantes: ${listaParticipantes}\n`;
+    }
+    
+    cuerpo = encodeURIComponent(cuerpo);
+    window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
+  };
+
+  // Función para compartir evento por WhatsApp
+  const compartirEventoPorWhatsApp = (evento) => {
+    let texto = `*Invitación: ${evento.titulo}*\n\n`;
+    texto += `Fecha: ${evento.fecha}\n`;
+    texto += `Hora: ${evento.hora}\n`;
+    texto += `Tipo: ${evento.tipo}\n`;
+    
+    if (evento.participantes && evento.participantes.length > 0) {
+      const listaParticipantes = evento.participantes.map(p => p.email).join(', ');
+      texto += `Participantes: ${listaParticipantes}\n`;
+    }
+    
+    const textoCodificado = encodeURIComponent(texto);
+    window.open(`https://wa.me/?text=${textoCodificado}`, '_blank');
+  };
+
+  // Filtrar eventos según el tipo seleccionado
+  const eventosFiltrados = filtroTipo === 'todos' 
+    ? eventos 
+    : eventos.filter(e => e.tipo === filtroTipo);
+
+  // Ordenar eventos por fecha y hora
+  const eventosOrdenados = [...eventosFiltrados].sort((a, b) => {
+    const fechaA = new Date(`${a.fecha}T${a.hora}`);
+    const fechaB = new Date(`${b.fecha}T${b.hora}`);
+    return fechaA - fechaB;
+  });
+
+  // Obtener eventos del día seleccionado
+  const eventosDelDia = eventosOrdenados.filter(e => 
+    e.fecha === fechaSeleccionada.toISOString().split('T')[0]
   );
 
- return (
+  // Obtener eventos de hoy
+  const eventosHoy = eventosOrdenados.filter(e => 
+    e.fecha === new Date().toISOString().split('T')[0]
+  );
+
+  // Iconos y colores para tipos de eventos
+  const iconosTipo = {
+    reunion: <FaUsers className="text-blue-400" />,
+    cita: <FaClock className="text-green-400" />,
+    junta: <FaUsers className="text-purple-400" />,
+    videollamada: <FaVideo className="text-red-400" />
+  };
+
+  const coloresTipo = {
+    reunion: 'border-l-4 border-blue-500 bg-blue-500/10',
+    cita: 'border-l-4 border-green-500 bg-green-500/10',
+    junta: 'border-l-4 border-purple-500 bg-purple-500/10',
+    videollamada: 'border-l-4 border-red-500 bg-red-500/10'
+  };
+
+  return (
     <div className="bg-gray-800 rounded-xl p-6 h-full">
       {/* Mensajes de éxito y error */}
       {exito && <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{exito}</div>}
