@@ -15,14 +15,17 @@ import {
   FaTimes,
   FaEdit,
   FaArrowLeft,
-  FaLink
+  FaLink,
+  FaCheck,
+  FaQuestion,
+  FaTimesCircle
 } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom'; // Para el botón de volver
+import { useNavigate } from 'react-router-dom';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 
 const Eventos = () => {
-  const navigate = useNavigate(); // Hook para navegación
+  const navigate = useNavigate();
 
   const [eventos, setEventos] = useState([]);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -30,12 +33,12 @@ const Eventos = () => {
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [tipo, setTipo] = useState('reunion');
-  const [participantesInput, setParticipantesInput] = useState(''); // String para entrada de correos
-  const [enlaceVideollamada, setEnlaceVideollamada] = useState(''); // Nuevo estado para el enlace
+  const [participantesInput, setParticipantesInput] = useState('');
+  const [enlaceVideollamada, setEnlaceVideollamada] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
-  const [eventoEditando, setEventoEditando] = useState(null); // Para edición
+  const [eventoEditando, setEventoEditando] = useState(null);
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
 
@@ -70,30 +73,25 @@ const Eventos = () => {
         const tiempoEvento = new Date(`${evento.fecha}T${evento.hora}`);
         const diferencia = tiempoEvento - ahora;
         
-        if (diferencia > 0 && diferencia <= 600000) { // 10 minutos antes
+        if (diferencia > 0 && diferencia <= 600000) {
           new Notification('⏰ Evento próximo', {
             body: `${evento.titulo} comienza en 10 minutos`,
             icon: '/favicon.ico'
           });
         }
       });
-    }, 60000); // Verificar cada minuto
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [eventos]);
 
   // Función para simular el envío de invitaciones
   const enviarInvitaciones = (evento, nuevosParticipantes) => {
-    // En una aplicación real, aquí se haría una llamada al backend
-    // para enviar correos electrónicos a los participantes.
-    // Por ahora, solo mostramos un mensaje en consola.
     console.log(`Simulando envío de invitaciones para el evento: ${evento.titulo}`);
     nuevosParticipantes.forEach(participante => {
       console.log(`  - Invitación enviada a: ${participante.email}`);
-      // Aquí se podría usar una API de correo como Nodemailer, SendGrid, etc.
     });
     
-    // Para propósitos de demostración, mostramos un mensaje de éxito
     setExito(`✅ Invitaciones enviadas a ${nuevosParticipantes.length} participante(s).`);
     setTimeout(() => setExito(''), 3000);
   };
@@ -101,7 +99,6 @@ const Eventos = () => {
   const crearEvento = (e) => {
     e.preventDefault();
     
-    // Validaciones básicas
     if (!titulo.trim()) {
       setError('El título es obligatorio');
       return;
@@ -115,14 +112,13 @@ const Eventos = () => {
       return;
     }
 
-    // Parsear participantes del input (correos separados por coma o punto y coma)
     let participantesArray = [];
     if (participantesInput.trim()) {
       participantesArray = participantesInput
-        .split(/[,;]/) // Separar por coma o punto y coma
+        .split(/[,;]/)
         .map(email => email.trim())
-        .filter(email => email && /\S+@\S+\.\S+/.test(email)) // Validar formato de email básico
-        .map(email => ({ email: email.toLowerCase() }));
+        .filter(email => email && /\S+@\S+\.\S+/.test(email))
+        .map(email => ({ email: email.toLowerCase(), confirmacion: 'pendiente' })); // Agregar estado de confirmación
     }
 
     const nuevoEvento = {
@@ -132,15 +128,13 @@ const Eventos = () => {
       hora,
       tipo,
       participantes: participantesArray,
-      enlaceVideollamada: enlaceVideollamada.trim() // Guardar el enlace
+      enlaceVideollamada: enlaceVideollamada.trim()
     };
 
     if (eventoEditando) {
-      // Actualizar evento existente
       setEventos(eventos.map(e => e.id === eventoEditando.id ? nuevoEvento : e));
       setExito('✅ Evento actualizado exitosamente.');
       
-      // Comparar participantes anteriores y nuevos para enviar invitaciones solo a los nuevos
       const participantesAnteriores = eventoEditando.participantes || [];
       const nuevosParticipantes = participantesArray.filter(
         np => !participantesAnteriores.some(op => op.email === np.email)
@@ -150,11 +144,9 @@ const Eventos = () => {
         enviarInvitaciones(nuevoEvento, nuevosParticipantes);
       }
     } else {
-      // Crear nuevo evento
       setEventos([...eventos, nuevoEvento]);
       setExito('✅ Evento creado exitosamente.');
       
-      // Enviar invitaciones a todos los participantes
       if (participantesArray.length > 0) {
         enviarInvitaciones(nuevoEvento, participantesArray);
       }
@@ -175,9 +167,8 @@ const Eventos = () => {
     setFecha(evento.fecha);
     setHora(evento.hora);
     setTipo(evento.tipo);
-    // Convertir array de participantes de vuelta a string para el input
     setParticipantesInput(evento.participantes ? evento.participantes.map(p => p.email).join(', ') : '');
-    setEnlaceVideollamada(evento.enlaceVideollamada || ''); // Cargar el enlace si existe
+    setEnlaceVideollamada(evento.enlaceVideollamada || '');
     setMostrarFormulario(true);
   };
 
@@ -187,7 +178,7 @@ const Eventos = () => {
     setHora('');
     setTipo('reunion');
     setParticipantesInput('');
-    setEnlaceVideollamada(''); // Limpiar el enlace
+    setEnlaceVideollamada('');
     setEventoEditando(null);
     setError('');
   };
@@ -235,6 +226,22 @@ const Eventos = () => {
     window.open(`https://wa.me/?text=${textoCodificado}`, '_blank');
   };
 
+  // Función para actualizar la confirmación de asistencia
+  const actualizarConfirmacion = (eventoId, email, confirmacion) => {
+    setEventos(eventos.map(evento => {
+      if (evento.id === eventoId) {
+        const participantesActualizados = evento.participantes.map(participante => {
+          if (participante.email === email) {
+            return { ...participante, confirmacion };
+          }
+          return participante;
+        });
+        return { ...evento, participantes: participantesActualizados };
+      }
+      return evento;
+    }));
+  };
+
   // Filtrar eventos según el tipo seleccionado
   const eventosFiltrados = filtroTipo === 'todos' 
     ? eventos 
@@ -272,6 +279,13 @@ const Eventos = () => {
     videollamada: 'border-l-4 border-red-500 bg-red-500/10'
   };
 
+  // Iconos para confirmación
+  const iconosConfirmacion = {
+    aceptado: <FaCheck className="text-green-500" />,
+    pendiente: <FaQuestion className="text-yellow-500" />,
+    rechazado: <FaTimesCircle className="text-red-500" />
+  };
+
   return (
     <div className="bg-gray-800 rounded-xl p-6 h-full">
       {/* Mensajes de éxito y error */}
@@ -280,7 +294,6 @@ const Eventos = () => {
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div className="flex items-center gap-4">
-          {/* Botón de volver al dashboard */}
           <button 
             onClick={() => navigate('/dashboard')}
             className="flex items-center gap-2 text-gray-300 hover:text-white"
@@ -374,7 +387,6 @@ const Eventos = () => {
               </select>
             </div>
             
-            {/* Campo para enlace de videollamada */}
             {tipo === 'videollamada' && (
               <div>
                 <label className="block text-gray-300 mb-2">Enlace de Videollamada</label>
@@ -530,7 +542,6 @@ const Eventos = () => {
                           )}
                         </div>
                         
-                        {/* Mostrar enlace de videollamada si es relevante */}
                         {evento.tipo === 'videollamada' && evento.enlaceVideollamada && (
                           <div className="mt-2">
                             <a 
@@ -547,14 +558,40 @@ const Eventos = () => {
                         {evento.participantes && evento.participantes.length > 0 && (
                           <div className="mt-3">
                             <p className="text-sm text-gray-400">Participantes:</p>
-                            <div className="flex flex-wrap gap-2 mt-1">
+                            <div className="space-y-2 mt-1">
                               {evento.participantes.map((p, index) => (
-                                <span 
-                                  key={index} 
-                                  className="text-xs bg-indigo-900/50 text-indigo-200 px-2 py-1 rounded"
-                                >
-                                  {p.email}
-                                </span>
+                                <div key={index} className="flex items-center justify-between bg-gray-700/50 p-2 rounded">
+                                  <span className="text-indigo-200 text-sm">{p.email}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                                      {iconosConfirmacion[p.confirmacion]}
+                                      {p.confirmacion}
+                                    </span>
+                                    <div className="flex gap-1">
+                                      <button
+                                        onClick={() => actualizarConfirmacion(evento.id, p.email, 'aceptado')}
+                                        className={`p-1 rounded ${p.confirmacion === 'aceptado' ? 'bg-green-500/20 text-green-400' : 'text-gray-400 hover:text-green-400'}`}
+                                        title="Aceptar"
+                                      >
+                                        <FaCheck size={12} />
+                                      </button>
+                                      <button
+                                        onClick={() => actualizarConfirmacion(evento.id, p.email, 'pendiente')}
+                                        className={`p-1 rounded ${p.confirmacion === 'pendiente' ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-400 hover:text-yellow-400'}`}
+                                        title="Pendiente"
+                                      >
+                                        <FaQuestion size={12} />
+                                      </button>
+                                      <button
+                                        onClick={() => actualizarConfirmacion(evento.id, p.email, 'rechazado')}
+                                        className={`p-1 rounded ${p.confirmacion === 'rechazado' ? 'bg-red-500/20 text-red-400' : 'text-gray-400 hover:text-red-400'}`}
+                                        title="Rechazar"
+                                      >
+                                        <FaTimesCircle size={12} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
                               ))}
                             </div>
                           </div>
@@ -562,7 +599,6 @@ const Eventos = () => {
                       </div>
                       
                       <div className="flex gap-2 ml-4">
-                        {/* Botón de compartir */}
                         <div className="relative">
                           <button
                             onClick={(e) => {
