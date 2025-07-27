@@ -13,12 +13,17 @@ import {
   FaEnvelope,
   FaWhatsapp,
   FaTimes,
-  FaEdit
+  FaEdit,
+  FaArrowLeft,
+  FaLink
 } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom'; // Para el botón de volver
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 
 const Eventos = () => {
+  const navigate = useNavigate(); // Hook para navegación
+
   const [eventos, setEventos] = useState([]);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [titulo, setTitulo] = useState('');
@@ -26,6 +31,7 @@ const Eventos = () => {
   const [hora, setHora] = useState('');
   const [tipo, setTipo] = useState('reunion');
   const [participantesInput, setParticipantesInput] = useState(''); // String para entrada de correos
+  const [enlaceVideollamada, setEnlaceVideollamada] = useState(''); // Nuevo estado para el enlace
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
@@ -125,7 +131,8 @@ const Eventos = () => {
       fecha,
       hora,
       tipo,
-      participantes: participantesArray
+      participantes: participantesArray,
+      enlaceVideollamada: enlaceVideollamada.trim() // Guardar el enlace
     };
 
     if (eventoEditando) {
@@ -170,6 +177,7 @@ const Eventos = () => {
     setTipo(evento.tipo);
     // Convertir array de participantes de vuelta a string para el input
     setParticipantesInput(evento.participantes ? evento.participantes.map(p => p.email).join(', ') : '');
+    setEnlaceVideollamada(evento.enlaceVideollamada || ''); // Cargar el enlace si existe
     setMostrarFormulario(true);
   };
 
@@ -179,6 +187,7 @@ const Eventos = () => {
     setHora('');
     setTipo('reunion');
     setParticipantesInput('');
+    setEnlaceVideollamada(''); // Limpiar el enlace
     setEventoEditando(null);
     setError('');
   };
@@ -192,6 +201,10 @@ const Eventos = () => {
     cuerpo += `Fecha: ${evento.fecha}\n`;
     cuerpo += `Hora: ${evento.hora}\n`;
     cuerpo += `Tipo: ${evento.tipo}\n`;
+    
+    if (evento.enlaceVideollamada && evento.tipo === 'videollamada') {
+        cuerpo += `Enlace de videollamada: ${evento.enlaceVideollamada}\n`;
+    }
     
     if (evento.participantes && evento.participantes.length > 0) {
       const listaParticipantes = evento.participantes.map(p => p.email).join(', ');
@@ -208,6 +221,10 @@ const Eventos = () => {
     texto += `Fecha: ${evento.fecha}\n`;
     texto += `Hora: ${evento.hora}\n`;
     texto += `Tipo: ${evento.tipo}\n`;
+    
+    if (evento.enlaceVideollamada && evento.tipo === 'videollamada') {
+        texto += `Enlace de videollamada: ${evento.enlaceVideollamada}\n`;
+    }
     
     if (evento.participantes && evento.participantes.length > 0) {
       const listaParticipantes = evento.participantes.map(p => p.email).join(', ');
@@ -262,10 +279,21 @@ const Eventos = () => {
       {error && <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{error}</div>}
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-          <FaCalendarAlt className="text-indigo-400" />
-          Gestión de Eventos
-        </h2>
+        <div className="flex items-center gap-4">
+          {/* Botón de volver al dashboard */}
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 text-gray-300 hover:text-white"
+            title="Volver al Dashboard"
+          >
+            <FaArrowLeft />
+            <span className="hidden sm:inline">Volver</span>
+          </button>
+          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+            <FaCalendarAlt className="text-indigo-400" />
+            Gestión de Eventos
+          </h2>
+        </div>
         <button 
           onClick={() => {
             limpiarFormulario();
@@ -345,6 +373,23 @@ const Eventos = () => {
                 <option value="videollamada">Videollamada</option>
               </select>
             </div>
+            
+            {/* Campo para enlace de videollamada */}
+            {tipo === 'videollamada' && (
+              <div>
+                <label className="block text-gray-300 mb-2">Enlace de Videollamada</label>
+                <input
+                  type="url"
+                  value={enlaceVideollamada}
+                  onChange={(e) => setEnlaceVideollamada(e.target.value)}
+                  className="w-full p-3 bg-gray-600 text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Ingresa el enlace para la videollamada.
+                </p>
+              </div>
+            )}
             
             <div>
               <label className="block text-gray-300 mb-2">
@@ -484,6 +529,20 @@ const Eventos = () => {
                             </div>
                           )}
                         </div>
+                        
+                        {/* Mostrar enlace de videollamada si es relevante */}
+                        {evento.tipo === 'videollamada' && evento.enlaceVideollamada && (
+                          <div className="mt-2">
+                            <a 
+                              href={evento.enlaceVideollamada} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-sm bg-red-900/50 text-red-200 px-2 py-1 rounded hover:bg-red-800/50 transition-colors"
+                            >
+                              <FaLink /> Unirse a la videollamada
+                            </a>
+                          </div>
+                        )}
                         
                         {evento.participantes && evento.participantes.length > 0 && (
                           <div className="mt-3">
