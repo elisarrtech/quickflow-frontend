@@ -1,6 +1,6 @@
-// src/components/Estadisticas.jsx
 import React, { useState, useEffect } from 'react';
 import { FaTasks, FaCheckCircle, FaClock, FaCalendarAlt } from 'react-icons/fa';
+import { RUTAS_API } from '../utils/apiRoutes';
 
 const Estadisticas = () => {
   const [tareas, setTareas] = useState([]);
@@ -8,11 +8,10 @@ const Estadisticas = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const API_URL = import.meta.env.VITE_API_URL;
 
     const fetchTareas = async () => {
       try {
-        const res = await fetch(`${API_URL}/tasks`, {
+        const res = await fetch(RUTAS_API.tareas, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -24,20 +23,19 @@ const Estadisticas = () => {
       }
     };
 
-      const fetchEventos = async () => {
+    const fetchEventos = async () => {
       try {
-      const res = await fetch(`${API_URL}/eventos`, {
-      headers: {
-        Authorization: `Bearer ${token}`
+        const res = await fetch(RUTAS_API.eventos, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        setEventos(data);
+      } catch (error) {
+        console.error("Error al cargar eventos:", error);
       }
-    });
-    const data = await res.json();
-    setEventos(data);
-  } catch (error) {
-    console.error("Error al cargar eventos:", error);
-  }
-};
-
+    };
 
     fetchTareas();
     fetchEventos();
@@ -46,7 +44,6 @@ const Estadisticas = () => {
   const totalTareas = tareas.length;
   const tareasCompletadas = tareas.filter(t => t.estado === 'completada').length;
   const tareasPendientes = tareas.filter(t => t.estado === 'pendiente').length;
-
   const totalEventos = eventos.length;
   const eventosHoy = eventos.filter(e => e.fecha === new Date().toISOString().split('T')[0]).length;
 
@@ -67,6 +64,7 @@ const Estadisticas = () => {
     return diffTime > 0 && diffTime <= 604800000;
   }).length;
 
+ 
   return (
     <div className="bg-gray-800 rounded-xl p-6">
       <h1 className="text-2xl font-bold text-white mb-6">Estadísticas</h1>
