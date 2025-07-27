@@ -1,7 +1,6 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard'; // Importar Dashboard desde pages
 import DashboardLayout from './components/DashboardLayout';
 import Tareas from './pages/Tareas';
 import Eventos from './components/Eventos';
@@ -14,7 +13,7 @@ function App() {
       <DashboardLayout>
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/tareas" element={<Tareas />} />
+          <Route path="/tareas" element={<Tareas />} /> {/* Solo una ruta para Tareas */}
           <Route path="/eventos" element={<Eventos />} />
           <Route path="/estadisticas" element={<Estadisticas />} />
           <Route path="/perfil" element={<Perfil />} />
