@@ -13,7 +13,6 @@ const DashboardLayout = ({ children }) => {
     { path: '/eventos', icon: <FaCalendarAlt />, label: 'Eventos' },
     { path: '/estadisticas', icon: <FaChartBar />, label: 'Estadísticas' },
     { path: '/perfil', icon: <FaUser />, label: 'Perfil' },
-    // Comentado temporalmente hasta que exista la página de configuración
     // { path: '/configuracion', icon: <FaCog />, label: 'Configuración' }
   ];
 
@@ -49,7 +48,6 @@ const DashboardLayout = ({ children }) => {
                   : 'text-gray-300 hover:text-white hover:bg-gray-800'
               }`}
               onClick={() => setSidebarOpen(false)} // Cerrar sidebar en móvil al hacer clic
-              aria-current={location.pathname === item.path ? "page" : undefined}
             >
               {item.icon}
               {item.label}
@@ -68,7 +66,7 @@ const DashboardLayout = ({ children }) => {
 
       {/* Main Content */}
       <main className="flex-1 px-4 py-6 md:px-10 mt-12 md:mt-0">
-        {children}
+        {children} {/* Asegúrate de que children se esté pasando correctamente */}
       </main>
     </div>
   );
