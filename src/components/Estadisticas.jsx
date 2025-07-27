@@ -26,13 +26,17 @@ const Estadisticas = () => {
 
           const hoy = new Date();
           const tareasDelMes = tareas.filter(t => {
-            const fechaT = new Date(t.fecha);
+            const fechaT = t.fecha ? new Date(t.fecha) : null;
+            if (!fechaT || isNaN(fechaT)) return false;
             return fechaT.getMonth() === hoy.getMonth() && fechaT.getFullYear() === hoy.getFullYear();
           });
 
           const completadas = tareasDelMes.filter(t => t.estado === 'completada').length;
           const pendientes = tareasDelMes.filter(t => t.estado === 'pendiente').length;
-          const atrasadas = tareas.filter(t => new Date(t.fecha) < hoy && t.estado !== 'completada').length;
+          const atrasadas = tareas.filter(t => {
+            const fechaT = t.fecha ? new Date(t.fecha) : null;
+            return fechaT && !isNaN(fechaT) && fechaT < hoy && t.estado !== 'completada';
+          }).length;
 
           setStats({ completadas, pendientes });
           setTareasAtrasadas(atrasadas);
@@ -49,10 +53,12 @@ const Estadisticas = () => {
           let tareasUltimaSemana = 0;
 
           tareas.forEach(t => {
+            const fechaT = t.fecha ? new Date(t.fecha) : null;
+            if (!fechaT || isNaN(fechaT)) return;
+
             const cat = t.categoria || 'Sin categoría';
             categorias[cat] = (categorias[cat] || 0) + 1;
 
-            const fechaT = new Date(t.fecha);
             const dia = fechaT.toLocaleDateString('es-MX', { weekday: 'short' });
             dias[dia] = (dias[dia] || 0) + 1;
 
