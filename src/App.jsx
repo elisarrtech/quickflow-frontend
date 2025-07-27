@@ -13,6 +13,9 @@ function App() {
     <Router>
       <DashboardLayout>
         <Routes>
+          
+  </DashboardLayout>
+</Router>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tareas" element={<Tareas />} /> {/* Solo una ruta para Tareas */}
           <Route path="/eventos" element={<Eventos />} />
