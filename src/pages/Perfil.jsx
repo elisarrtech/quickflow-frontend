@@ -1,20 +1,18 @@
-// src/pages/Perfil.jsx
 import React, { useEffect, useState } from 'react';
-// import DashboardLayout from '../components/DashboardLayout'; // Elimina esta línea
 import { useNavigate } from 'react-router-dom';
+import { RUTAS_API } from '../utils/apiRoutes';
 
 const Perfil = () => {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
-  const [mensajeTipo, setMensajeTipo] = useState(''); // 'exito' o 'error'
+  const [mensajeTipo, setMensajeTipo] = useState('');
   const [mensaje, setMensaje] = useState('');
   const navigate = useNavigate();
-  const API = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const obtenerPerfil = async () => {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API}/api/perfil`, {
+      const res = await fetch(RUTAS_API.perfil, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -29,7 +27,7 @@ const Perfil = () => {
   const actualizarPerfil = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API}/api/perfil`, {
+      const res = await fetch(RUTAS_API.perfil, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -58,7 +56,6 @@ const Perfil = () => {
   };
 
   return (
-    // Elimina <DashboardLayout> y </DashboardLayout>
     <div className="text-white p-6 max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Perfil de usuario</h1>
       <div className="mb-4">
@@ -102,7 +99,6 @@ const Perfil = () => {
         </div>
       )}
     </div>
-    // Elimina </DashboardLayout>
   );
 };
 
