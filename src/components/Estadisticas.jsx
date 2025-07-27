@@ -1,94 +1,190 @@
-// src/components/Estadisticas.jsx
-import React, { useEffect, useState } from 'react';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
-import { Chart, registerables } from 'chart.js';
-import { useNavigate } from 'react-router-dom';
-Chart.register(...registerables);
+// src/pages/Estadisticas.jsx
+import React, { useState, useEffect } from 'react';
+import { FaTasks, FaCalendarAlt, FaCheckCircle, FaClock } from 'react-icons/fa';
+import DashboardLayout from '../components/DashboardLayout';
 
 const Estadisticas = () => {
   const [tareas, setTareas] = useState([]);
-  const [error, setError] = useState('');
-  const API = import.meta.env.VITE_API_URL;
-  const navigate = useNavigate();
+  const [eventos, setEventos] = useState([]);
 
   useEffect(() => {
-    const fetchTareas = async () => {
-      const token = localStorage.getItem('token');
+    // Cargar tareas del localStorage
+    const tareasGuardadas = localStorage.getItem('tareas');
+    if (tareasGuardadas) {
       try {
-        const res = await fetch(`${API}/api/tasks`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (res.ok) setTareas(data);
-        else setError(data.error || 'No se pudieron obtener estadísticas.');
-      } catch (err) {
-        setError('Error de red.');
+        setTareas(JSON.parse(tareasGuardadas));
+      } catch (e) {
+        console.error("Error parsing tareas from localStorage", e);
+        setTareas([]);
       }
-    };
-    fetchTareas();
+    }
+
+    // Cargar eventos del localStorage
+    const eventosGuardados = localStorage.getItem('eventos');
+    if (eventosGuardados) {
+      try {
+        setEventos(JSON.parse(eventosGuardados));
+      } catch (e) {
+        console.error("Error parsing eventos from localStorage", e);
+        setEventos([]);
+      }
+    }
   }, []);
 
-  const completadas = tareas.filter(t => t.estado === 'completada').length;
-  const pendientes = tareas.filter(t => t.estado === 'pendiente').length;
-  const categorias = [...new Set(tareas.map(t => t.categoria).filter(Boolean))];
-  const tareasPorCategoria = categorias.map(cat => tareas.filter(t => t.categoria === cat).length);
-  const fechas = [...new Set(tareas.map(t => t.fecha).sort())];
-  const tareasPorFecha = fechas.map(f => tareas.filter(t => t.fecha === f).length);
+  // Calcular estadísticas de tareas
+  const totalTareas = tareas.length;
+  const tareasCompletadas = tareas.filter(t => t.estado === 'completada').length;
+  const tareasPendientes = tareas.filter(t => t.estado === 'pendiente').length;
+  const tareasEnProgreso = tareas.filter(t => t.estado === 'en progreso').length;
+
+  // Calcular estadísticas de eventos
+  const totalEventos = eventos.length;
+  const eventosHoy = eventos.filter(e => {
+    const hoy = new Date().toISOString().split('T')[0];
+    return e.fecha === hoy;
+  }).length;
+
+  // Calcular tareas por categoría
+  const tareasPorCategoria = tareas.reduce((acc, tarea) => {
+    acc[tarea.categoria] = (acc[tarea.categoria] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Calcular eventos por tipo
+  const eventosPorTipo = eventos.reduce((acc, evento) => {
+    acc[evento.tipo] = (acc[evento.tipo] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
-    <div className="bg-gray-900 text-white p-6 min-h-screen">
-      <button onClick={() => navigate('/dashboard')} className="text-blue-400 mb-4">← Volver</button>
-      <h2 className="text-2xl font-bold mb-6">📊 Estadísticas de Tareas</h2>
-
-      {error && <p className="text-red-400">{error}</p>}
-
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-gray-800 p-4 rounded">
-          <h3 className="text-lg mb-2">Tareas por Estado</h3>
-          <Doughnut
-            data={{
-              labels: ['Pendientes', 'Completadas'],
-              datasets: [{
-                data: [pendientes, completadas],
-                backgroundColor: ['#facc15', '#4ade80'],
-              }]
-            }}
-          />
+    <DashboardLayout>
+      <div className="bg-gray-800 rounded-xl p-6">
+        <h1 className="text-2xl font-bold text-white mb-6">Estadísticas</h1>
+        
+        {/* Resumen general */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gray-700 rounded-lg p-5 flex items-center">
+            <div className="bg-blue-500/20 p-3 rounded-full mr-4">
+              <FaTasks className="text-blue-400 text-2xl" />
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Total Tareas</p>
+              <p className="text-2xl font-bold text-white">{totalTareas}</p>
+            </div>
+          </div>
+          
+          <div className="bg-gray-700 rounded-lg p-5 flex items-center">
+            <div className="bg-green-500/20 p-3 rounded-full mr-4">
+              <FaCheckCircle className="text-green-400 text-2xl" />
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Tareas Completadas</p>
+              <p className="text-2xl font-bold text-white">{tareasCompletadas}</p>
+            </div>
+          </div>
+          
+          <div className="bg-gray-700 rounded-lg p-5 flex items-center">
+            <div className="bg-yellow-500/20 p-3 rounded-full mr-4">
+              <FaClock className="text-yellow-400 text-2xl" />
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Tareas Pendientes</p>
+              <p className="text-2xl font-bold text-white">{tareasPendientes}</p>
+            </div>
+          </div>
+          
+          <div className="bg-gray-700 rounded-lg p-5 flex items-center">
+            <div className="bg-purple-500/20 p-3 rounded-full mr-4">
+              <FaCalendarAlt className="text-purple-400 text-2xl" />
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Eventos Hoy</p>
+              <p className="text-2xl font-bold text-white">{eventosHoy}</p>
+            </div>
+          </div>
         </div>
-
-        <div className="bg-gray-800 p-4 rounded">
-          <h3 className="text-lg mb-2">Tareas por Categoría</h3>
-          <Bar
-            data={{
-              labels: categorias,
-              datasets: [{
-                label: 'Cantidad',
-                data: tareasPorCategoria,
-                backgroundColor: '#60a5fa'
-              }]
-            }}
-          />
+        
+        {/* Gráficos de tareas y eventos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Tareas por categoría */}
+          <div className="bg-gray-700 rounded-lg p-5">
+            <h2 className="text-xl font-semibold text-white mb-4">Tareas por Categoría</h2>
+            <div className="space-y-3">
+              {Object.entries(tareasPorCategoria).map(([categoria, cantidad]) => (
+                <div key={categoria} className="flex items-center justify-between">
+                  <span className="text-gray-300">{categoria || 'Sin categoría'}</span>
+                  <div className="flex items-center">
+                    <div className="w-32 bg-gray-600 rounded-full h-2 mr-2">
+                      <div 
+                        className="bg-blue-500 h-2 rounded-full" 
+                        style={{ width: `${(cantidad / totalTareas) * 100}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-white w-8 text-right">{cantidad}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Eventos por tipo */}
+          <div className="bg-gray-700 rounded-lg p-5">
+            <h2 className="text-xl font-semibold text-white mb-4">Eventos por Tipo</h2>
+            <div className="space-y-3">
+              {Object.entries(eventosPorTipo).map(([tipo, cantidad]) => (
+                <div key={tipo} className="flex items-center justify-between">
+                  <span className="text-gray-300 capitalize">{tipo}</span>
+                  <div className="flex items-center">
+                    <div className="w-32 bg-gray-600 rounded-full h-2 mr-2">
+                      <div 
+                        className="bg-purple-500 h-2 rounded-full" 
+                        style={{ width: `${(cantidad / totalEventos) * 100}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-white w-8 text-right">{cantidad}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-
-        <div className="bg-gray-800 p-4 rounded md:col-span-2">
-          <h3 className="text-lg mb-2">Tareas por Fecha</h3>
-          <Line
-            data={{
-              labels: fechas,
-              datasets: [{
-                label: 'Tareas creadas',
-                data: tareasPorFecha,
-                fill: false,
-                borderColor: '#c084fc',
-                tension: 0.3
-              }]
-            }}
-          />
+        
+        {/* Sección adicional de productividad */}
+        <div className="mt-8 bg-gray-700 rounded-lg p-5">
+          <h2 className="text-xl font-semibold text-white mb-4">Resumen de Productividad</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-600 rounded-lg p-4 text-center">
+              <p className="text-gray-400">Tasa de Finalización</p>
+              <p className="text-2xl font-bold text-white mt-2">
+                {totalTareas > 0 ? Math.round((tareasCompletadas / totalTareas) * 100) : 0}%
+              </p>
+              <p className="text-gray-400 text-sm mt-1">de tareas completadas</p>
+            </div>
+            
+            <div className="bg-gray-600 rounded-lg p-4 text-center">
+              <p className="text-gray-400">Eventos Programados</p>
+              <p className="text-2xl font-bold text-white mt-2">{totalEventos}</p>
+              <p className="text-gray-400 text-sm mt-1">en el calendario</p>
+            </div>
+            
+            <div className="bg-gray-600 rounded-lg p-4 text-center">
+              <p className="text-gray-400">Próximos 7 Días</p>
+              <p className="text-2xl font-bold text-white mt-2">
+                {eventos.filter(e => {
+                  const fechaEvento = new Date(e.fecha);
+                  const hoy = new Date();
+                  const diffTime = fechaEvento - hoy;
+                  const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                  return diffDays >= 0 && diffDays <= 7;
+                }).length}
+              </p>
+              <p className="text-gray-400 text-sm mt-1">eventos próximos</p>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
 export default Estadisticas;
-
