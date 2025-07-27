@@ -1,11 +1,11 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard'; // o la ruta correcta donde esté ubicado
+import Dashboard from './pages/Dashboard'; // Importar Dashboard desde pages
 import DashboardLayout from './components/DashboardLayout';
 import Tareas from './pages/Tareas';
 import Eventos from './components/Eventos';
-import Estadisticas from './components/Estadisticas'; // Cambio aquí
+import Estadisticas from './components/Estadisticas';
 import Perfil from './pages/Perfil';
 
 function App() {
@@ -16,7 +16,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tareas" element={<Tareas />} />
           <Route path="/eventos" element={<Eventos />} />
-          <Route path="/estadisticas" element={<Estadisticas />} /> {/* Ruta para Estadísticas */}
+          <Route path="/estadisticas" element={<Estadisticas />} />
           <Route path="/perfil" element={<Perfil />} />
         </Routes>
       </DashboardLayout>
