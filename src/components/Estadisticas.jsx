@@ -6,29 +6,27 @@ const Estadisticas = () => {
   const [tareas, setTareas] = useState([]);
   const [eventos, setEventos] = useState([]);
 
-  useEffect(() => {
-    // Cargar tareas del localStorage
-    const tareasGuardadas = localStorage.getItem('tareas');
-    if (tareasGuardadas) {
-      try {
-        setTareas(JSON.parse(tareasGuardadas));
-      } catch (e) {
-        console.error("Error parsing tareas from localStorage", e);
-        setTareas([]);
-      }
-    }
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  const fetchTareasYEventos = async () => {
+    try {
+      const tareasRes = await fetch(`${API_URL}/api/tareas`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const tareasData = await tareasRes.json();
+      setTareas(tareasData);
 
-    // Cargar eventos del localStorage
-    const eventosGuardados = localStorage.getItem('eventos');
-    if (eventosGuardados) {
-      try {
-        setEventos(JSON.parse(eventosGuardados));
-      } catch (e) {
-        console.error("Error parsing eventos from localStorage", e);
-        setEventos([]);
-      }
+      const eventosRes = await fetch(`${API_URL}/api/eventos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const eventosData = await eventosRes.json();
+      setEventos(eventosData);
+    } catch (error) {
+      console.error('Error al cargar estadísticas:', error);
     }
-  }, []);
+  };
+  fetchTareasYEventos();
+}, []);
 
   // Calcular estadísticas básicas
   const totalTareas = tareas.length;
