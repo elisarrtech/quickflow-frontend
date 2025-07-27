@@ -6,6 +6,7 @@ import Tareas from './pages/Tareas';
 import Eventos from './components/Eventos';
 import Estadisticas from './components/Estadisticas';
 import Perfil from './pages/Perfil';
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
