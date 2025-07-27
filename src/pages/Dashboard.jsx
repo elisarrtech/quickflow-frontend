@@ -9,14 +9,13 @@ const Dashboard = () => {
   const [stats, setStats] = useState({ completadas: 0, pendientes: 0 });
   const [categoriaStats, setCategoriaStats] = useState({});
   const [eventosHoy, setEventosHoy] = useState(0);
-  const API = import.meta.env.VITE_API_URL;
+  const API = import.meta.env.VITE_API_URL + '/api';
 
   useEffect(() => {
     const obtenerStats = async () => {
       const token = localStorage.getItem('token');
 
       try {
-        // ✅ Obtener tareas
         const resTareas = await fetch(`${API}/tasks`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -35,7 +34,6 @@ const Dashboard = () => {
           setCategoriaStats(categorias);
         }
 
-        // ✅ Obtener eventos locales (por ahora localStorage)
         const eventosGuardados = localStorage.getItem('eventos');
         if (eventosGuardados) {
           const eventos = JSON.parse(eventosGuardados);
