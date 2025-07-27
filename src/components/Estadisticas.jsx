@@ -23,6 +23,12 @@ const Estadisticas = () => {
 
         if (res.ok) {
           const tareas = await res.json();
+          console.log("🟢 Tareas recibidas:", tareas);
+
+          tareas.forEach(t => {
+          console.log("📅 Fecha:", t.fecha, "→ Estado:", t.estado);
+});
+
 
           const hoy = new Date();
           const tareasDelMes = tareas.filter(t => {
