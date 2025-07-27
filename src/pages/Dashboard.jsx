@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Pie, Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 
+
 const Dashboard = () => {
   const [stats, setStats] = useState({ completadas: 0, pendientes: 0 });
   const [categoriaStats, setCategoriaStats] = useState({});
