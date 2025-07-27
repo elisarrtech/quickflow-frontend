@@ -1,11 +1,3 @@
-Entendido. Basándome en todo el historial de nuestra conversación y los archivos proporcionados, aquí tienes el código completo y corregido para `src/pages/Tareas.jsx`. Este código incorpora todas las funcionalidades discutidas (gestión de tareas, asignación, compartir, Kanban, filtros) y está corregido para evitar el error de sintaxis que impedía el despliegue.
-
-He corregido específicamente:
-1.  La estructura del `return` para envolver todo el contenido en un solo elemento.
-2.  Eliminado cualquier referencia residual a `DashboardLayout` dentro del componente.
-3.  Asegurado que todas las expresiones condicionales y mapeos estén correctamente formateadas.
-
-```jsx
 // src/pages/Tareas.jsx
 import React, { useState, useEffect } from 'react';
 import {
@@ -494,4 +486,4 @@ const Tareas = () => {
 };
 
 export default Tareas;
-```
+
