@@ -1,9 +1,8 @@
-// src/components/DashboardLayout.jsx
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaTasks, FaCalendarAlt, FaChartBar, FaUser, FaCog, FaBars, FaTimes } from 'react-icons/fa';
+import { Link, useLocation, Outlet } from 'react-router-dom';
+import { FaHome, FaTasks, FaCalendarAlt, FaChartBar, FaUser, FaBars, FaTimes } from 'react-icons/fa';
 
-const DashboardLayout = ({ children }) => {
+const DashboardLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -13,7 +12,6 @@ const DashboardLayout = ({ children }) => {
     { path: '/eventos', icon: <FaCalendarAlt />, label: 'Eventos' },
     { path: '/estadisticas', icon: <FaChartBar />, label: 'Estadísticas' },
     { path: '/perfil', icon: <FaUser />, label: 'Perfil' },
-    // { path: '/configuracion', icon: <FaCog />, label: 'Configuración' }
   ];
 
   const toggleSidebar = () => {
@@ -47,7 +45,7 @@ const DashboardLayout = ({ children }) => {
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-300 hover:text-white hover:bg-gray-800'
               }`}
-              onClick={() => setSidebarOpen(false)} // Cerrar sidebar en móvil al hacer clic
+              onClick={() => setSidebarOpen(false)}
             >
               {item.icon}
               {item.label}
@@ -66,7 +64,7 @@ const DashboardLayout = ({ children }) => {
 
       {/* Main Content */}
       <main className="flex-1 px-4 py-6 md:px-10 mt-12 md:mt-0">
-        {children} {/* Asegúrate de que children se esté pasando correctamente */}
+        <Outlet /> {/* 🔥 Esta línea permite que se muestren las rutas hijas */}
       </main>
     </div>
   );
