@@ -1,31 +1,25 @@
-// src/App.js
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
+// src/App.jsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import DashboardLayout from './components/DashboardLayout';
 import Tareas from './pages/Tareas';
 import Eventos from './components/Eventos';
-import Estadisticas from './pages/Estadisticas';
+import Estadisticas from './components/Estadisticas'; // Cambio aquí
 import Perfil from './pages/Perfil';
-// Importar el nuevo componente cuando lo crees
-// import Configuracion from './pages/Configuracion';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/tareas" element={<Tareas />} />
-        <Route path="/eventos" element={<Eventos />} />
-        <Route path="/estadisticas" element={<Estadisticas />} />
-        <Route path="/perfil" element={<Perfil />} />
-        {/* Agregar la ruta cuando crees el componente */}
-        {/* <Route path="/configuracion" element={<Configuracion />} /> */}
-      </Routes>
-    </BrowserRouter>
+    <Router>
+      <DashboardLayout>
+        <Routes>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/tareas" element={<Tareas />} />
+          <Route path="/eventos" element={<Eventos />} />
+          <Route path="/estadisticas" element={<Estadisticas />} /> {/* Ruta para Estadísticas */}
+          <Route path="/perfil" element={<Perfil />} />
+        </Routes>
+      </DashboardLayout>
+    </Router>
   );
 }
 
