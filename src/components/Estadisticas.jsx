@@ -1,177 +1,124 @@
-import React, { useState, useEffect } from 'react';
-import { FaTasks, FaCheckCircle, FaClock, FaCalendarAlt } from 'react-icons/fa';
-import { RUTAS_API } from '../utils/apiRoutes';
+import React, { useEffect, useState } from 'react';
+import { Bar, Pie } from 'react-chartjs-2';
+import { FaTasks, FaCalendarAlt } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import 'chart.js/auto';
 
 const Estadisticas = () => {
-  const [tareas, setTareas] = useState([]);
-  const [eventos, setEventos] = useState([]);
+  const [stats, setStats] = useState({ completadas: 0, pendientes: 0 });
+  const [categoriaStats, setCategoriaStats] = useState({});
+  const [eventosHoy, setEventosHoy] = useState(0);
+  const API = import.meta.env.VITE_API_URL + '/api';
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
 
-    const fetchTareas = async () => {
+    const fetchEstadisticas = async () => {
       try {
-        const res = await fetch(RUTAS_API.tareas, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+        // ✅ Obtener tareas
+        const resTareas = await fetch(`${API}/tasks`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await res.json();
-        setTareas(data);
+
+        if (resTareas.ok) {
+          const tareas = await resTareas.json();
+          const completadas = tareas.filter(t => t.estado === 'completada').length;
+          const pendientes = tareas.filter(t => t.estado === 'pendiente').length;
+          setStats({ completadas, pendientes });
+
+          const categorias = {};
+          tareas.forEach(t => {
+            const cat = t.categoria || 'Sin categoría';
+            categorias[cat] = (categorias[cat] || 0) + 1;
+          });
+          setCategoriaStats(categorias);
+        }
+
+        // ✅ Obtener eventos desde localStorage
+        const eventosGuardados = localStorage.getItem('eventos');
+        if (eventosGuardados) {
+          const eventos = JSON.parse(eventosGuardados);
+          const hoy = new Date().toISOString().split('T')[0];
+          const eventosHoyCount = eventos.filter(e => e.fecha === hoy).length;
+          setEventosHoy(eventosHoyCount);
+        }
       } catch (error) {
-        console.error("Error al cargar tareas:", error);
+        console.error('Error al cargar estadísticas:', error);
       }
     };
 
-    const fetchEventos = async () => {
-      try {
-        const res = await fetch(RUTAS_API.eventos, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        const data = await res.json();
-        setEventos(data);
-      } catch (error) {
-        console.error("Error al cargar eventos:", error);
-      }
-    };
-
-    fetchTareas();
-    fetchEventos();
+    fetchEstadisticas();
   }, []);
 
-  const totalTareas = tareas.length;
-  const tareasCompletadas = tareas.filter(t => t.estado === 'completada').length;
-  const tareasPendientes = tareas.filter(t => t.estado === 'pendiente').length;
-  const totalEventos = eventos.length;
-  const eventosHoy = eventos.filter(e => e.fecha === new Date().toISOString().split('T')[0]).length;
+  const dataPie = {
+    labels: ['Pendientes', 'Completadas'],
+    datasets: [
+      {
+        data: [stats.pendientes, stats.completadas],
+        backgroundColor: ['#facc15', '#4ade80'],
+        borderWidth: 1
+      }
+    ]
+  };
 
-  const tareasPorCategoria = tareas.reduce((acc, tarea) => {
-    acc[tarea.categoria] = (acc[tarea.categoria] || 0) + 1;
-    return acc;
-  }, {});
+  const dataBar = {
+    labels: Object.keys(categoriaStats),
+    datasets: [
+      {
+        label: 'Tareas por categoría',
+        data: Object.values(categoriaStats),
+        backgroundColor: '#38bdf8'
+      }
+    ]
+  };
 
-  const eventosPorTipo = eventos.reduce((acc, evento) => {
-    acc[evento.tipo] = (acc[evento.tipo] || 0) + 1;
-    return acc;
-  }, {});
-
-  const proximosEventos = eventos.filter(e => {
-    const fechaEvento = new Date(`${e.fecha}T${e.hora || '00:00'}`);
-    const hoy = new Date();
-    const diffTime = fechaEvento - hoy;
-    return diffTime > 0 && diffTime <= 604800000;
-  }).length;
-
- 
   return (
-    <div className="bg-gray-800 rounded-xl p-6">
-      <h1 className="text-2xl font-bold text-white mb-6">Estadísticas</h1>
+    <div className="text-white p-6 max-w-6xl mx-auto">
+      <motion.h1 className="text-3xl font-bold mb-6" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        Estadísticas Generales
+      </motion.h1>
 
-      {/* Resumen general */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gray-700 rounded-lg p-5 flex items-center">
-          <div className="bg-blue-500/20 p-3 rounded-full mr-4">
-            <FaTasks className="text-blue-400 text-2xl" />
-          </div>
-          <div>
-            <p className="text-gray-400 text-sm">Total Tareas</p>
-            <p className="text-2xl font-bold text-white">{totalTareas}</p>
-          </div>
-        </div>
-
-        <div className="bg-green-500/20 rounded-lg p-5 flex items-center">
-          <div className="bg-green-500/20 p-3 rounded-full mr-4">
-            <FaCheckCircle className="text-green-400 text-2xl" />
-          </div>
-          <div>
-            <p className="text-gray-400 text-sm">Tareas Completadas</p>
-            <p className="text-2xl font-bold text-white">{tareasCompletadas}</p>
-          </div>
-        </div>
-
-        <div className="bg-yellow-500/20 rounded-lg p-5 flex items-center">
-          <div className="bg-yellow-500/20 p-3 rounded-full mr-4">
-            <FaClock className="text-yellow-400 text-2xl" />
-          </div>
-          <div>
-            <p className="text-gray-400 text-sm">Tareas Pendientes</p>
-            <p className="text-2xl font-bold text-white">{tareasPendientes}</p>
-          </div>
-        </div>
-
-        <div className="bg-purple-500/20 rounded-lg p-5 flex items-center">
-          <div className="bg-purple-500/20 p-3 rounded-full mr-4">
-            <FaCalendarAlt className="text-purple-400 text-2xl" />
-          </div>
-          <div>
-            <p className="text-gray-400 text-sm">Eventos Hoy</p>
-            <p className="text-2xl font-bold text-white">{eventosHoy}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Gráficos de tareas y eventos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <div className="bg-gray-700 rounded-lg p-5">
-          <h2 className="text-xl font-semibold text-white mb-4">Tareas por Categoría</h2>
-          <div className="space-y-3">
-            {Object.entries(tareasPorCategoria).map(([categoria, cantidad]) => (
-              <div key={categoria} className="flex items-center justify-between">
-                <span className="text-gray-300">{categoria || 'Sin categoría'}</span>
-                <div className="flex items-center">
-                  <div className="w-32 bg-gray-600 rounded-full h-2 mr-2"
-                    style={{ width: `${(cantidad / totalTareas) * 100}%` }} />
-                  <span className="text-white w-8 text-right">{cantidad}</span>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+        <motion.div className="bg-gray-900 p-6 rounded-lg shadow border border-gray-700" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <h2 className="text-xl font-semibold mb-4">Estado de Tareas</h2>
+          <div className="max-w-xs mx-auto">
+            {stats.completadas + stats.pendientes > 0 ? (
+              <Pie data={dataPie} />
+            ) : (
+              <div className="text-center text-gray-500 py-10">
+                <FaTasks className="text-4xl mx-auto mb-3 opacity-50" />
+                <p>No hay tareas registradas</p>
               </div>
-            ))}
+            )}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-gray-700 rounded-lg p-5">
-          <h2 className="text-xl font-semibold text-white mb-4">Eventos por Tipo</h2>
-          <div className="space-y-3">
-            {Object.entries(eventosPorTipo).map(([tipo, cantidad]) => (
-              <div key={tipo} className="flex items-center justify-between">
-                <span className="text-gray-300">{tipo}</span>
-                <div className="flex items-center">
-                  <div className="w-32 bg-purple-500 rounded-full h-2 mr-2"
-                    style={{ width: `${(cantidad / totalEventos) * 100}%` }} />
-                  <span className="text-white w-8 text-right">{cantidad}</span>
-                </div>
+        <motion.div className="bg-gray-900 p-6 rounded-lg shadow border border-gray-700" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+          <h2 className="text-xl font-semibold mb-4">Tareas por Categoría</h2>
+          <div className="max-w-3xl mx-auto">
+            {Object.keys(categoriaStats).length > 0 ? (
+              <Bar data={dataBar} />
+            ) : (
+              <div className="text-center text-gray-500 py-10">
+                <FaTasks className="text-4xl mx-auto mb-3 opacity-50" />
+                <p>No hay categorías registradas</p>
               </div>
-            ))}
+            )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Sección adicional de productividad */}
-      <div className="mt-8 bg-gray-700 rounded-lg p-5">
-        <h2 className="text-xl font-semibold text-white mb-4">Resumen de Productividad</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-600 rounded-lg p-4 text-center">
-            <p className="text-gray-400">Tasa de Finalización</p>
-            <p className="text-2xl font-bold text-white mt-2">
-              {totalTareas > 0 ? Math.round((tareasCompletadas / totalTareas) * 100) : 0}%
-            </p>
-            <p className="text-gray-400 text-sm mt-1">de tareas completadas</p>
-          </div>
-
-          <div className="bg-gray-600 rounded-lg p-4 text-center">
-            <p className="text-gray-400">Eventos Programados</p>
-            <p className="text-2xl font-bold text-white mt-2">{totalEventos}</p>
-            <p className="text-gray-400 text-sm mt-1">en el calendario</p>
-          </div>
-
-          <div className="bg-gray-600 rounded-lg p-4 text-center">
-            <p className="text-gray-400">Próximos 7 Días</p>
-            <p className="text-2xl font-bold text-white mt-2">{proximosEventos}</p>
-            <p className="text-gray-400 text-sm mt-1">eventos próximos</p>
-          </div>
-        </div>
-      </div>
+      <motion.div className="bg-gray-900 p-6 rounded-lg shadow border border-gray-700 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+        <h2 className="text-xl font-semibold mb-4">Eventos para Hoy</h2>
+        {eventosHoy > 0 ? (
+          <p className="text-2xl font-bold text-purple-400">
+            <FaCalendarAlt className="inline-block mr-2" />
+            {eventosHoy} evento(s) programado(s) para hoy
+          </p>
+        ) : (
+          <p className="text-gray-400">No hay eventos programados para hoy</p>
+        )}
+      </motion.div>
     </div>
   );
 };
