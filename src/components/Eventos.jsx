@@ -1,28 +1,26 @@
+
 // src/pages/Eventos.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   FaCalendarAlt, FaClock, FaUsers, FaVideo, FaTrash, FaPlus,
   FaCalendar, FaBell, FaShareAlt, FaEnvelope, FaWhatsapp, FaTimes, FaEdit
-} from 'react-icons/fa';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+} from "react-icons/fa";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
-const API_URL = "https://quickflow-api.onrender.com"; // ✅ Cambia esta URL si es necesario
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Eventos = () => {
   const [eventos, setEventos] = useState([]);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [titulo, setTitulo] = useState('');
-  const [fecha, setFecha] = useState('');
-  const [hora, setHora] = useState('');
-  const [tipo, setTipo] = useState('reunion');
-  const [participantesInput, setParticipantesInput] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState('todos');
-  const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
-  const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
+  const [titulo, setTitulo] = useState("");
+  const [fecha, setFecha] = useState("");
+  const [hora, setHora] = useState("");
+  const [tipo, setTipo] = useState("reunion");
+  const [participantesInput, setParticipantesInput] = useState("");
   const [eventoEditando, setEventoEditando] = useState(null);
-  const [error, setError] = useState('');
-  const [exito, setExito] = useState('');
+  const [error, setError] = useState("");
+  const [exito, setExito] = useState("");
 
   const token = localStorage.getItem("token");
 
@@ -30,121 +28,81 @@ const Eventos = () => {
     Notification.requestPermission();
   }, []);
 
-  // 🔁 GET: cargar eventos desde backend
   useEffect(() => {
     const fetchEventos = async () => {
       try {
-        const res = await fetch(\`\${API_URL}/api/eventos\`, {
-          headers: { Authorization: \`Bearer \${token}\` }
+        const res = await fetch(`${API_URL}/api/eventos`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
         setEventos(data);
       } catch (err) {
-        console.error(err);
-        setError("No se pudieron cargar los eventos");
+        setError("Error al cargar eventos");
       }
     };
     fetchEventos();
   }, []);
 
-  // ⏰ Notificaciones de eventos próximos
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const ahora = new Date();
-      eventos.forEach(evento => {
-        const tiempoEvento = new Date(\`\${evento.fecha}T\${evento.hora}\`);
-        const diferencia = tiempoEvento - ahora;
-        if (diferencia > 0 && diferencia <= 600000) {
-          new Notification("⏰ Evento próximo", {
-            body: \`\${evento.titulo} comienza en 10 minutos\`,
-            icon: "/favicon.ico"
-          });
-        }
-      });
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [eventos]);
-
   const limpiarFormulario = () => {
-    setTitulo('');
-    setFecha('');
-    setHora('');
-    setTipo('reunion');
-    setParticipantesInput('');
+    setTitulo("");
+    setFecha("");
+    setHora("");
+    setTipo("reunion");
+    setParticipantesInput("");
     setEventoEditando(null);
-    setError('');
+    setError("");
   };
 
-  // ✅ POST y PUT: crear o actualizar evento
   const crearEvento = async (e) => {
     e.preventDefault();
-    if (!titulo.trim() || !fecha || !hora) return setError('Faltan campos obligatorios');
+    if (!titulo || !fecha || !hora) return setError("Faltan campos obligatorios");
 
-    const participantesArray = participantesInput
-      .split(/[,;]/)
-      .map(email => email.trim())
-      .filter(email => email && /\S+@\S+\.\S+/.test(email))
-      .map(email => ({ email: email.toLowerCase() }));
-
-    const eventoData = {
-      titulo, fecha, hora, tipo, participantes: participantesArray
-    };
+    const participantes = participantesInput.split(/[,;]/).map(email => ({ email: email.trim() }));
+    const nuevoEvento = { titulo, fecha, hora, tipo, participantes };
 
     try {
-      let res, mensaje;
-      if (eventoEditando) {
-        res = await fetch(\`\${API_URL}/api/eventos/\${eventoEditando._id}\`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: \`Bearer \${token}\`
-          },
-          body: JSON.stringify(eventoData)
-        });
-        mensaje = "Evento actualizado correctamente.";
-      } else {
-        res = await fetch(\`\${API_URL}/api/eventos\`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: \`Bearer \${token}\`
-          },
-          body: JSON.stringify(eventoData)
-        });
-        mensaje = "Evento creado correctamente.";
-      }
+      const url = eventoEditando
+        ? `${API_URL}/api/eventos/${eventoEditando._id}`
+        : `${API_URL}/api/eventos`;
+      const method = eventoEditando ? "PUT" : "POST";
 
-      if (!res.ok) throw new Error("Error en la solicitud");
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(nuevoEvento)
+      });
+
+      if (!res.ok) throw new Error("Error al guardar");
+
       const data = await res.json();
-
       if (eventoEditando) {
-        setEventos(prev => prev.map(e => e._id === eventoEditando._id ? data : e));
+        setEventos(eventos.map(e => (e._id === data._id ? data : e)));
       } else {
-        setEventos(prev => [...prev, data]);
+        setEventos([...eventos, data]);
       }
 
-      setExito("✅ " + mensaje);
+      setExito("Evento guardado");
       limpiarFormulario();
       setMostrarFormulario(false);
       setTimeout(() => setExito(""), 3000);
     } catch (err) {
-      console.error(err);
-      setError("❌ Error al guardar el evento");
+      setError("No se pudo guardar");
     }
   };
 
-  // 🗑 DELETE: eliminar evento
   const eliminarEvento = async (id) => {
     try {
-      const res = await fetch(\`\${API_URL}/api/eventos/\${id}\`, {
+      const res = await fetch(`${API_URL}/api/eventos/${id}`, {
         method: "DELETE",
-        headers: { Authorization: \`Bearer \${token}\` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error();
-      setEventos(prev => prev.filter(e => e._id !== id));
-    } catch (err) {
-      console.error(err);
-      setError("No se pudo eliminar el evento");
+      setEventos(eventos.filter(e => e._id !== id));
+    } catch {
+      setError("No se pudo eliminar");
     }
   };
 
@@ -154,51 +112,9 @@ const Eventos = () => {
     setFecha(evento.fecha);
     setHora(evento.hora);
     setTipo(evento.tipo);
-    setParticipantesInput(evento.participantes?.map(p => p.email).join(', ') || '');
+    setParticipantesInput(evento.participantes?.map(p => p.email).join(", ") || "");
     setMostrarFormulario(true);
   };
-
-  const compartirEventoPorCorreo = (evento) => {
-    const asunto = encodeURIComponent(\`Invitación: \${evento.titulo}\`);
-    let cuerpo = \`Hola,\n\nHas sido invitado al siguiente evento:\n\n\`;
-    cuerpo += \`Título: \${evento.titulo}\nFecha: \${evento.fecha}\nHora: \${evento.hora}\nTipo: \${evento.tipo}\n\`;
-    if (evento.participantes?.length) {
-      cuerpo += \`Participantes: \${evento.participantes.map(p => p.email).join(', ')}\n\`;
-    }
-    cuerpo = encodeURIComponent(cuerpo);
-    window.location.href = \`mailto:?subject=\${asunto}&body=\${cuerpo}\`;
-  };
-
-  const compartirEventoPorWhatsApp = (evento) => {
-    let texto = \`*Invitación: \${evento.titulo}*\n\nFecha: \${evento.fecha}\nHora: \${evento.hora}\nTipo: \${evento.tipo}\n\`;
-    if (evento.participantes?.length) {
-      texto += \`Participantes: \${evento.participantes.map(p => p.email).join(', ')}\n\`;
-    }
-    const textoCodificado = encodeURIComponent(texto);
-    window.open(\`https://wa.me/?text=\${textoCodificado}\`, '_blank');
-  };
-
-  // 🔍 Filtros y ordenamiento
-  const eventosFiltrados = filtroTipo === 'todos' ? eventos : eventos.filter(e => e.tipo === filtroTipo);
-  const eventosOrdenados = [...eventosFiltrados].sort((a, b) => new Date(\`\${a.fecha}T\${a.hora}\`) - new Date(\`\${b.fecha}T\${b.hora}\`));
-  const eventosDelDia = eventosOrdenados.filter(e => e.fecha === fechaSeleccionada.toISOString().split('T')[0]);
-  const eventosHoy = eventosOrdenados.filter(e => e.fecha === new Date().toISOString().split('T')[0]);
-
-  // Iconos y colores
-  const iconosTipo = {
-    reunion: <FaUsers className="text-blue-400" />,
-    cita: <FaClock className="text-green-400" />,
-    junta: <FaUsers className="text-purple-400" />,
-    videollamada: <FaVideo className="text-red-400" />
-  };
-
-  const coloresTipo = {
-    reunion: 'border-l-4 border-blue-500 bg-blue-500/10',
-    cita: 'border-l-4 border-green-500 bg-green-500/10',
-    junta: 'border-l-4 border-purple-500 bg-purple-500/10',
-    videollamada: 'border-l-4 border-red-500 bg-red-500/10'
-  };
-
 
   return (
     <div className="bg-gray-800 rounded-xl p-6 h-full">
