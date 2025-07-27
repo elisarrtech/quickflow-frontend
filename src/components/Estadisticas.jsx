@@ -6,19 +6,19 @@ const Estadisticas = () => {
   const [eventos, setEventos] = useState([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
     const fetchTareas = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/tareas`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/tasks`, {
           headers: {
-            Authorization: `Bearer ${token}`,
-          },
+            Authorization: `Bearer ${token}`
+          }
         });
         const data = await res.json();
-        setTareas(data.reverse());
+        setTareas(data);
       } catch (error) {
-        console.error('Error al cargar tareas:', error);
+        console.error("Error cargando tareas:", error);
       }
     };
 
@@ -26,13 +26,13 @@ const Estadisticas = () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/eventos`, {
           headers: {
-            Authorization: `Bearer ${token}`,
-          },
+            Authorization: `Bearer ${token}`
+          }
         });
         const data = await res.json();
         setEventos(data);
       } catch (error) {
-        console.error('Error al cargar eventos:', error);
+        console.error("Error cargando eventos:", error);
       }
     };
 
@@ -43,30 +43,25 @@ const Estadisticas = () => {
   const totalTareas = tareas.length;
   const tareasCompletadas = tareas.filter(t => t.estado === 'completada').length;
   const tareasPendientes = tareas.filter(t => t.estado === 'pendiente').length;
-
   const totalEventos = eventos.length;
-  const eventosHoy = eventos.filter(e => {
-    const hoy = new Date().toISOString().split('T')[0];
-    return e.fecha === hoy;
-  }).length;
+  const eventosHoy = eventos.filter(e => e.fecha === new Date().toISOString().split('T')[0]).length;
 
   const tareasPorCategoria = tareas.reduce((acc, tarea) => {
-    const categoria = tarea.categoria || 'Sin categoría';
-    acc[categoria] = (acc[categoria] || 0) + 1;
+    const cat = tarea.categoria || 'Sin categoría';
+    acc[cat] = (acc[cat] || 0) + 1;
     return acc;
   }, {});
 
   const eventosPorTipo = eventos.reduce((acc, evento) => {
-    const tipo = evento.tipo || 'Otro';
-    acc[tipo] = (acc[tipo] || 0) + 1;
+    acc[evento.tipo] = (acc[evento.tipo] || 0) + 1;
     return acc;
   }, {});
 
   const proximosEventos = eventos.filter(e => {
     const fechaEvento = new Date(`${e.fecha}T${e.hora}`);
     const hoy = new Date();
-    const diffTime = fechaEvento - hoy;
-    return diffTime > 0 && diffTime <= 7 * 24 * 60 * 60 * 1000;
+    const diff = fechaEvento - hoy;
+    return diff > 0 && diff <= 7 * 24 * 60 * 60 * 1000;
   }).length;
 
   return (
@@ -74,54 +69,54 @@ const Estadisticas = () => {
       <h1 className="text-2xl font-bold text-white mb-6">Estadísticas</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card icon={<FaTasks />} label="Total Tareas" value={totalTareas} color="blue" />
-        <Card icon={<FaCheckCircle />} label="Tareas Completadas" value={tareasCompletadas} color="green" />
-        <Card icon={<FaClock />} label="Tareas Pendientes" value={tareasPendientes} color="yellow" />
-        <Card icon={<FaCalendarAlt />} label="Eventos Hoy" value={eventosHoy} color="purple" />
+        <Card icon={<FaTasks className="text-blue-400 text-2xl" />} title="Total Tareas" value={totalTareas} bg="blue" />
+        <Card icon={<FaCheckCircle className="text-green-400 text-2xl" />} title="Tareas Completadas" value={tareasCompletadas} bg="green" />
+        <Card icon={<FaClock className="text-yellow-400 text-2xl" />} title="Tareas Pendientes" value={tareasPendientes} bg="yellow" />
+        <Card icon={<FaCalendarAlt className="text-purple-400 text-2xl" />} title="Eventos Hoy" value={eventosHoy} bg="purple" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <StatBlock title="Tareas por Categoría" data={tareasPorCategoria} color="gray" total={totalTareas} />
-        <StatBlock title="Eventos por Tipo" data={eventosPorTipo} color="purple" total={totalEventos} />
+        <StatBlock title="Tareas por Categoría" data={tareasPorCategoria} total={totalTareas} color="gray" />
+        <StatBlock title="Eventos por Tipo" data={eventosPorTipo} total={totalEventos} color="purple" />
       </div>
 
       <div className="mt-8 bg-gray-700 rounded-lg p-5">
         <h2 className="text-xl font-semibold text-white mb-4">Resumen de Productividad</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <SummaryBlock label="Tasa de Finalización" value={`${totalTareas > 0 ? Math.round((tareasCompletadas / totalTareas) * 100) : 0}%`} sub="de tareas completadas" />
-          <SummaryBlock label="Eventos Programados" value={totalEventos} sub="en el calendario" />
-          <SummaryBlock label="Próximos 7 Días" value={proximosEventos} sub="eventos próximos" />
+          <SummaryCard title="Tasa de Finalización" value={`${totalTareas ? Math.round((tareasCompletadas / totalTareas) * 100) : 0}%`} subtitle="de tareas completadas" />
+          <SummaryCard title="Eventos Programados" value={totalEventos} subtitle="en el calendario" />
+          <SummaryCard title="Próximos 7 Días" value={proximosEventos} subtitle="eventos próximos" />
         </div>
       </div>
     </div>
   );
 };
 
-const Card = ({ icon, label, value, color }) => (
-  <div className={`bg-${color}-500/20 rounded-lg p-5 flex items-center`}>
-    <div className={`bg-${color}-500/20 p-3 rounded-full mr-4`}>
-      {React.cloneElement(icon, { className: `text-${color}-400 text-2xl` })}
+const Card = ({ icon, title, value, bg }) => (
+  <div className={`bg-${bg}-500/20 rounded-lg p-5 flex items-center`}>
+    <div className={`bg-${bg}-500/20 p-3 rounded-full mr-4`}>
+      {icon}
     </div>
     <div>
-      <p className="text-gray-400 text-sm">{label}</p>
+      <p className="text-gray-400 text-sm">{title}</p>
       <p className="text-2xl font-bold text-white">{value}</p>
     </div>
   </div>
 );
 
-const StatBlock = ({ title, data, color, total }) => (
+const StatBlock = ({ title, data, total, color }) => (
   <div className="bg-gray-700 rounded-lg p-5">
     <h2 className="text-xl font-semibold text-white mb-4">{title}</h2>
     <div className="space-y-3">
-      {Object.entries(data).map(([key, value]) => (
-        <div key={key} className="flex items-center justify-between">
-          <span className="text-gray-300">{key}</span>
+      {Object.entries(data).map(([label, count]) => (
+        <div key={label} className="flex items-center justify-between">
+          <span className="text-gray-300">{label}</span>
           <div className="flex items-center">
             <div
-              className={`h-2 rounded-full bg-${color}-500 mr-2`}
-              style={{ width: `${(value / total) * 100}%`, maxWidth: 100 }}
-            ></div>
-            <span className="text-white w-8 text-right">{value}</span>
+              className={`w-32 bg-${color}-500 rounded-full h-2 mr-2`}
+              style={{ width: `${(count / total) * 100}%` }}
+            />
+            <span className="text-white w-8 text-right">{count}</span>
           </div>
         </div>
       ))}
@@ -129,11 +124,11 @@ const StatBlock = ({ title, data, color, total }) => (
   </div>
 );
 
-const SummaryBlock = ({ label, value, sub }) => (
+const SummaryCard = ({ title, value, subtitle }) => (
   <div className="bg-gray-600 rounded-lg p-4 text-center">
-    <p className="text-gray-400">{label}</p>
+    <p className="text-gray-400">{title}</p>
     <p className="text-2xl font-bold text-white mt-2">{value}</p>
-    <p className="text-gray-400 text-sm mt-1">{sub}</p>
+    <p className="text-gray-400 text-sm mt-1">{subtitle}</p>
   </div>
 );
 
