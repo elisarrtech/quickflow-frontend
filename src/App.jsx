@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Dashboard from './pages/Dashboard'; // o la ruta correcta donde esté ubicado
 import DashboardLayout from './components/DashboardLayout';
 import Tareas from './pages/Tareas';
 import Eventos from './components/Eventos';
