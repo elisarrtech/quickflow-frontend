@@ -7,29 +7,37 @@ const Estadisticas = () => {
   const [tareas, setTareas] = useState([]);
   const [eventos, setEventos] = useState([]);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
+useEffect(() => {
+  const token = localStorage.getItem('token');
 
-    const fetchData = async () => {
-      try {
-        const tareasRes = await fetch(`${API_URL}/api/tareas`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const tareasData = await tareasRes.json();
-        setTareas(tareasData);
+  const fetchTareas = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/tareas`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setTareas(data.reverse()); // o simplemente data si no necesitas orden descendente
+    } catch (error) {
+      console.error("Error al cargar tareas:", error);
+    }
+  };
 
-        const eventosRes = await fetch(`${API_URL}/api/eventos`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const eventosData = await eventosRes.json();
-        setEventos(eventosData);
-      } catch (error) {
-        console.error('Error cargando datos:', error);
-      }
-    };
+  const fetchEventos = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/eventos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setEventos(data);
+    } catch (error) {
+      console.error("Error al cargar eventos:", error);
+    }
+  };
 
-    fetchData();
-  }, []);
+  fetchTareas();
+  fetchEventos();
+}, []);
+
 
   const totalTareas = tareas.length;
   const tareasCompletadas = tareas.filter(t => t.estado === 'completada').length;
