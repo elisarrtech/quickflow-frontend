@@ -1,14 +1,14 @@
 // src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Eliminamos Navigate por ahora
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Tareas from './pages/Tareas';
 import Eventos from './components/Eventos';
 import Estadisticas from './components/Estadisticas';
 import Perfil from './pages/Perfil';
-import Login from './pages/Login'; // Asegúrate de importarlo
-import Register from './pages/Register'; // Asegúrate de importarlo
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 function App() {
   return (
@@ -23,13 +23,6 @@ function App() {
         
         {/* Rutas protegidas (con DashboardLayout) */}
         <Route element={<DashboardLayout />}>
-          {/* 
-            Esta ruta se activa si alguien va a /dashboard directamente.
-            Aquí es donde normalmente verificarías si el usuario está logueado.
-            Si no lo está, lo rediriges a /login.
-            Si está logueado, muestras el Dashboard.
-            Por simplicidad ahora, asumimos que si llega aquí, está logueado.
-          */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tareas" element={<Tareas />} />
           <Route path="/eventos" element={<Eventos />} />
@@ -37,7 +30,6 @@ function App() {
           <Route path="/perfil" element={<Perfil />} />
           
           {/* Redirección por defecto dentro del layout si se accede a una subruta no definida */}
-          {/* Puedes redirigir a dashboard o a login basado en autenticación */}
           <Route path="*" element={<Dashboard />} /> 
         </Route>
       </Routes>
