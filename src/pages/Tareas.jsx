@@ -60,41 +60,61 @@ const Tareas = () => {
     Notification.requestPermission();
   }, []);
 
-  // Cargar tareas desde el backend
-useEffect(() => {
-  const obtenerTareas = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('No hay token');
-      return;
-    }
-    try {
-      const res = await fetch(API + '/api/tasks', {
-        headers: { Authorization: 'Bearer ' + token }
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Error API:', res.status, errorData);
+  // Cargar tareas desde el backend (¡único useEffect necesario!)
+  useEffect(() => {
+    const obtenerTareas = async () => {
+      const token = localStorage.getItem('token');
+      
+      // Verificar si hay token
+      if (!token) {
+        setError('No estás autenticado. Redirigiendo al login...');
+        setTimeout(() => navigate('/login'), 2000);
         return;
       }
 
-      const data = await res.json();
-      console.log('✅ Tareas recibidas:', data);
+      try {
+        const res = await fetch(`${API}/api/tasks`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Origin': 'https://peppy-starlight-fd4c37.netlify.app'
+          }
+        });
 
-      const tareasArray = Array.isArray(data) ? data : data.tareas || [];
-      setTareas(tareasArray);
+        // Manejar errores de autenticación o servidor
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          
+          if (res.status === 401) {
+            setError('Sesión inválida. Redirigiendo al login...');
+            setTimeout(() => {
+              navigate('/login');
+              localStorage.removeItem('token');
+            }, 2000);
+            return;
+          }
 
-      const categorias = [...new Set(tareasArray.map(t => t.categoria).filter(Boolean))];
-      setCategoriasExistentes(categorias);
+          setError(`Error ${res.status}: ${errorData.error || 'No se pudieron cargar las tareas'}`);
+          return;
+        }
 
-    } catch (error) {
-      console.error('🔴 Error de red al obtener tareas:', error);
-    }
-  };
+        const data = await res.json();
+        console.log('✅ Tareas cargadas:', data);
 
-  obtenerTareas();
-}, [API]);
+        // Asegurarse de que data sea un array
+        const tareasArray = Array.isArray(data) ? data : data.tareas || [];
+
+        setTareas(tareasArray);
+
+        // Extraer categorías únicas
+        const categorias = [...new Set(tareasArray.map(t => t.categoria).filter(Boolean))];
+        setCategoriasExistentes(categorias);
+
+      } catch (error) {
+        console.error('🔴 Error de red al obtener tareas:', error);
+        setError('No se pudo conectar con el servidor. Verifica tu conexión.');
+      }
+    };
 
     obtenerTareas();
   }, [API, navigate]);
