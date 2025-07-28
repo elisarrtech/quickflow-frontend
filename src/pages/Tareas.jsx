@@ -119,28 +119,6 @@ const Tareas = () => {
     obtenerTareas();
   }, [API, navigate]);
 
-  // Notificaciones cada minuto
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const ahora = new Date();
-      tareas.forEach(tarea => {
-        if (
-          tarea.estado === 'pendiente' &&
-          tarea.fecha &&
-          tarea.hora &&
-          new Date(tarea.fecha + 'T' + tarea.hora) <= ahora &&
-          new Date(tarea.fecha + 'T' + tarea.hora).getDate() === ahora.getDate()
-        ) {
-          new Notification('⏰ Recordatorio: ' + tarea.titulo, {
-            body: tarea.descripcion || 'Tarea pendiente.',
-            icon: '/favicon.ico'
-          });
-        }
-      });
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [tareas]);
 
   // Manejar drag & drop
   const onDragEnd = async (result) => {
