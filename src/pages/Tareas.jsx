@@ -8,6 +8,7 @@ const Tareas = () => {
   const [tareas, setTareas] = useState([]);
   const [nuevaTarea, setNuevaTarea] = useState('');
   const [categoriasExistentes, setCategoriasExistentes] = useState([]);
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     const obtenerTareas = async () => {
@@ -21,15 +22,20 @@ const Tareas = () => {
           setTareas(data);
           const categorias = [...new Set(data.map(t => t.categoria).filter(Boolean))];
           setCategoriasExistentes(categorias);
+        } else {
+          console.error("Error al obtener tareas:", data.message || res.statusText);
         }
       } catch (error) {
-        console.error('Error al obtener tareas:', error);
+        console.error('Error de conexión al obtener tareas:', error);
+      } finally {
+        setCargando(false);
       }
     };
     obtenerTareas();
   }, []);
 
   const crearTarea = async () => {
+    if (!nuevaTarea.trim()) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(RUTAS_API.tareas, {
@@ -44,9 +50,11 @@ const Tareas = () => {
       if (res.ok) {
         setTareas([...tareas, data]);
         setNuevaTarea('');
+      } else {
+        console.error("Error al crear tarea:", data.message);
       }
     } catch (error) {
-      console.error('Error al crear tarea:', error);
+      console.error('Error de conexión al crear tarea:', error);
     }
   };
 
@@ -105,35 +113,43 @@ const Tareas = () => {
           </button>
         </div>
 
-        <div className="space-y-4">
-          {tareas.map((tarea) => (
-            <div
-              key={tarea._id}
-              className="bg-gray-800 p-4 rounded shadow flex justify-between items-center"
-            >
-              <div>
-                <h3 className="text-lg font-semibold">{tarea.titulo}</h3>
-                {tarea.categoria && (
-                  <span className="text-sm text-gray-400">Categoría: {tarea.categoria}</span>
-                )}
+        {cargando ? (
+          <p className="text-gray-400">Cargando tareas...</p>
+        ) : tareas.length === 0 ? (
+          <p className="text-gray-400">No tienes tareas registradas.</p>
+        ) : (
+          <div className="space-y-4">
+            {tareas.map((tarea) => (
+              <div
+                key={tarea._id}
+                className="bg-gray-800 p-4 rounded shadow flex justify-between items-center"
+              >
+                <div>
+                  <h3 className="text-lg font-semibold">{tarea.titulo}</h3>
+                  {tarea.categoria && (
+                    <span className="text-sm text-gray-400">
+                      Categoría: {tarea.categoria}
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => actualizarTarea(tarea._id, { completada: !tarea.completada })}
+                    className="text-green-400 hover:text-green-600"
+                  >
+                    <FaCheckCircle />
+                  </button>
+                  <button
+                    onClick={() => eliminarTarea(tarea._id)}
+                    className="text-red-400 hover:text-red-600"
+                  >
+                    <FaTrashAlt />
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => actualizarTarea(tarea._id, { completada: !tarea.completada })}
-                  className="text-green-400 hover:text-green-600"
-                >
-                  <FaCheckCircle />
-                </button>
-                <button
-                  onClick={() => eliminarTarea(tarea._id)}
-                  className="text-red-400 hover:text-red-600"
-                >
-                  <FaTrashAlt />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
