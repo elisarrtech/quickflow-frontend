@@ -19,7 +19,6 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { RUTAS_API } from '../utils/apiRoutes'; // ✅ AÑADIDO
 
 const coloresPorCategoria = {
   trabajo: 'bg-blue-600',
@@ -29,7 +28,6 @@ const coloresPorCategoria = {
   otros: 'bg-gray-600'
 };
 
-
 const Tareas = () => {
   const [tareas, setTareas] = useState([]);
   const [titulo, setTitulo] = useState('');
@@ -37,7 +35,6 @@ const Tareas = () => {
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [categoria, setCategoria] = useState('');
-  const [subtareasInput, setSubtareasInput] = useState('');
   const [subtareas, setSubtareas] = useState([]);
   const [archivo, setArchivo] = useState(null);
   const [enlace, setEnlace] = useState('');
@@ -54,97 +51,144 @@ const Tareas = () => {
   const [asignadoAFiltro, setAsignadoAFiltro] = useState('');
   const [asignadoA, setAsignadoA] = useState('');
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
+
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
-  useEffect(() => { Notification.requestPermission(); }, []);
+  // Solicitar permiso para notificaciones
+  useEffect(() => {
+    Notification.requestPermission();
+  }, []);
 
+  // Cargar tareas desde el backend
+  useEffect(() => {
+    const obtenerTareas = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('No estás autenticado. Redirigiendo al login...');
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/api/tasks`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Origin': 'https://peppy-starlight-fd4c37.netlify.app'
+          }
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error('Error al obtener tareas:', res.status, errorData);
+          if (res.status === 401) {
+            setError('Sesión inválida. Redirigiendo al login...');
+            setTimeout(() => {
+              navigate('/login');
+              localStorage.removeItem('token');
+            }, 2000);
+          } else {
+            setError(`Error ${res.status}: ${errorData.error || 'No se pudieron cargar las tareas'}`);
+          }
+          return;
+        }
+
+        const data = await res.json();
+        console.log('✅ Tareas cargadas:', data);
+
+        const tareasArray = Array.isArray(data) ? data : data.tareas || [];
+        setTareas(tareasArray);
+
+        // Extraer categorías únicas
+        const categorias = [...new Set(tareasArray.map(t => t.categoria).filter(Boolean))];
+        setCategoriasExistentes(categorias);
+
+      } catch (error) {
+        console.error('🔴 Error de red al cargar tareas:', error);
+        setError('No se pudo conectar con el servidor. Verifica tu conexión.');
+      }
+    };
+
+    obtenerTareas();
+  }, [API, navigate]);
+
+  // Notificaciones cada minuto
   useEffect(() => {
     const interval = setInterval(() => {
       const ahora = new Date();
-      tareas.forEach(t => {
-        if (t.estado === 'pendiente' && t.fecha === ahora.toISOString().split('T')[0] && t.hora && new Date(t.fecha + 'T' + t.hora) <= ahora) {
-          new Notification('⏰ Recordatorio programado', {
-            body: t.titulo + ' está programada para esta hora',
+      tareas.forEach(tarea => {
+        if (
+          tarea.estado === 'pendiente' &&
+          tarea.fecha &&
+          tarea.hora &&
+          new Date(tarea.fecha + 'T' + tarea.hora) <= ahora &&
+          new Date(tarea.fecha + 'T' + tarea.hora).getDate() === ahora.getDate()
+        ) {
+          new Notification('⏰ Recordatorio: ' + tarea.titulo, {
+            body: tarea.descripcion || 'Tarea pendiente.',
             icon: '/favicon.ico'
           });
         }
       });
     }, 60000);
+
     return () => clearInterval(interval);
   }, [tareas]);
 
-  useEffect(() => {
-    const obtenerTareas = async () => {
-      const token = localStorage.getItem('token');
-      try {
-        const res = await fetch(API + '/api/tasks', { headers: { Authorization: 'Bearer ' + token } });
-        const data = await res.json();
-        if (res.ok) {
-          setTareas(data);
-          const categorias = [...new Set(data.map(t => t.categoria).filter(Boolean))];
-          setCategoriasExistentes(categorias);
-        }
-      } catch (error) {
-        console.error('Error al obtener tareas:', error);
-      }
-    };
-    obtenerTareas();
-  }, []);
-
+  // Manejar drag & drop
   const onDragEnd = async (result) => {
-    // Corrección: Agregar await y manejo de errores
     if (!result.destination) return;
+
     const { source, destination } = result;
-    // Si no hay cambio real, no hacer nada
-    if (source.droppableId === destination.droppableId && source.index === destination.index) {
-      return;
-    }
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
     const items = Array.from(tareas);
     const [movedItem] = items.splice(source.index, 1);
-    // Actualizar estado local inmediatamente para una mejor UX
     const updatedItem = { ...movedItem, estado: destination.droppableId };
     items.splice(destination.index, 0, updatedItem);
     setTareas(items);
-    // Actualizar en el backend
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(API + '/api/tasks/' + movedItem._id, {
+      const res = await fetch(`${API}/api/tasks/${movedItem._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ estado: destination.droppableId }),
+        body: JSON.stringify({ estado: destination.droppableId })
       });
-      if (!response.ok) {
-        // Si falla, revertir el cambio local
-        const originalItems = Array.from(tareas);
-        setTareas(originalItems);
-        console.error('Error al actualizar el estado de la tarea');
+
+      if (!res.ok) {
+        setTareas(tareas); // revertir
+        console.error('Error al actualizar estado en el backend');
       }
     } catch (error) {
-      // Si hay error de red, revertir el cambio local
-      const originalItems = Array.from(tareas);
-      setTareas(originalItems);
-      console.error('Error de red al actualizar la tarea:', error);
+      setTareas(tareas); // revertir por error de red
+      console.error('Error de red al actualizar tarea:', error);
     }
   };
 
-  const tareasPorEstado = (estado) => tareas.filter(t => t.estado === estado);
-  const colorCategoria = (cat) => coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
-
+  // Filtrar tareas
   const filtrarTareas = () => {
     let filtradas = [...tareas];
+
     if (categoriaFiltro) filtradas = filtradas.filter(t => t.categoria === categoriaFiltro);
     if (estadoFiltro) filtradas = filtradas.filter(t => t.estado === estadoFiltro);
-    if (asignadoAFiltro) filtradas = filtradas.filter(t => t.asignadoA && t.asignadoA.toLowerCase().includes(asignadoAFiltro.toLowerCase())); // Filtro por asignación
-    if (fechaInicio && !fechaFin) filtradas = filtradas.filter(t => new Date(t.fecha).toISOString().split('T')[0] === fechaInicio);
+    if (asignadoAFiltro) filtradas = filtradas.filter(t => t.asignadoA?.toLowerCase().includes(asignadoAFiltro.toLowerCase()));
+    if (fechaInicio && !fechaFin) filtradas = filtradas.filter(t => t.fecha === fechaInicio);
     if (fechaInicio && fechaFin) filtradas = filtradas.filter(t => new Date(t.fecha) >= new Date(fechaInicio) && new Date(t.fecha) <= new Date(fechaFin));
-    return filtradas.sort((a, b) => a.estado !== b.estado ? (a.estado === 'pendiente' ? -1 : 1) : new Date(a.fecha) - new Date(b.fecha));
+
+    return filtradas.sort((a, b) => {
+      if (a.estado !== b.estado) return a.estado === 'pendiente' ? -1 : 1;
+      return new Date(a.fecha) - new Date(b.fecha);
+    });
   };
 
   const tareasFiltradas = filtrarTareas();
+  const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
+
+  const colorCategoria = (cat) => coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
 
   const limpiarFormulario = () => {
     setTitulo('');
@@ -156,7 +200,7 @@ const Tareas = () => {
     setEnlace('');
     setSubtareas([]);
     setArchivo(null);
-    setAsignadoA(''); // Limpiar asignación
+    setAsignadoA('');
     setError('');
     setExito('');
     setModoEdicion(null);
@@ -167,11 +211,13 @@ const Tareas = () => {
     setEstadoFiltro('');
     setFechaInicio('');
     setFechaFin('');
-    setAsignadoAFiltro(''); // Limpiar filtro de asignación
+    setAsignadoAFiltro('');
   };
 
+  // Crear nueva tarea
   const crearTarea = async () => {
     if (!titulo.trim()) return setError('El título es obligatorio');
+
     const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('titulo', titulo);
@@ -181,140 +227,131 @@ const Tareas = () => {
     formData.append('categoria', categoria);
     formData.append('nota', nota);
     formData.append('enlace', enlace);
-    formData.append('asignadoA', asignadoA); // Agregar asignación
+    formData.append('asignadoA', asignadoA);
     formData.append('estado', 'pendiente');
     formData.append('subtareas', JSON.stringify(subtareas));
     if (archivo) formData.append('archivo', archivo);
+
     try {
-      const res = await fetch(API + '/api/tasks', {
+      const res = await fetch(`${API}/api/tasks`, {
         method: 'POST',
         headers: {
-          Authorization: 'Bearer ' + token,
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
+
       const data = await res.json();
       if (res.ok) {
         setTareas(prev => [...prev, data]);
-        setExito('✅ Tarea agregada exitosamente.');
+        setExito('✅ Tarea creada con éxito.');
         limpiarFormulario();
         setTimeout(() => setExito(''), 3000);
         if (!categoriasExistentes.includes(data.categoria)) {
           setCategoriasExistentes(prev => [...prev, data.categoria]);
         }
       } else {
-        console.error('Error al crear tarea:', data);
-        setError(data?.error || 'Error desconocido');
+        setError(data.error || 'Error al crear la tarea');
       }
     } catch (error) {
-      console.error('Error de red al crear tarea:', error);
+      setError('Error de red al crear la tarea');
     }
   };
 
+  // Editar tarea
   const guardarEdicion = async () => {
     if (!modoEdicion) return;
+
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(API + '/api/tasks/' + modoEdicion, {
+      const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
         method: 'PUT',
         headers: {
-          Authorization: 'Bearer ' + token,
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas }), // Incluir asignación
+        body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas })
       });
+
       const data = await res.json();
       if (res.ok) {
         setTareas(prev => prev.map(t => (t._id === modoEdicion ? { ...t, ...data } : t)));
-        setExito('✅ Tarea actualizada correctamente.');
+        setExito('✅ Tarea actualizada.');
         limpiarFormulario();
         setTimeout(() => setExito(''), 3000);
       } else {
-        console.error('Error al editar tarea:', data);
-        setError(data?.error || 'Error al editar');
+        setError(data.error || 'Error al guardar');
       }
     } catch (error) {
-      console.error('Error de red al editar tarea:', error);
+      setError('Error de red al actualizar');
     }
   };
 
-  // Función para compartir por correo
+  // Compartir por correo
   const compartirPorCorreo = (tarea) => {
     const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
     const cuerpo = encodeURIComponent(
-      `Hola,
-Te comparto la siguiente tarea:
-` +
-      `Título: ${tarea.titulo}
-` +
-      `Descripción: ${tarea.descripcion || 'Sin descripción'}
-` +
-      `Fecha: ${tarea.fecha || 'Sin fecha'}
-` +
-      `Hora: ${tarea.hora || 'Sin hora'}
-` +
-      `Categoría: ${tarea.categoria || 'Sin categoría'}
-` +
-      `Asignado a: ${tarea.asignadoA || 'No asignado'}
-` +
-      `${tarea.enlace ? `
-Enlace relacionado: ${tarea.enlace}
-` : ''}` +
-      `${tarea.nota ? `
-Nota: ${tarea.nota}
-` : ''}`
+      `Hola,\n\n` +
+      `Título: ${tarea.titulo}\n` +
+      `Descripción: ${tarea.descripcion || 'Sin descripción'}\n` +
+      `Fecha: ${tarea.fecha || 'Sin fecha'}\n` +
+      `Hora: ${tarea.hora || 'Sin hora'}\n` +
+      `Categoría: ${tarea.categoria || 'Sin categoría'}\n` +
+      `Asignado a: ${tarea.asignadoA || 'No asignado'}\n` +
+      `${tarea.enlace ? `\nEnlace: ${tarea.enlace}` : ''}` +
+      `${tarea.nota ? `\nNota: ${tarea.nota}` : ''}`
     );
     window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
   };
 
-  // Función para compartir por WhatsApp
+  // Compartir por WhatsApp
   const compartirPorWhatsApp = (tarea) => {
     const texto = encodeURIComponent(
-      `*Tarea: ${tarea.titulo}*
-` +
-      `Descripción: ${tarea.descripcion || 'Sin descripción'}
-` +
-      `Fecha: ${tarea.fecha || 'Sin fecha'}
-` +
-      `Hora: ${tarea.hora || 'Sin hora'}
-` +
-      `Categoría: ${tarea.categoria || 'Sin categoría'}
-` +
-      `Asignado a: ${tarea.asignadoA || 'No asignado'}
-` +
-      `${tarea.enlace ? `
-Enlace: ${tarea.enlace}
-` : ''}` +
-      `${tarea.nota ? `
-Nota: ${tarea.nota}
-` : ''}`
+      `*Tarea: ${tarea.titulo}*\n` +
+      `Descripción: ${tarea.descripcion || 'Sin descripción'}\n` +
+      `Fecha: ${tarea.fecha || 'Sin fecha'}\n` +
+      `Hora: ${tarea.hora || 'Sin hora'}\n` +
+      `Categoría: ${tarea.categoria || 'Sin categoría'}\n` +
+      `Asignado a: ${tarea.asignadoA || 'No asignado'}\n` +
+      `${tarea.enlace ? `\nEnlace: ${tarea.enlace}` : ''}` +
+      `${tarea.nota ? `\nNota: ${tarea.nota}` : ''}`
     );
     window.open(`https://wa.me/?text=${texto}`, '_blank');
   };
 
-  // Obtener lista única de personas asignadas para el filtro
-  const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
-
   return (
     <div className="text-white p-6 max-w-5xl mx-auto">
-      {/* Mostrar mensajes de éxito y error */}
-      {exito && <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{exito}</div>}
-      {error && <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-500 ease-in-out">{error}</div>}
+      {/* Mensajes */}
+      {exito && (
+        <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50">
+          {exito}
+        </div>
+      )}
+      {error && (
+        <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50">
+          {error}
+        </div>
+      )}
 
+      {/* Filtros */}
       <h2 className="text-xl font-semibold mb-4">Filtros</h2>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white">
-          <option value="">Todas las categorías</option>
-          {categoriasExistentes.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          <option value="">Todas</option>
+          {categoriasExistentes.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
         </select>
         <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)} className="input bg-gray-800 text-white">
-          <option value="">Todos los estados</option>
+          <option value="">Todos</option>
           <option value="pendiente">Pendiente</option>
           <option value="completada">Completada</option>
         </select>
         <select value={asignadoAFiltro} onChange={e => setAsignadoAFiltro(e.target.value)} className="input bg-gray-800 text-white">
-          <option value="">Todas las asignaciones</option>
-          {personasAsignadas.map(persona => <option key={persona} value={persona}>{persona}</option>)}
+          <option value="">Todos</option>
+          {personasAsignadas.map(persona => (
+            <option key={persona} value={persona}>{persona}</option>
+          ))}
         </select>
         <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} className="input bg-gray-800 text-white" />
         <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white" />
@@ -324,16 +361,16 @@ Nota: ${tarea.nota}
       {/* Formulario */}
       <div className="bg-gray-900 p-4 rounded mb-8">
         <h2 className="text-xl font-bold mb-4">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
-        <input className="input w-full mb-2 bg-gray-800 text-white" placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} />
-        <input className="input w-full mb-2 bg-gray-800 text-white" placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} />
+        <input placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
+        <input placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-          <input type="date" className="input bg-gray-800 text-white" value={fecha} onChange={e => setFecha(e.target.value)} />
-          <input type="time" className="input bg-gray-800 text-white" value={hora} onChange={e => setHora(e.target.value)} />
-          <input className="input bg-gray-800 text-white" placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} />
-          <input className="input bg-gray-800 text-white" placeholder="Enlace relacionado" value={enlace} onChange={e => setEnlace(e.target.value)} />
+          <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="input bg-gray-800 text-white" />
+          <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="input bg-gray-800 text-white" />
+          <input placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="input bg-gray-800 text-white" />
+          <input placeholder="Enlace" value={enlace} onChange={e => setEnlace(e.target.value)} className="input bg-gray-800 text-white" />
         </div>
-        <input className="input w-full mb-2 bg-gray-800 text-white" placeholder="Asignar a (nombre o email)" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} /> {/* Campo de asignación */}
-        <textarea className="input w-full mb-2 bg-gray-800 text-white" placeholder="Nota larga" value={nota} onChange={e => setNota(e.target.value)} />
+        <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
+        <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
         <input type="file" onChange={e => setArchivo(e.target.files[0])} className="input w-full mb-2 bg-gray-800 text-white" />
         {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
         <button
@@ -356,41 +393,18 @@ Nota: ${tarea.nota}
               {t.fecha && <span className="bg-gray-700 px-2 py-0.5 rounded">📅 {t.fecha}</span>}
               {t.hora && <span className="bg-gray-700 px-2 py-0.5 rounded">⏰ {t.hora}</span>}
               {t.categoria && <span className="bg-blue-700 px-2 py-0.5 rounded flex items-center gap-1"><FaTag /> {t.categoria}</span>}
-              {t.asignadoA && <span className="bg-indigo-700 px-2 py-0.5 rounded flex items-center gap-1"><FaUser /> {t.asignadoA}</span>} {/* Mostrar asignación */}
+              {t.asignadoA && <span className="bg-indigo-700 px-2 py-0.5 rounded flex items-center gap-1"><FaUser /> {t.asignadoA}</span>}
               {t.nota && <span className="bg-purple-700 px-2 py-0.5 rounded">📝 Nota</span>}
               {t.enlace && <a href={t.enlace} target="_blank" rel="noopener noreferrer" className="bg-cyan-700 px-2 py-0.5 rounded flex items-center gap-1"><FaExternalLinkAlt /> Enlace</a>}
               {t.archivoUrl && <a href={t.archivoUrl} target="_blank" rel="noopener noreferrer" className="bg-teal-700 px-2 py-0.5 rounded flex items-center gap-1"><FaPaperclip /> Archivo</a>}
             </div>
-            {/* Acciones al pie */}
             <div className="flex justify-end gap-3 mt-4">
-              {/* Botón de compartir */}
               <div className="relative">
-                <button
-                  onClick={() => setCompartirMenuAbierto(compartirMenuAbierto === t._id ? null : t._id)}
-                  className="text-blue-400 hover:text-blue-200"
-                >
-                  <FaShareAlt />
-                </button>
+                <button onClick={() => setCompartirMenuAbierto(compartirMenuAbierto === t._id ? null : t._id)} className="text-blue-400 hover:text-blue-200"><FaShareAlt /></button>
                 {compartirMenuAbierto === t._id && (
                   <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
-                    <button
-                      onClick={() => {
-                        compartirPorCorreo(t);
-                        setCompartirMenuAbierto(null);
-                      }}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"
-                    >
-                      <FaEnvelope className="text-blue-400" /> Correo electrónico
-                    </button>
-                    <button
-                      onClick={() => {
-                        compartirPorWhatsApp(t);
-                        setCompartirMenuAbierto(null);
-                      }}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"
-                    >
-                      <FaWhatsapp className="text-green-400" /> WhatsApp
-                    </button>
+                    <button onClick={() => { compartirPorCorreo(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaEnvelope /> Correo</button>
+                    <button onClick={() => { compartirPorWhatsApp(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaWhatsapp /> WhatsApp</button>
                   </div>
                 )}
               </div>
@@ -403,43 +417,33 @@ Nota: ${tarea.nota}
                 setCategoria(t.categoria);
                 setNota(t.nota);
                 setEnlace(t.enlace);
-                setAsignadoA(t.asignadoA || ''); // Cargar asignación
-                setSubtareas(t.subtareas || []);
-              }} className="text-yellow-400 hover:text-yellow-200">
-                ✏️ Editar
-              </button>
+                setAsignadoA(t.asignadoA || '');
+              }} className="text-yellow-400 hover:text-yellow-200">✏️ Editar</button>
               <button
                 onClick={async () => {
                   const token = localStorage.getItem('token');
                   const nuevoEstado = t.estado === 'pendiente' ? 'completada' : 'pendiente';
-                  const res = await fetch(API + '/api/tasks/' + t._id, {
+                  const res = await fetch(`${API}/api/tasks/${t._id}`, {
                     method: 'PUT',
                     headers: {
                       'Content-Type': 'application/json',
-                      Authorization: 'Bearer ' + token
+                      'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ estado: nuevoEstado }),
+                    body: JSON.stringify({ estado: nuevoEstado })
                   });
                   if (res.ok) {
-                    setTareas(prev => prev.map(task => task._id === t._id ? { ...task, estado: nuevoEstado } : task));
+                    setTareas(prev => prev.map(task => (task._id === t._id ? { ...task, estado: nuevoEstado } : task)));
                   }
                 }}
                 className="text-green-400 hover:text-green-200"
               >
-                {t.estado === 'pendiente' ? '✅ Marcar como completada' : '⏳ Marcar como pendiente'}
+                {t.estado === 'pendiente' ? '✅ Completar' : '⏳ Pendiente'}
               </button>
               <button
                 onClick={async () => {
                   const token = localStorage.getItem('token');
-                  const res = await fetch(API + '/api/tasks/' + t._id, {
-                    method: 'DELETE',
-                    headers: {
-                      Authorization: 'Bearer ' + token
-                    },
-                  });
-                  if (res.ok) {
-                    setTareas(prev => prev.filter(task => task._id !== t._id));
-                  }
+                  const res = await fetch(`${API}/api/tasks/${t._id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                  if (res.ok) setTareas(prev => prev.filter(task => task._id !== t._id));
                 }}
                 className="text-red-500 hover:text-red-300"
               >
@@ -450,11 +454,11 @@ Nota: ${tarea.nota}
         ))}
       </div>
 
-      {/* Vista Kanban con drag & drop */}
+      {/* Vista Kanban */}
       <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Cambiado a 2 columnas (sin "en progreso") */}
-          {['pendiente', 'completada'].map((estado) => ( // Solo pendiente y completada
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {['pendiente', 'completada'].map(estado => (
             <Droppable droppableId={estado} key={estado}>
               {(provided, snapshot) => (
                 <div
@@ -462,25 +466,21 @@ Nota: ${tarea.nota}
                   {...provided.droppableProps}
                   className={`bg-gray-800 rounded-lg p-4 shadow min-h-[200px] ${snapshot.isDraggingOver ? 'bg-gray-700' : ''}`}
                 >
-                  <h3 className="text-lg font-semibold capitalize text-white mb-2">{estado}</h3>
-                  {tareasPorEstado(estado).map((tarea, index) => (
-                    <Draggable draggableId={tarea._id} index={index} key={tarea._id}>
-                      {(provided, snapshot) => (
+                  <h3 className="text-lg font-semibold text-white mb-2">{estado === 'pendiente' ? 'Pendientes' : 'Completadas'}</h3>
+                  {tareas.filter(t => t.estado === estado).map((tarea, index) => (
+                    <Draggable key={tarea._id} draggableId={tarea._id} index={index}>
+                      {(provided) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
-                          className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(tarea.categoria)} ${snapshot.isDragging ? 'opacity-90' : ''}`}
+                          className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(tarea.categoria)}`}
                         >
                           <h4 className="font-bold">{tarea.titulo}</h4>
-                          <p className="text-sm text-white/90">{tarea.descripcion}</p>
-                          {tarea.asignadoA && ( // Mostrar asignación en Kanban
-                            <p className="text-xs text-white/80 flex items-center gap-1 mt-1">
-                              <FaUser className="text-xs" /> {tarea.asignadoA}
-                            </p>
-                          )}
-                          <p className="text-xs text-white/70">📅 {tarea.fecha} 🕒 {tarea.hora}</p>
-                          {tarea.categoria && <p className="text-xs mt-1 flex items-center gap-1"><FaTag /> {tarea.categoria}</p>}
+                          <p className="text-sm">{tarea.descripcion}</p>
+                          {tarea.asignadoA && <p className="text-xs flex items-center gap-1"><FaUser /> {tarea.asignadoA}</p>}
+                          <p className="text-xs">📅 {tarea.fecha} ⏰ {tarea.hora}</p>
+                          {tarea.categoria && <p className="text-xs"><FaTag /> {tarea.categoria}</p>}
                         </div>
                       )}
                     </Draggable>
