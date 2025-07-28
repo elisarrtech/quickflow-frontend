@@ -19,6 +19,7 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { RUTAS_API } from '../utils/apiRoutes'; // ✅ AÑADIDO
 
 const coloresPorCategoria = {
   trabajo: 'bg-blue-600',
@@ -27,6 +28,7 @@ const coloresPorCategoria = {
   estudio: 'bg-purple-600',
   otros: 'bg-gray-600'
 };
+
 
 const Tareas = () => {
   const [tareas, setTareas] = useState([]);
