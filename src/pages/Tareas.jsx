@@ -4,7 +4,6 @@ import {
   FaCheckCircle,
   FaEdit,
   FaTrashAlt,
-  FaPlus,
   FaTag,
   FaExternalLinkAlt,
   FaPaperclip,
@@ -15,7 +14,10 @@ import {
   FaUser,
   FaShareAlt,
   FaEnvelope,
-  FaWhatsapp
+  FaWhatsapp,
+  FaCalendarAlt,  // ✅ Añadido
+  FaClock,        // ✅ Añadido
+  FaStickyNote    // ✅ Añadido
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -60,12 +62,10 @@ const Tareas = () => {
     Notification.requestPermission();
   }, []);
 
-  // Cargar tareas desde el backend (¡único useEffect necesario!)
+  // Cargar tareas desde el backend
   useEffect(() => {
     const obtenerTareas = async () => {
       const token = localStorage.getItem('token');
-      
-      // Verificar si hay token
       if (!token) {
         setError('No estás autenticado. Redirigiendo al login...');
         setTimeout(() => navigate('/login'), 2000);
@@ -81,32 +81,26 @@ const Tareas = () => {
           }
         });
 
-        // Manejar errores de autenticación o servidor
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
-          
           if (res.status === 401) {
             setError('Sesión inválida. Redirigiendo al login...');
             setTimeout(() => {
               navigate('/login');
               localStorage.removeItem('token');
             }, 2000);
-            return;
+          } else {
+            setError(`Error ${res.status}: ${errorData.error || 'No se pudieron cargar las tareas'}`);
           }
-
-          setError(`Error ${res.status}: ${errorData.error || 'No se pudieron cargar las tareas'}`);
           return;
         }
 
         const data = await res.json();
         console.log('✅ Tareas cargadas:', data);
 
-        // Asegurarse de que data sea un array
         const tareasArray = Array.isArray(data) ? data : data.tareas || [];
-
         setTareas(tareasArray);
 
-        // Extraer categorías únicas
         const categorias = [...new Set(tareasArray.map(t => t.categoria).filter(Boolean))];
         setCategoriasExistentes(categorias);
 
@@ -118,7 +112,6 @@ const Tareas = () => {
 
     obtenerTareas();
   }, [API, navigate]);
-
 
   // Manejar drag & drop
   const onDragEnd = async (result) => {
@@ -145,11 +138,11 @@ const Tareas = () => {
       });
 
       if (!res.ok) {
-        setTareas(tareas); // revertir
+        setTareas(tareas);
         console.error('Error al actualizar estado en el backend');
       }
     } catch (error) {
-      setTareas(tareas); // revertir por error de red
+      setTareas(tareas);
       console.error('Error de red al actualizar tarea:', error);
     }
   };
@@ -157,13 +150,11 @@ const Tareas = () => {
   // Filtrar tareas
   const filtrarTareas = () => {
     let filtradas = [...tareas];
-
     if (categoriaFiltro) filtradas = filtradas.filter(t => t.categoria === categoriaFiltro);
     if (estadoFiltro) filtradas = filtradas.filter(t => t.estado === estadoFiltro);
     if (asignadoAFiltro) filtradas = filtradas.filter(t => t.asignadoA?.toLowerCase().includes(asignadoAFiltro.toLowerCase()));
     if (fechaInicio && !fechaFin) filtradas = filtradas.filter(t => t.fecha === fechaInicio);
     if (fechaInicio && fechaFin) filtradas = filtradas.filter(t => new Date(t.fecha) >= new Date(fechaInicio) && new Date(t.fecha) <= new Date(fechaFin));
-
     return filtradas.sort((a, b) => {
       if (a.estado !== b.estado) return a.estado === 'pendiente' ? -1 : 1;
       return new Date(a.fecha) - new Date(b.fecha);
@@ -374,18 +365,55 @@ const Tareas = () => {
               {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
             </h3>
             <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
-            <div className="text-sm flex flex-wrap gap-2 mt-2">
-              {t.fecha && <span className="bg-gray-700 px-2 py-0.5 rounded">📅 {t.fecha}</span>}
-              {t.hora && <span className="bg-gray-700 px-2 py-0.5 rounded">⏰ {t.hora}</span>}
-              {t.categoria && <span className="bg-blue-700 px-2 py-0.5 rounded flex items-center gap-1"><FaTag /> {t.categoria}</span>}
-              {t.asignadoA && <span className="bg-indigo-700 px-2 py-0.5 rounded flex items-center gap-1"><FaUser /> {t.asignadoA}</span>}
-              {t.nota && <span className="bg-purple-700 px-2 py-0.5 rounded">📝 Nota</span>}
-              {t.enlace && <a href={t.enlace} target="_blank" rel="noopener noreferrer" className="bg-cyan-700 px-2 py-0.5 rounded flex items-center gap-1"><FaExternalLinkAlt /> Enlace</a>}
-              {t.archivoUrl && <a href={t.archivoUrl} target="_blank" rel="noopener noreferrer" className="bg-teal-700 px-2 py-0.5 rounded flex items-center gap-1"><FaPaperclip /> Archivo</a>}
+
+            {/* Etiquetas con nuevos estilos */}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {t.fecha && (
+                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-purple-600">
+                  <FaCalendarAlt className="inline mr-1" /> {t.fecha}
+                </span>
+              )}
+              {t.hora && (
+                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-pink-500">
+                  <FaClock className="inline mr-1" /> {t.hora}
+                </span>
+              )}
+              {t.categoria && (
+                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-blue-600">
+                  <FaTag className="inline mr-1" /> {t.categoria?.toUpperCase()}
+                </span>
+              )}
+              {t.asignadoA && (
+                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-gray-600">
+                  <FaUser className="inline mr-1" /> {t.asignadoA}
+                </span>
+              )}
+              {t.nota && (
+                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-fuchsia-600">
+                  <FaStickyNote className="inline mr-1" /> Nota
+                </span>
+              )}
+              {t.enlace && (
+                <a href={t.enlace} target="_blank" rel="noopener noreferrer" className="px-2 py-1 rounded text-white text-sm font-semibold bg-indigo-600">
+                  <FaExternalLinkAlt className="inline mr-1" /> Enlace
+                </a>
+              )}
+              {t.archivoUrl && (
+                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-emerald-600">
+                  <FaPaperclip className="inline mr-1" /> Archivo
+                </span>
+              )}
             </div>
+
+            {/* Botones de acción con nuevos colores */}
             <div className="flex justify-end gap-3 mt-4">
               <div className="relative">
-                <button onClick={() => setCompartirMenuAbierto(compartirMenuAbierto === t._id ? null : t._id)} className="text-blue-400 hover:text-blue-200"><FaShareAlt /></button>
+                <button
+                  onClick={() => setCompartirMenuAbierto(compartirMenuAbierto === t._id ? null : t._id)}
+                  className="text-blue-400 hover:text-blue-600"
+                >
+                  <FaShareAlt />
+                </button>
                 {compartirMenuAbierto === t._id && (
                   <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
                     <button onClick={() => { compartirPorCorreo(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaEnvelope /> Correo</button>
@@ -393,17 +421,24 @@ const Tareas = () => {
                   </div>
                 )}
               </div>
-              <button onClick={() => {
-                setModoEdicion(t._id);
-                setTitulo(t.titulo);
-                setDescripcion(t.descripcion);
-                setFecha(t.fecha);
-                setHora(t.hora);
-                setCategoria(t.categoria);
-                setNota(t.nota);
-                setEnlace(t.enlace);
-                setAsignadoA(t.asignadoA || '');
-              }} className="text-yellow-400 hover:text-yellow-200">✏️ Editar</button>
+
+              <button
+                onClick={() => {
+                  setModoEdicion(t._id);
+                  setTitulo(t.titulo);
+                  setDescripcion(t.descripcion);
+                  setFecha(t.fecha);
+                  setHora(t.hora);
+                  setCategoria(t.categoria);
+                  setNota(t.nota);
+                  setEnlace(t.enlace);
+                  setAsignadoA(t.asignadoA || '');
+                }}
+                className="text-yellow-500 hover:text-yellow-600"
+              >
+                <FaEdit /> Editar
+              </button>
+
               <button
                 onClick={async () => {
                   const token = localStorage.getItem('token');
@@ -420,19 +455,20 @@ const Tareas = () => {
                     setTareas(prev => prev.map(task => (task._id === t._id ? { ...task, estado: nuevoEstado } : task)));
                   }
                 }}
-                className="text-green-400 hover:text-green-200"
+                className="text-green-500 hover:text-green-600"
               >
-                {t.estado === 'pendiente' ? '✅ Completar' : '⏳ Pendiente'}
+                <FaCheckCircle /> {t.estado === 'pendiente' ? 'Completar' : 'Pendiente'}
               </button>
+
               <button
                 onClick={async () => {
                   const token = localStorage.getItem('token');
                   const res = await fetch(`${API}/api/tasks/${t._id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
                   if (res.ok) setTareas(prev => prev.filter(task => task._id !== t._id));
                 }}
-                className="text-red-500 hover:text-red-300"
+                className="text-red-500 hover:text-red-600"
               >
-                🗑️ Eliminar
+                <FaTrashAlt /> Eliminar
               </button>
             </div>
           </div>
