@@ -156,6 +156,21 @@ const Estadisticas = () => {
       <div className="flex gap-4 mb-6">
         <button onClick={() => exportToPDF("estadisticas", "reporte-estadisticas", "Elisa")} className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded">Exportar PDF</button>
         <button onClick={() => exportToExcel(tareasTotales, `estadisticas-${filtroAnio || 'all'}`)} className="bg-lime-600 hover:bg-lime-700 text-white px-4 py-2 rounded">Exportar Excel</button>
+          <button
+    onClick={async () => {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/api/enviar-reporte`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) alert("📬 Reporte enviado a tu correo");
+      else alert("❌ Error al enviar el reporte");
+    }}
+    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded"
+  >
+    Enviar Reporte PDF por Correo
+  </button>
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
