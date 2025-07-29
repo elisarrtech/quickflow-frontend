@@ -17,7 +17,7 @@ const Estadisticas = () => {
 
     const obtenerEstadisticas = async () => {
       try {
-        const res = await fetch(`${API}/tasks`, {
+        const res = await fetch(`${API}/api/tasks`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
