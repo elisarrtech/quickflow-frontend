@@ -891,7 +891,9 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
       {/* === PESTAÑA: CALENDARIO === */}
       {activeTab === 'calendario' && (
         <div style={{ height: '70vh', marginTop: '1rem' }}>
-          // En el renderizado del calendario
+         
+          
+        
 <BigCalendar
   localizer={localizer}
   events={eventosCalendario}
