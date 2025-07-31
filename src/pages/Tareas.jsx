@@ -425,28 +425,30 @@ const Tareas = () => {
   window.location.href = `mailto:?subject=${asunto}&body=${cuerpoCodificado}`;
 };
 
-  const compartirPorWhatsApp = (tarea) => {
-    const texto = encodeURIComponent(`
-*Tarea: ${tarea.titulo}*
-_Descripción_: ${tarea.descripcion || 'Sin descripción'}
-*Fecha*: ${tarea.fecha || 'Sin fecha'}
-*Hora*: ${tarea.hora || 'Sin hora'}
-*Categoría*: ${tarea.categoria || 'Sin categoría'}
-*Asignado a*: ${tarea.asignadoA || 'No asignado'}
-${tarea.enlace ? \`🔗 Enlace: \${tarea.enlace}\` : ''}
-${tarea.nota ? \`📝 Nota: \${tarea.nota}\` : ''}
-${tarea.subtareas?.length > 0 ? \`
-✅ Subtareas:
-\${tarea.subtareas.map((s) => \`• \${s.completada ? '✔️' : '☐'} \${s.texto}\`).join('\\n')}\` : ''}
-    `);
-    window.open(`https://wa.me/?text=${texto}`, '_blank');
-  };
+const compartirPorWhatsApp = (tarea) => {
+  let texto = `*Tarea: ${tarea.titulo}*\n`;
+  texto += `_Descripción_: ${tarea.descripcion || 'Sin descripción'}\n`;
+  texto += `*Fecha*: ${tarea.fecha || 'Sin fecha'}\n`;
+  texto += `*Hora*: ${tarea.hora || 'Sin hora'}\n`;
+  texto += `*Categoría*: ${tarea.categoria || 'Sin categoría'}\n`;
+  texto += `*Asignado a*: ${tarea.asignadoA || 'No asignado'}\n`;
 
-  const mostrarNotificacion = (titulo, cuerpo) => {
-    if (Notification.permission === 'granted') {
-      new Notification(titulo, { body: cuerpo, icon: '/favicon.ico' });
-    }
-  };
+  if (tarea.enlace) {
+    texto += `🔗 Enlace: ${tarea.enlace}\n`;
+  }
+  if (tarea.nota) {
+    texto += `📝 Nota: ${tarea.nota}\n`;
+  }
+  if (tarea.subtareas?.length > 0) {
+    texto += `✅ Subtareas:\n`;
+    tarea.subtareas.forEach(s => {
+      texto += `• ${s.completada ? '✔️' : '☐'} ${s.texto}\n`;
+    });
+  }
+
+  const textoCodificado = encodeURIComponent(texto.trim());
+  window.open(`https://wa.me/?text=${textoCodificado}`, '_blank');
+};
 
   // Tareas recientes con persistencia
   const actualizarTareasRecientes = (tareaId) => {
