@@ -62,6 +62,13 @@
   background-color: #1f2937;
 }
 
+.rbc-month-view .rbc-day-slot {
+  height: 120px; /* Ajusta este valor según sea necesario */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #6b7280 #1f2937;
+}
+
 .rbc-day-bg {
   min-height: 100px;
   border: 1px solid #374151;
