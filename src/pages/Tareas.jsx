@@ -306,6 +306,24 @@ const Tareas = () => {
     setError('Error de red al actualizar');
   }
 };
+
+  // Mostrar detalle de tarea
+{tareaSeleccionada && (
+  <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div className="bg-gray-900 p-6 rounded-lg shadow-xl max-w-lg w-full text-white relative">
+      <button
+        onClick={() => setTareaSeleccionada(null)}
+        className="absolute top-2 right-3 text-white text-xl hover:text-red-400"
+      >
+        <FaTimes />
+      </button>
+      <h2 className="text-2xl font-bold mb-2">{tareaSeleccionada.titulo}</h2>
+      <p className="mb-2 text-gray-300">{tareaSeleccionada.descripcion}</p>
+      {/* ... resto del contenido */}
+    </div>
+  </div>
+)}
+  
   const compartirPorCorreo = (tarea) => {
     const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
     const cuerpo = encodeURIComponent(
