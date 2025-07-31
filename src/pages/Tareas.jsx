@@ -342,6 +342,7 @@ const Tareas = () => {
         </div>
       )}
 
+      {/* Búsqueda global */}
       <div className="mb-4">
         <input
           type="text"
@@ -352,6 +353,7 @@ const Tareas = () => {
         />
       </div>
 
+      {/* Filtros */}
       <h2 className="text-xl font-semibold mb-4">Filtros</h2>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white">
@@ -376,6 +378,7 @@ const Tareas = () => {
       </div>
       <button onClick={limpiarFiltros} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded mb-4">Limpiar filtros</button>
 
+      {/* Formulario */}
       <div className="bg-gray-900 p-4 rounded mb-8">
         <h2 className="text-xl font-bold mb-4">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
         <input placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
@@ -394,6 +397,7 @@ const Tareas = () => {
         <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
         <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
 
+        {/* Subtareas */}
         <div className="mb-2">
           <label className="block text-sm font-semibold mb-1 flex items-center gap-1">
             Subtareas
@@ -526,6 +530,7 @@ const Tareas = () => {
         </button>
       </div>
 
+      {/* Tareas recientes */}
       {tareasRecientes.length > 0 && (
         <div className="mt-6 p-4 bg-gray-800 rounded">
           <h3 className="text-lg font-semibold mb-2">🕒 Tareas recientes</h3>
@@ -547,6 +552,7 @@ const Tareas = () => {
         </div>
       )}
 
+      {/* Lista de tareas */}
       <div className="space-y-4 mt-6">
         {tareasFiltradas.map(t => (
           <div key={t._id} className={`p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
@@ -676,6 +682,7 @@ const Tareas = () => {
         ))}
       </div>
 
+      {/* Vista Kanban */}
       <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
       <DragDropContext onDragEnd={onDragEndKanban}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -714,6 +721,7 @@ const Tareas = () => {
         </div>
       </DragDropContext>
 
+      {/* Modal de detalle */}
       {tareaSeleccionada && (
         <DragDropContext onDragEnd={(result) => onDragEndSubtareas(result, tareaSeleccionada._id)}>
           <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
@@ -735,27 +743,13 @@ const Tareas = () => {
               {tareaSeleccionada.enlace && (
                 <div className="mb-2">
                   <p className="font-semibold">🔗 Enlace:</p>
-                  <a
-                    href={tareaSeleccionada.enlace}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 underline"
-                  >
-                    {tareaSeleccionada.enlace}
-                  </a>
+                  <a href={tareaSeleccionada.enlace} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">{tareaSeleccionada.enlace}</a>
                 </div>
               )}
               {tareaSeleccionada.archivoUrl && (
                 <div className="mb-2">
                   <p className="font-semibold">📎 Archivo:</p>
-                  <a
-                    href={tareaSeleccionada.archivoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-green-400 underline"
-                  >
-                    Descargar archivo
-                  </a>
+                  <a href={tareaSeleccionada.archivoUrl} target="_blank" rel="noopener noreferrer" className="text-green-400 underline">Descargar archivo</a>
                 </div>
               )}
               {tareaSeleccionada.subtareas?.length > 0 && (
@@ -860,6 +854,7 @@ const Tareas = () => {
                 <p><strong>Asignado a:</strong> {tareaSeleccionada.asignadoA || 'No asignado'}</p>
               </div>
 
+              {/* Comentarios */}
               <div className="mt-4 pt-4 border-t border-gray-700">
                 <h4 className="font-semibold mb-2">💬 Comentarios</h4>
                 {tareaSeleccionada.comentarios?.length > 0 ? (
@@ -867,9 +862,7 @@ const Tareas = () => {
                     {tareaSeleccionada.comentarios.map((c, i) => (
                       <li key={i} className="bg-gray-800 p-2 rounded">
                         <p>{c.texto}</p>
-                        <p className="text-xs text-gray-400">
-                          {c.autor} • {new Date(c.fecha).toLocaleString()}
-                        </p>
+                        <p className="text-xs text-gray-400">{c.autor} • {new Date(c.fecha).toLocaleString()}</p>
                       </li>
                     ))}
                   </ul>
@@ -944,13 +937,12 @@ const Tareas = () => {
                 </div>
               </div>
 
+              {/* Historial */}
               <div className="mt-4 pt-4 border-t border-gray-700">
                 <h4 className="font-semibold mb-2">📋 Historial</h4>
                 <ul className="text-xs text-gray-400 space-y-1 max-h-24 overflow-y-auto">
                   {(tareaSeleccionada.historial || []).sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).map((h, i) => (
-                    <li key={i}>
-                      {h.accion} • {new Date(h.fecha).toLocaleString()}
-                    </li>
+                    <li key={i}>{h.accion} • {new Date(h.fecha).toLocaleString()}</li>
                   ))}
                 </ul>
               </div>
