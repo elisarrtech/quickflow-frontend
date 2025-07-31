@@ -9,7 +9,6 @@ import {
   FaPaperclip,
   FaCheckSquare,
   FaRegSquare,
-  FaTimes,
   FaUser,
   FaShareAlt,
   FaEnvelope,
@@ -76,10 +75,6 @@ const Tareas = () => {
     Notification.requestPermission();
   }, []);
 
-  useEffect(() => {
-    obtenerTareas();
-  }, [API, navigate]);
-
   const obtenerTareas = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -127,6 +122,10 @@ const Tareas = () => {
       setError('No se pudo conectar con el servidor. Verifica tu conexión.');
     }
   };
+
+  useEffect(() => {
+    obtenerTareas();
+  }, [API, navigate]);
 
   const onDragEndKanban = async (result) => {
     if (!result.destination) return;
@@ -298,7 +297,6 @@ const Tareas = () => {
         setExito('✅ Tarea actualizada.');
         limpiarFormulario();
         setTimeout(() => setExito(''), 3000);
-        obtenerTareas(); // Refresca datos desde backend
       } else {
         setError(data.error || 'Error al guardar');
       }
@@ -348,57 +346,58 @@ const Tareas = () => {
           placeholder="🔍 Buscar tareas..."
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
-          className="input w-full bg-gray-800 text-white placeholder-gray-400"
+          className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 text-sm"
         />
       </div>
 
-      {/* Filtros */}
-      <h2 className="text-xl font-semibold mb-4">Filtros</h2>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white">
-          <option value="">Todas</option>
-          {categoriasExistentes.map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-        <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)} className="input bg-gray-800 text-white">
-          <option value="">Todos</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="completada">Completada</option>
-        </select>
-        <select value={asignadoAFiltro} onChange={e => setAsignadoAFiltro(e.target.value)} className="input bg-gray-800 text-white">
-          <option value="">Todos</option>
-          {personasAsignadas.map(persona => (
-            <option key={persona} value={persona}>{persona}</option>
-          ))}
-        </select>
-        <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} className="input bg-gray-800 text-white" />
-        <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white" />
+      {/* Filtros fijos */}
+      <div className="sticky top-0 z-40 bg-gray-900 p-4 rounded-t-lg border-b border-gray-700 mb-6">
+        <h2 className="text-xl font-semibold mb-4 text-white">Filtros</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+          <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm">
+            <option value="">Todas</option>
+            {categoriasExistentes.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm">
+            <option value="">Todos</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="completada">Completada</option>
+          </select>
+          <select value={asignadoAFiltro} onChange={e => setAsignadoAFiltro(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm">
+            <option value="">Todos</option>
+            {personasAsignadas.map(persona => (
+              <option key={persona} value={persona}>{persona}</option>
+            ))}
+          </select>
+          <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm" />
+          <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm" />
+        </div>
+        <button onClick={limpiarFiltros} className="mt-3 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">Limpiar filtros</button>
       </div>
-      <button onClick={limpiarFiltros} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded mb-4">Limpiar filtros</button>
 
       {/* Formulario */}
       <div className="bg-gray-900 p-4 rounded mb-8">
-        <h2 className="text-xl font-bold mb-4">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
-        <input placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
-        <input placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
+        <h2 className="text-xl font-bold mb-4 text-white">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
+        <input placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
+        <input placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
-          <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="input bg-gray-800 text-white" />
-          <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="input bg-gray-800 text-white" />
-          <input placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="input bg-gray-800 text-white" />
-          <input placeholder="Enlace" value={enlace} onChange={e => setEnlace(e.target.value)} className="input bg-gray-800 text-white" />
-          <select value={prioridad} onChange={e => setPrioridad(e.target.value)} className="input bg-gray-800 text-white">
+          <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
+          <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
+          <input placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
+          <input placeholder="Enlace" value={enlace} onChange={e => setEnlace(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
+          <select value={prioridad} onChange={e => setPrioridad(e.target.value)} className="input bg-gray-800 text-white p-2 rounded">
             {Object.entries(PRIORIDADES).map(([key, { label }]) => (
               <option key={key} value={key}>Prioridad: {label}</option>
             ))}
           </select>
         </div>
-        <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
-        <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
-
+        <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
+        <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
         {/* Subtareas */}
         <div className="mb-2">
-          <label className="block text-sm font-semibold mb-1 flex items-center gap-1">
+          <label className="block text-sm font-semibold mb-1 flex items-center gap-1 text-white">
             Subtareas
             <span className="text-xs text-gray-400">(doble clic o lápiz para editar)</span>
           </label>
@@ -408,7 +407,7 @@ const Tareas = () => {
               placeholder="Escribe una subtarea"
               value={nuevaSubtarea}
               onChange={e => setNuevaSubtarea(e.target.value)}
-              className="input flex-1 bg-gray-800 text-white"
+              className="input flex-1 bg-gray-800 text-white p-2 rounded"
               onKeyPress={e => {
                 if (e.key === 'Enter' && nuevaSubtarea.trim()) {
                   setSubtareas([...subtareas, { texto: nuevaSubtarea.trim(), completada: false }]);
@@ -424,7 +423,7 @@ const Tareas = () => {
                   setNuevaSubtarea('');
                 }
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded"
             >
               + Agregar
             </button>
@@ -519,7 +518,7 @@ const Tareas = () => {
             </DragDropContext>
           )}
         </div>
-        <input type="file" onChange={e => setArchivo(e.target.files[0])} className="input w-full mb-2 bg-gray-800 text-white" />
+        <input type="file" onChange={e => setArchivo(e.target.files[0])} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
         {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
         <button
           onClick={modoEdicion ? guardarEdicion : crearTarea}
@@ -532,7 +531,7 @@ const Tareas = () => {
       {/* Tareas recientes */}
       {tareasRecientes.length > 0 && (
         <div className="mt-6 p-4 bg-gray-800 rounded">
-          <h3 className="text-lg font-semibold mb-2">🕒 Tareas recientes</h3>
+          <h3 className="text-lg font-semibold mb-2 text-white">🕒 Tareas recientes</h3>
           <div className="flex flex-wrap gap-2">
             {tareasRecientes.map(recienteId => {
               const t = tareas.find(t => t._id === recienteId);
@@ -541,7 +540,7 @@ const Tareas = () => {
                 <button
                   key={t._id}
                   onClick={() => setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t)}
-                  className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded"
+                  className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white"
                 >
                   {t.titulo.length > 20 ? `${t.titulo.slice(0, 20)}...` : t.titulo}
                 </button>
@@ -551,11 +550,11 @@ const Tareas = () => {
         </div>
       )}
 
-      {/* Lista de tareas con expansión en línea */}
+      {/* Lista de tareas */}
       <div className="space-y-4 mt-6">
         {tareasFiltradas.map(t => (
           <div key={t._id} className={`p-3 sm:p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
-            <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-bold flex items-center gap-2 text-white">
               {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
             </h3>
             <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
@@ -563,27 +562,27 @@ const Tareas = () => {
             {/* Etiquetas */}
             <div className="flex flex-wrap gap-2 mt-2">
               {t.fecha && (
-                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-purple-600">
+                <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-purple-600">
                   <FaCalendarAlt className="inline mr-1" /> {t.fecha}
                 </span>
               )}
               {t.hora && (
-                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-pink-500">
+                <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-pink-500">
                   <FaClock className="inline mr-1" /> {t.hora}
                 </span>
               )}
               {t.categoria && (
-                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-blue-600">
+                <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-blue-600">
                   <FaTag className="inline mr-1" /> {t.categoria?.toUpperCase()}
                 </span>
               )}
               {t.prioridad && (
-                <span className={`px-2 py-1 rounded text-white text-sm font-semibold ${PRIORIDADES[t.prioridad].color}`}>
+                <span className={`px-2 py-1 rounded text-white text-xs font-semibold ${PRIORIDADES[t.prioridad].color}`}>
                   <FaBell className="inline mr-1" /> {PRIORIDADES[t.prioridad].label}
                 </span>
               )}
               {t.asignadoA && (
-                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-gray-600">
+                <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-gray-600">
                   <FaUser className="inline mr-1" /> {t.asignadoA}
                 </span>
               )}
@@ -666,7 +665,7 @@ const Tareas = () => {
               </button>
             </div>
 
-            {/* Panel expandido - Detalles completos */}
+            {/* Panel expandido */}
             {tareaSeleccionada?._id === t._id && (
               <div className="mt-4 pt-4 border-t border-gray-700 text-sm text-gray-300 animate-fadeIn">
                 {t.nota && (
@@ -675,7 +674,6 @@ const Tareas = () => {
                     <p className="whitespace-pre-line">{t.nota}</p>
                   </div>
                 )}
-
                 {t.enlace && (
                   <div className="mb-3">
                     <p className="font-semibold text-white">🔗 Enlace:</p>
@@ -684,7 +682,6 @@ const Tareas = () => {
                     </a>
                   </div>
                 )}
-
                 {t.archivoUrl && (
                   <div className="mb-3">
                     <p className="font-semibold text-white">📎 Archivo:</p>
@@ -693,7 +690,6 @@ const Tareas = () => {
                     </a>
                   </div>
                 )}
-
                 {t.subtareas?.length > 0 && (
                   <div className="mb-3">
                     <p className="font-semibold text-white">✅ Subtareas:</p>
@@ -706,8 +702,6 @@ const Tareas = () => {
                     </ul>
                   </div>
                 )}
-
-                {/* Comentarios */}
                 {t.comentarios?.length > 0 && (
                   <div className="mb-3">
                     <p className="font-semibold text-white">💬 Comentarios:</p>
@@ -723,8 +717,6 @@ const Tareas = () => {
                     </ul>
                   </div>
                 )}
-
-                {/* Historial */}
                 <div className="mb-3">
                   <p className="font-semibold text-white">📋 Historial:</p>
                   <ul className="text-xs text-gray-400 space-y-1 max-h-24 overflow-y-auto">
