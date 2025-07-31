@@ -541,7 +541,7 @@ const Tareas = () => {
               return (
                 <button
                   key={t._id}
-                  onClick={() => setTareaSeleccionada(t)}
+                  onClick={() => setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t)}
                   className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded"
                 >
                   {t.titulo.length > 20 ? `${t.titulo.slice(0, 20)}...` : t.titulo}
