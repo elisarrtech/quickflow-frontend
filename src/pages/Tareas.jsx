@@ -311,12 +311,13 @@ const Tareas = () => {
 {tareaSeleccionada && (
   <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
     <div className="bg-gray-900 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-lg mx-4 sm:mx-auto text-white relative">
-      <button
-        onClick={() => setTareaSeleccionada(null)}
-        className="absolute top-2 right-3 text-white text-xl hover:text-red-400"
-      >
-        <FaTimes />
-      </button>
+      <button onClick={() => {
+    setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t);
+  }}
+    className="text-sm sm:text-base text-cyan-400 hover:text-cyan-600 mt-3 underline px-2 py-2"
+>
+  {tareaSeleccionada?._id === t._id ? 'Ver menos' : 'Ver más'}
+    </button>
       <h2 className="text-2xl font-bold mb-2">{tareaSeleccionada.titulo}</h2>
       <p className="mb-2 text-gray-300">{tareaSeleccionada.descripcion}</p>
       {/* ... resto del contenido */}
