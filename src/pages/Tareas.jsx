@@ -606,8 +606,7 @@ const Tareas = () => {
                 </span>
               )}
             </div>
-              ))}
-
+              
             {/* Botones de acción */}
             <div className="flex justify-end gap-3 mt-4">
               <div className="relative">
