@@ -38,4 +38,184 @@
   color: white;
   border: none;
   padding: 0.5rem 1rem;
-  border
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.rbc-toolbar button:hover {
+  background-color: #2563eb;
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: #1d4ed8;
+  font-weight: bold;
+}
+
+.rbc-toolbar .rbc-toolbar-label {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* Cuadrícula del calendario */
+.rbc-month-view,
+.rbc-week-view,
+.rbc-day-view {
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background-color: #1f2937;
+}
+
+/* Encabezados de días */
+.rbc-month-header,
+.rbc-week-header {
+  background-color: #374151;
+}
+
+.rbc-header {
+  background-color: #374151;
+  color: #e5e7eb;
+  font-weight: 600;
+  padding: 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid #4b5563;
+  font-size: 0.875rem;
+}
+
+/* Días del mes */
+.rbc-day-bg {
+  min-height: 100px;
+}
+
+.rbc-day-bg .rbc-day-bg {
+  border-top: 1px solid #374151;
+  border-left: 1px solid #374151;
+}
+
+.rbc-date-cell {
+  padding: 0.25rem;
+}
+
+.rbc-date-cell a {
+  color: #e5e7eb;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* Día actual */
+.rbc-today {
+  background-color: #0c4a6e !important;
+  font-weight: bold;
+}
+
+/* Eventos (tareas) en el calendario */
+.rbc-event {
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: none;
+  margin: 2px 0;
+  opacity: 0.95;
+}
+
+.rbc-event:hover {
+  opacity: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Celda de tiempo (vista semana/día) */
+.rbc-time-content {
+  border-top: 1px solid #374151;
+}
+
+.rbc-time-slot {
+  border-top: 1px solid #374151;
+  min-height: 40px;
+}
+
+.rbc-time-gutter,
+.rbc-time-content .rbc-time-slot {
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+/* Tooltip de eventos (opcional si usas react-overlays) */
+.rbc-overlay {
+  background-color: #1f2937;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  padding: 0.75rem;
+  z-index: 1000;
+}
+
+.rbc-overlay-header {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+  border-bottom: 1px solid #4b5563;
+  padding-bottom: 0.25rem;
+}
+
+.rbc-overlay-event {
+  padding: 0.25rem 0;
+  color: #d1d5db;
+}
+
+/* Vista de semana y día */
+.rbc-time-view {
+  border: 1px solid #374151;
+  border-radius: 8px;
+}
+
+.rbc-time-header {
+  background-color: #1f2937;
+}
+
+.rbc-time-header-content {
+  border-left: 1px solid #374151;
+  flex: 1;
+}
+
+/* Scroll personalizado (opcional) */
+.rbc-time-content {
+  overflow-y: auto;
+}
+
+.rbc-time-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rbc-time-content::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.rbc-time-content::-webkit-scrollbar-thumb {
+  background-color: #6b7280;
+  border-radius: 3px;
+}
+
+/* Ajuste responsivo */
+@media (max-width: 768px) {
+  .rbc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rbc-toolbar button {
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  .rbc-event {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
