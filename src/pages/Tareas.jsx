@@ -552,136 +552,146 @@ const Tareas = () => {
         </div>
       )}
 
-      {/* Lista de tareas */}
-      <div className="space-y-4 mt-6">
-        {tareasFiltradas.map(t => (
-          <div key={t._id} className={`p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
-            </h3>
-            <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {t.fecha && (
-                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-purple-600">
-                  <FaCalendarAlt className="inline mr-1" /> {t.fecha}
-                </span>
-              )}
-              {t.hora && (
-                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-pink-500">
-                  <FaClock className="inline mr-1" /> {t.hora}
-                </span>
-              )}
-              {t.categoria && (
-                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-blue-600">
-                  <FaTag className="inline mr-1" /> {t.categoria?.toUpperCase()}
-                </span>
-              )}
-              {t.prioridad && (
-                <span className={`px-2 py-1 rounded text-white text-sm font-semibold ${PRIORIDADES[t.prioridad].color}`}>
-                  <FaBell className="inline mr-1" /> {PRIORIDADES[t.prioridad].label}
-                </span>
-              )}
-              {t.asignadoA && (
-                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-gray-600">
-                  <FaUser className="inline mr-1" /> {t.asignadoA}
-                </span>
-              )}
-              {t.nota && (
-                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-fuchsia-600">
-                  <FaStickyNote className="inline mr-1" /> Nota
-                </span>
-              )}
-              {t.enlace && (
-                <a href={t.enlace} target="_blank" rel="noopener noreferrer" className="px-2 py-1 rounded text-white text-sm font-semibold bg-indigo-600">
-                  <FaExternalLinkAlt className="inline mr-1" /> Enlace
-                </a>
-              )}
-              {t.archivoUrl && (
-                <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-emerald-600">
-                  <FaPaperclip className="inline mr-1" /> Archivo
-                </span>
-              )}
-            </div>
-            <div className="flex justify-end gap-3 mt-4">
-              <div className="relative">
-                <button
-                  onClick={() => setCompartirMenuAbierto(compartirMenuAbierto === t._id ? null : t._id)}
-                  className="text-blue-400 hover:text-blue-600"
-                >
-                  <FaShareAlt />
-                </button>
-                {compartirMenuAbierto === t._id && (
-                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
-                    <button onClick={() => { compartirPorCorreo(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaEnvelope /> Correo</button>
-                    <button onClick={() => { compartirPorWhatsApp(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaWhatsapp /> WhatsApp</button>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  setModoEdicion(t._id);
-                  setTitulo(t.titulo);
-                  setDescripcion(t.descripcion);
-                  setFecha(t.fecha);
-                  setHora(t.hora);
-                  setCategoria(t.categoria);
-                  setNota(t.nota);
-                  setEnlace(t.enlace);
-                  setAsignadoA(t.asignadoA || '');
-                  setSubtareas(t.subtareas || []);
-                  setPrioridad(t.prioridad || 'media');
-                }}
-                className="text-yellow-500 hover:text-yellow-600"
-              >
-                <FaEdit /> Editar
-              </button>
-              <button
-                onClick={async () => {
-                  const token = localStorage.getItem('token');
-                  const nuevoEstado = t.estado === 'pendiente' ? 'completada' : 'pendiente';
-                  const res = await fetch(`${API}/api/tasks/${t._id}`, {
-                    method: 'PUT',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ estado: nuevoEstado })
-                  });
-                  if (res.ok) {
-                    setTareas(prev => prev.map(task => (task._id === t._id ? { ...task, estado: nuevoEstado } : task)));
-                  }
-                }}
-                className="text-green-500 hover:text-green-600"
-              >
-                <FaCheckCircle /> {t.estado === 'pendiente' ? 'Completar' : 'Pendiente'}
-              </button>
-              <button
-                onClick={async () => {
-                  const token = localStorage.getItem('token');
-                  const res = await fetch(`${API}/api/tasks/${t._id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-                  if (res.ok) setTareas(prev => prev.filter(task => task._id !== t._id));
-                }}
-                className="text-red-500 hover:text-red-600"
-              >
-                <FaTrashAlt /> Eliminar
-              </button>
-              <button
-                onClick={() => {
-                  setTareaSeleccionada(t);
-                  setTareasRecientes(prev => {
-                    const nuevas = prev.filter(id => id !== t._id);
-                    return [t._id, ...nuevas].slice(0, 5);
-                  });
-                }}
-                className="text-sm text-cyan-400 hover:text-cyan-600 mt-3 underline"
-              >
-                Ver más
-              </button>
-            </div>
-          </div>
-        ))}
+     {/* Lista de tareas */}
+<div className="space-y-4 mt-6">
+  {tareasFiltradas.map(t => (
+    <div key={t._id} className={`p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
+      <h3 className="text-lg font-bold flex items-center gap-2">
+        {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
+      </h3>
+      <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
+
+      {/* Etiquetas */}
+      <div className="flex flex-wrap gap-2 mt-2">
+        {t.fecha && (
+          <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-purple-600">
+            <FaCalendarAlt className="inline mr-1" /> {t.fecha}
+          </span>
+        )}
+        {t.hora && (
+          <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-pink-500">
+            <FaClock className="inline mr-1" /> {t.hora}
+          </span>
+        )}
+        {t.categoria && (
+          <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-blue-600">
+            <FaTag className="inline mr-1" /> {t.categoria?.toUpperCase()}
+          </span>
+        )}
+        {t.prioridad && (
+          <span className={`px-2 py-1 rounded text-white text-sm font-semibold ${PRIORIDADES[t.prioridad].color}`}>
+            <FaBell className="inline mr-1" /> {PRIORIDADES[t.prioridad].label}
+          </span>
+        )}
+        {t.asignadoA && (
+          <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-gray-600">
+            <FaUser className="inline mr-1" /> {t.asignadoA}
+          </span>
+        )}
       </div>
 
+      {/* Botones de acción */}
+      <div className="flex justify-end gap-3 mt-4">
+        <div className="relative">
+          <button
+            onClick={() => setCompartirMenuAbierto(compartirMenuAbierto === t._id ? null : t._id)}
+            className="text-blue-400 hover:text-blue-600"
+          >
+            <FaShareAlt />
+          </button>
+          {compartirMenuAbierto === t._id && (
+            <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
+              <button onClick={() => { compartirPorCorreo(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaEnvelope /> Correo</button>
+              <button onClick={() => { compartirPorWhatsApp(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaWhatsapp /> WhatsApp</button>
+            </div>
+          )}
+        </div>
+        <button onClick={() => {/* editar */}} className="text-yellow-500 hover:text-yellow-600"><FaEdit /></button>
+        <button onClick={() => {/* completar */}} className="text-green-500 hover:text-green-600"><FaCheckCircle /></button>
+        <button onClick={() => {/* eliminar */}} className="text-red-500 hover:text-red-600"><FaTrashAlt /></button>
+        <button
+          onClick={() => {
+            setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t);
+          }}
+          className="text-sm text-cyan-400 hover:text-cyan-600 mt-3 underline"
+        >
+          {tareaSeleccionada?._id === t._id ? 'Ver menos' : 'Ver más'}
+        </button>
+      </div>
+
+      {/* Panel expandido */}
+      {tareaSeleccionada?._id === t._id && (
+        <div className="mt-4 pt-4 border-t border-gray-700 text-sm text-gray-300 animate-fadeIn">
+          {t.nota && (
+            <div className="mb-3">
+              <p className="font-semibold text-white">📝 Nota:</p>
+              <p className="whitespace-pre-line">{t.nota}</p>
+            </div>
+          )}
+
+          {t.enlace && (
+            <div className="mb-3">
+              <p className="font-semibold text-white">🔗 Enlace:</p>
+              <a href={t.enlace} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline break-all">
+                {t.enlace}
+              </a>
+            </div>
+          )}
+
+          {t.archivoUrl && (
+            <div className="mb-3">
+              <p className="font-semibold text-white">📎 Archivo:</p>
+              <a href={t.archivoUrl} target="_blank" rel="noopener noreferrer" className="text-green-400 underline">
+                Descargar archivo
+              </a>
+            </div>
+          )}
+
+          {t.subtareas?.length > 0 && (
+            <div className="mb-3">
+              <p className="font-semibold text-white">✅ Subtareas:</p>
+              <ul className="list-disc list-inside space-y-1 mt-1">
+                {t.subtareas.map((sub, idx) => (
+                  <li key={idx} className={sub.completada ? 'line-through text-gray-400' : ''}>
+                    {sub.texto}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Comentarios */}
+          {t.comentarios?.length > 0 && (
+            <div className="mb-3">
+              <p className="font-semibold text-white">💬 Comentarios:</p>
+              <ul className="space-y-2 mt-1 max-h-32 overflow-y-auto">
+                {t.comentarios.map((c, i) => (
+                  <li key={i} className="bg-gray-800 p-2 rounded text-xs">
+                    <p>{c.texto}</p>
+                    <p className="text-gray-400">
+                      {c.autor} • {new Date(c.fecha).toLocaleString()}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Historial */}
+          <div className="mb-3">
+            <p className="font-semibold text-white">📋 Historial:</p>
+            <ul className="text-xs text-gray-400 space-y-1 max-h-24 overflow-y-auto">
+              {(t.historial || []).sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).map((h, i) => (
+                <li key={i}>{h.accion} • {new Date(h.fecha).toLocaleString()}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  ))}
+</div>
+      
       {/* Vista Kanban */}
       <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
       <DragDropContext onDragEnd={onDragEndKanban}>
