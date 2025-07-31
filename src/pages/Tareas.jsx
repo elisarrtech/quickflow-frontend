@@ -891,35 +891,36 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
       {/* === PESTAÑA: CALENDARIO === */}
       {activeTab === 'calendario' && (
         <div style={{ height: '70vh', marginTop: '1rem' }}>
-          <BigCalendar
-            localizer={localizer}
-            events={eventosCalendario}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: '100%', color: 'white' }}
-            views={['month', 'week', 'day']}
-            step={30}
-            timeslots={2}
-            selectable
-            onSelectSlot={manejarClickEnDia}
-            onSelectEvent={(event) => {
-              setTareaSeleccionada(event.resource);
-            }}
-            messages={{
-              next: 'Siguiente',
-              previous: 'Anterior',
-              today: 'Hoy',
-              month: 'Mes',
-              week: 'Semana',
-              day: 'Día'
-            }}
-            eventPropGetter={(event) => {
-              const bgColor = colorCategoria(event.resource.categoria);
-              return {
-                style: { backgroundColor: bgColor.replace('bg-', '').replace('-', ' '), borderRadius: '6px' }
-              };
-            }}
-          />
+          // En el renderizado del calendario
+<BigCalendar
+  localizer={localizer}
+  events={eventosCalendario}
+  startAccessor="start"
+  endAccessor="end"
+  style={{ height: '70vh', color: 'white' }}
+  views={['month', 'week', 'day']}
+  step={30}
+  timeslots={2}
+  selectable
+  onSelectSlot={manejarClickEnDia}
+  onSelectEvent={(event) => {
+    setTareaSeleccionada(event.resource);
+  }}
+  messages={{
+    next: 'Siguiente',
+    previous: 'Anterior',
+    today: 'Hoy',
+    month: 'Mes',
+    week: 'Semana',
+    day: 'Día'
+  }}
+  eventPropGetter={(event) => {
+    const bgColor = colorCategoria(event.resource.categoria); // Usa la función colorCategoria
+    return {
+      style: { backgroundColor: bgColor.replace('bg-', '').replace('-', ' '), borderRadius: '6px' }
+    };
+  }}
+/>
         </div>
       )}
     </div>
