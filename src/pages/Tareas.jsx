@@ -310,7 +310,7 @@ const Tareas = () => {
   // Mostrar detalle de tarea
 {tareaSeleccionada && (
   <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-    <div className="bg-gray-900 p-6 rounded-lg shadow-xl max-w-lg w-full text-white relative">
+    <div className="bg-gray-900 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-lg mx-4 sm:mx-auto text-white relative">
       <button
         onClick={() => setTareaSeleccionada(null)}
         className="absolute top-2 right-3 text-white text-xl hover:text-red-400"
