@@ -273,38 +273,39 @@ const Tareas = () => {
   };
 
   const guardarEdicion = async () => {
-    if (!modoEdicion) return;
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas, prioridad })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        const tareaActualizada = {
-          ...data,
-          subtareas: data.subtareas?.map(s => typeof s === 'string' ? { texto: s, completada: false } : s) || [],
-          prioridad: data.prioridad || 'media',
-          comentarios: data.comentarios || [],
-          historial: data.historial || []
-        };
-        setTareas(prev => prev.map(t => (t._id === modoEdicion ? tareaActualizada : t)));
-        setExito('✅ Tarea actualizada.');
-        limpiarFormulario();
-        setTimeout(() => setExito(''), 3000);
-      } else {
-        setError(data.error || 'Error al guardar');
-      }
-    } catch (error) {
-      setError('Error de red al actualizar');
-    }
-  };
+  if (!modoEdicion) return;
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      // Actualizar el estado local
+      const tareaActualizada = {
+        ...data,
+        subtareas: data.subtareas?.map(s => typeof s === 'string' ? { texto: s, completada: false } : s) || []
+      };
+      setTareas(prev => prev.map(t => (t._id === modoEdicion ? tareaActualizada : t)));
 
+      // Refrescar todas las tareas desde el backend
+      obtenerTareas();
+
+      setExito('✅ Tarea actualizada.');
+      limpiarFormulario();
+      setTimeout(() => setExito(''), 3000);
+    } else {
+      setError(data.error || 'Error al guardar');
+    }
+  } catch (error) {
+    setError('Error de red al actualizar');
+  }
+};
   const compartirPorCorreo = (tarea) => {
     const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
     const cuerpo = encodeURIComponent(
