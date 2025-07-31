@@ -397,24 +397,33 @@ const Tareas = () => {
   };
 
   // Compartir
-  const compartirPorCorreo = (tarea) => {
-    const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
-    const cuerpo = encodeURIComponent(`
-Hola,
-Título: ${tarea.titulo}
-Descripción: ${tarea.descripcion || 'Sin descripción'}
-Fecha: ${tarea.fecha || 'Sin fecha'}
-Hora: ${tarea.hora || 'Sin hora'}
-Categoría: ${tarea.categoria || 'Sin categoría'}
-Asignado a: ${tarea.asignadoA || 'No asignado'}
-${tarea.enlace ? \`Enlace: \${tarea.enlace}\` : ''}
-${tarea.nota ? \`Nota: \${tarea.nota}\` : ''}
-${tarea.subtareas?.length > 0 ? \`
-Subtareas:
-\${tarea.subtareas.map((s) => \`- [\${s.completada ? 'x' : ' '}] \${s.texto}\`).join('\\n')}\` : ''}
-    `);
-    window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
-  };
+ const compartirPorCorreo = (tarea) => {
+  let cuerpo = `Hola,\n`;
+  cuerpo += `Título: ${tarea.titulo}\n`;
+  cuerpo += `Descripción: ${tarea.descripcion || 'Sin descripción'}\n`;
+  cuerpo += `Fecha: ${tarea.fecha || 'Sin fecha'}\n`;
+  cuerpo += `Hora: ${tarea.hora || 'Sin hora'}\n`;
+  cuerpo += `Categoría: ${tarea.categoria || 'Sin categoría'}\n`;
+  cuerpo += `Asignado a: ${tarea.asignadoA || 'No asignado'}\n`;
+
+  if (tarea.enlace) {
+    cuerpo += `Enlace: ${tarea.enlace}\n`;
+  }
+  if (tarea.nota) {
+    cuerpo += `Nota: ${tarea.nota}\n`;
+  }
+  if (tarea.subtareas?.length > 0) {
+    cuerpo += `Subtareas:\n`;
+    tarea.subtareas.forEach(s => {
+      cuerpo += `- [${s.completada ? 'x' : ' '}] ${s.texto}\n`;
+    });
+  }
+
+  const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
+  const cuerpoCodificado = encodeURIComponent(cuerpo.trim());
+
+  window.location.href = `mailto:?subject=${asunto}&body=${cuerpoCodificado}`;
+};
 
   const compartirPorWhatsApp = (tarea) => {
     const texto = encodeURIComponent(`
