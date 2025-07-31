@@ -17,7 +17,8 @@ import {
   FaWhatsapp,
   FaCalendarAlt,
   FaClock,
-  FaStickyNote
+  FaStickyNote,
+  FaGripLines
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -37,8 +38,8 @@ const Tareas = () => {
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [categoria, setCategoria] = useState('');
-  const [subtareas, setSubtareas] = useState([]);
-  const [nuevaSubtarea, setNuevaSubtarea] = useState(''); // Para subtareas
+  const [subtareas, setSubtareas] = useState([]); // [{ texto, completada }]
+  const [nuevaSubtarea, setNuevaSubtarea] = useState('');
   const [archivo, setArchivo] = useState(null);
   const [enlace, setEnlace] = useState('');
   const [nota, setNota] = useState('');
@@ -96,8 +97,15 @@ const Tareas = () => {
         const data = await res.json();
         console.log('✅ Tareas cargadas:', data);
         const tareasArray = Array.isArray(data) ? data : data.tareas || [];
-        setTareas(tareasArray);
-        const categorias = [...new Set(tareasArray.map(t => t.categoria).filter(Boolean))];
+        // Asegurar que subtareas sea un array de objetos {texto, completada}
+        const tareasConSubtareas = tareasArray.map(t => ({
+          ...t,
+          subtareas: Array.isArray(t.subtareas)
+            ? t.subtareas.map(s => typeof s === 'string' ? { texto: s, completada: false } : s)
+            : []
+        }));
+        setTareas(tareasConSubtareas);
+        const categorias = [...new Set(tareasConSubtareas.map(t => t.categoria).filter(Boolean))];
         setCategoriasExistentes(categorias);
       } catch (error) {
         console.error('🔴 Error de red al obtener tareas:', error);
@@ -107,8 +115,8 @@ const Tareas = () => {
     obtenerTareas();
   }, [API, navigate]);
 
-  // Manejar drag & drop
-  const onDragEnd = async (result) => {
+  // Manejar drag & drop (kanban)
+  const onDragEndKanban = async (result) => {
     if (!result.destination) return;
     const { source, destination } = result;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
@@ -135,6 +143,20 @@ const Tareas = () => {
       setTareas(tareas);
       console.error('Error de red al actualizar tarea:', error);
     }
+  };
+
+  // Drag & drop para subtareas
+  const onDragEndSubtareas = (result, tareaId) => {
+    if (!result.destination) return;
+    const tarea = tareas.find(t => t._id === tareaId);
+    if (!tarea) return;
+    const newSubtareas = Array.from(tarea.subtareas);
+    const [reordered] = newSubtareas.splice(result.source.index, 1);
+    newSubtareas.splice(result.destination.index, 0, reordered);
+    const updatedTarea = { ...tarea, subtareas: newSubtareas };
+    setTareas(prev => prev.map(t => (t._id === tareaId ? updatedTarea : t)));
+    setSubtareas(newSubtareas); // Si estamos editando
+    setTareaSeleccionada(prev => prev?._id === tareaId ? updatedTarea : prev);
   };
 
   // Filtrar tareas
@@ -165,7 +187,7 @@ const Tareas = () => {
     setNota('');
     setEnlace('');
     setSubtareas([]);
-    setNuevaSubtarea(''); // Limpiar también el input de subtarea
+    setNuevaSubtarea('');
     setArchivo(null);
     setAsignadoA('');
     setError('');
@@ -195,7 +217,7 @@ const Tareas = () => {
     formData.append('enlace', enlace);
     formData.append('asignadoA', asignadoA);
     formData.append('estado', 'pendiente');
-    formData.append('subtareas', JSON.stringify(subtareas)); // ✅ Se envían las subtareas
+    formData.append('subtareas', JSON.stringify(subtareas));
     if (archivo) formData.append('archivo', archivo);
 
     try {
@@ -208,7 +230,11 @@ const Tareas = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        setTareas(prev => [...prev, data]);
+        const tareaConSubtareas = {
+          ...data,
+          subtareas: data.subtareas?.map(s => typeof s === 'string' ? { texto: s, completada: false } : s) || []
+        };
+        setTareas(prev => [...prev, tareaConSubtareas]);
         setExito('✅ Tarea creada con éxito.');
         limpiarFormulario();
         setTimeout(() => setExito(''), 3000);
@@ -238,7 +264,11 @@ const Tareas = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        setTareas(prev => prev.map(t => (t._id === modoEdicion ? { ...t, ...data } : t)));
+        const tareaActualizada = {
+          ...data,
+          subtareas: data.subtareas?.map(s => typeof s === 'string' ? { texto: s, completada: false } : s) || []
+        };
+        setTareas(prev => prev.map(t => (t._id === modoEdicion ? tareaActualizada : t)));
         setExito('✅ Tarea actualizada.');
         limpiarFormulario();
         setTimeout(() => setExito(''), 3000);
@@ -271,7 +301,12 @@ const Tareas = () => {
       `${tarea.enlace ? `
 Enlace: ${tarea.enlace}` : ''}` +
       `${tarea.nota ? `
-Nota: ${tarea.nota}` : ''}`
+Nota: ${tarea.nota}` : ''}` +
+      (tarea.subtareas?.length > 0
+        ? `
+Subtareas:
+${tarea.subtareas.map(s => `- [${s.completada ? 'x' : ' '}] ${s.texto}`).join('\n')}`
+        : '')
     );
     window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
   };
@@ -292,9 +327,14 @@ Nota: ${tarea.nota}` : ''}`
       `Asignado a: ${tarea.asignadoA || 'No asignado'}
 ` +
       `${tarea.enlace ? `
-Enlace: ${tarea.enlace}` : ''}` +
+🔗 Enlace: ${tarea.enlace}` : ''}` +
       `${tarea.nota ? `
-Nota: ${tarea.nota}` : ''}`
+📝 Nota: ${tarea.nota}` : ''}` +
+      (tarea.subtareas?.length > 0
+        ? `
+✅ Subtareas:
+${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).join('\n')}`
+        : '')
     );
     window.open(`https://wa.me/?text=${texto}`, '_blank');
   };
@@ -352,7 +392,7 @@ Nota: ${tarea.nota}` : ''}`
         <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
         <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
 
-        {/* Formulario de subtareas */}
+        {/* Formulario de subtareas con checkbox y edición */}
         <div className="mb-2">
           <label className="block text-sm font-semibold mb-1">Subtareas</label>
           <div className="flex gap-2 mb-2">
@@ -362,12 +402,18 @@ Nota: ${tarea.nota}` : ''}`
               value={nuevaSubtarea}
               onChange={e => setNuevaSubtarea(e.target.value)}
               className="input flex-1 bg-gray-800 text-white"
+              onKeyPress={e => {
+                if (e.key === 'Enter' && nuevaSubtarea.trim()) {
+                  setSubtareas([...subtareas, { texto: nuevaSubtarea.trim(), completada: false }]);
+                  setNuevaSubtarea('');
+                }
+              }}
             />
             <button
               type="button"
               onClick={() => {
                 if (nuevaSubtarea.trim()) {
-                  setSubtareas([...subtareas, nuevaSubtarea.trim()]);
+                  setSubtareas([...subtareas, { texto: nuevaSubtarea.trim(), completada: false }]);
                   setNuevaSubtarea('');
                 }
               }}
@@ -376,21 +422,53 @@ Nota: ${tarea.nota}` : ''}`
               + Agregar
             </button>
           </div>
+
           {subtareas.length > 0 && (
-            <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
-              {subtareas.map((s, i) => (
-                <li key={i} className="flex items-center justify-between">
-                  {s}
-                  <button
-                    type="button"
-                    onClick={() => setSubtareas(subtareas.filter((_, idx) => idx !== i))}
-                    className="text-red-500 hover:text-red-700 text-xs"
-                  >
-                    Eliminar
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <DragDropContext onDragEnd={(result) => onDragEndSubtareas(result, 'form')}>
+              <Droppable droppableId="subtareas-form">
+                {(provided) => (
+                  <ul ref={provided.innerRef} {...provided.droppableProps} className="list-none text-sm text-gray-300 space-y-1">
+                    {subtareas.map((s, i) => (
+                      <Draggable key={`form-${i}`} draggableId={`form-${i}`} index={i}>
+                        {(provided) => (
+                          <li
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="flex items-center justify-between bg-gray-800 p-2 rounded"
+                          >
+                            <div className="flex items-center gap-2 flex-1">
+                              <FaGripLines className="text-gray-500 cursor-move" />
+                              <input
+                                type="checkbox"
+                                checked={s.completada}
+                                onChange={() => {
+                                  const updated = [...subtareas];
+                                  updated[i] = { ...s, completada: !s.completada };
+                                  setSubtareas(updated);
+                                }}
+                                className="text-green-500"
+                              />
+                              <span className={s.completada ? 'line-through text-gray-400' : ''}>
+                                {s.texto}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setSubtareas(subtareas.filter((_, idx) => idx !== i))}
+                              className="text-red-500 hover:text-red-700 text-xs ml-2"
+                            >
+                              Eliminar
+                            </button>
+                          </li>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </ul>
+                )}
+              </Droppable>
+            </DragDropContext>
           )}
         </div>
 
@@ -479,7 +557,7 @@ Nota: ${tarea.nota}` : ''}`
                   setNota(t.nota);
                   setEnlace(t.enlace);
                   setAsignadoA(t.asignadoA || '');
-                  setSubtareas(t.subtareas || []); // Cargar subtareas si existen
+                  setSubtareas(t.subtareas || []);
                 }}
                 className="text-yellow-500 hover:text-yellow-600"
               >
@@ -529,7 +607,7 @@ Nota: ${tarea.nota}` : ''}`
 
       {/* Vista Kanban */}
       <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
-      <DragDropContext onDragEnd={onDragEnd}>
+      <DragDropContext onDragEnd={onDragEndKanban}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {['pendiente', 'completada'].map(estado => (
             <Droppable droppableId={estado} key={estado}>
@@ -568,75 +646,103 @@ Nota: ${tarea.nota}` : ''}`
 
       {/* Modal de detalle de tarea */}
       {tareaSeleccionada && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg shadow-xl max-w-lg w-full text-white relative">
-            <button
-              onClick={() => setTareaSeleccionada(null)}
-              className="absolute top-2 right-3 text-white text-xl hover:text-red-400"
-            >
-              <FaTimes />
-            </button>
-            <h2 className="text-2xl font-bold mb-2">{tareaSeleccionada.titulo}</h2>
-            <p className="mb-2 text-gray-300">{tareaSeleccionada.descripcion}</p>
+        <DragDropContext onDragEnd={(result) => onDragEndSubtareas(result, tareaSeleccionada._id)}>
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div className="bg-gray-900 p-6 rounded-lg shadow-xl max-w-lg w-full text-white relative">
+              <button
+                onClick={() => setTareaSeleccionada(null)}
+                className="absolute top-2 right-3 text-white text-xl hover:text-red-400"
+              >
+                <FaTimes />
+              </button>
+              <h2 className="text-2xl font-bold mb-2">{tareaSeleccionada.titulo}</h2>
+              <p className="mb-2 text-gray-300">{tareaSeleccionada.descripcion}</p>
 
-            {tareaSeleccionada.nota && (
-              <div className="mb-2">
-                <p className="font-semibold">📝 Nota:</p>
-                <p className="whitespace-pre-line">{tareaSeleccionada.nota}</p>
+              {tareaSeleccionada.nota && (
+                <div className="mb-2">
+                  <p className="font-semibold">📝 Nota:</p>
+                  <p className="whitespace-pre-line">{tareaSeleccionada.nota}</p>
+                </div>
+              )}
+
+              {tareaSeleccionada.enlace && (
+                <div className="mb-2">
+                  <p className="font-semibold">🔗 Enlace:</p>
+                  <a
+                    href={tareaSeleccionada.enlace}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 underline"
+                  >
+                    {tareaSeleccionada.enlace}
+                  </a>
+                </div>
+              )}
+
+              {tareaSeleccionada.archivoUrl && (
+                <div className="mb-2">
+                  <p className="font-semibold">📎 Archivo:</p>
+                  <a
+                    href={tareaSeleccionada.archivoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-400 underline"
+                  >
+                    Descargar archivo
+                  </a>
+                </div>
+              )}
+
+              {/* Subtareas en el modal con checkbox y drag */}
+              {tareaSeleccionada.subtareas?.length > 0 && (
+                <div className="mb-2">
+                  <p className="font-semibold mb-1">✅ Subtareas:</p>
+                  <Droppable droppableId="subtareas-modal">
+                    {(provided) => (
+                      <ul ref={provided.innerRef} {...provided.droppableProps} className="list-none space-y-1">
+                        {tareaSeleccionada.subtareas.map((sub, idx) => (
+                          <Draggable key={`modal-${idx}`} draggableId={`modal-${idx}`} index={idx}>
+                            {(provided) => (
+                              <li
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="flex items-center gap-2 p-1 border-b border-gray-700 last:border-b-0"
+                              >
+                                <FaGripLines className="text-gray-500 cursor-move" />
+                                <input
+                                  type="checkbox"
+                                  checked={sub.completada}
+                                  onChange={() => {
+                                    const updated = [...tareaSeleccionada.subtareas];
+                                    updated[idx] = { ...sub, completada: !sub.completada };
+                                    setTareaSeleccionada({ ...tareaSeleccionada, subtareas: updated });
+                                  }}
+                                  className="text-green-500"
+                                />
+                                <span className={sub.completada ? 'line-through text-gray-400' : ''}>
+                                  {sub.texto}
+                                </span>
+                              </li>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </ul>
+                    )}
+                  </Droppable>
+                </div>
+              )}
+
+              <div className="text-sm mt-4 text-gray-400">
+                <p><strong>Fecha:</strong> {tareaSeleccionada.fecha}</p>
+                <p><strong>Hora:</strong> {tareaSeleccionada.hora}</p>
+                <p><strong>Categoría:</strong> {tareaSeleccionada.categoria}</p>
+                <p><strong>Asignado a:</strong> {tareaSeleccionada.asignadoA || 'No asignado'}</p>
               </div>
-            )}
-
-            {tareaSeleccionada.enlace && (
-              <div className="mb-2">
-                <p className="font-semibold">🔗 Enlace:</p>
-                <a
-                  href={tareaSeleccionada.enlace}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 underline"
-                >
-                  {tareaSeleccionada.enlace}
-                </a>
-              </div>
-            )}
-
-            {tareaSeleccionada.archivoUrl && (
-              <div className="mb-2">
-                <p className="font-semibold">📎 Archivo:</p>
-                <a
-                  href={tareaSeleccionada.archivoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-green-400 underline"
-                >
-                  Descargar archivo
-                </a>
-              </div>
-            )}
-
-            {/* Subtareas en el modal */}
-            {tareaSeleccionada.subtareas?.length > 0 && (
-              <div className="mb-2">
-                <p className="font-semibold mb-1">✅ Subtareas:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  {tareaSeleccionada.subtareas.map((sub, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <FaCheckSquare className="text-green-400" />
-                      <span>{sub}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="text-sm mt-4 text-gray-400">
-              <p><strong>Fecha:</strong> {tareaSeleccionada.fecha}</p>
-              <p><strong>Hora:</strong> {tareaSeleccionada.hora}</p>
-              <p><strong>Categoría:</strong> {tareaSeleccionada.categoria}</p>
-              <p><strong>Asignado a:</strong> {tareaSeleccionada.asignadoA || 'No asignado'}</p>
             </div>
           </div>
-        </div>
+        </DragDropContext>
       )}
     </div>
   );
