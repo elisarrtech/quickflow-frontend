@@ -572,11 +572,10 @@ const Tareas = () => {
       {/* Lista de tareas con expansión en línea */}
       <div className="space-y-4 mt-6">
         {tareasFiltradas.map(t => (
-          {/* En cada tarjeta de tarea */}
-          <div key={t._id} className={`p-3 sm:p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
-          <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
-              {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
-            </h3>
+  <div key={t._id} className={`p-3 sm:p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
+    <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
+      {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
+    </h3>
             <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
 
             {/* Etiquetas */}
@@ -607,6 +606,7 @@ const Tareas = () => {
                 </span>
               )}
             </div>
+              ))}
 
             {/* Botones de acción */}
             <div className="flex justify-end gap-3 mt-4">
