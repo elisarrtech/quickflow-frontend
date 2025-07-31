@@ -1,5 +1,5 @@
 // src/pages/Tareas.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FaCheckCircle,
   FaEdit,
@@ -190,8 +190,7 @@ const Tareas = () => {
       if (!res.ok) throw new Error('Error al actualizar estado');
     } catch (error) {
       console.error('Error al actualizar estado en el servidor:', error);
-      // Revertir
-      obtenerTareas();
+      obtenerTareas(); // Revertir si falla
     }
   };
 
@@ -219,7 +218,7 @@ const Tareas = () => {
   };
 
   // Filtros
-  const filtrarTareas = useMemo(() => {
+  const filtrarTareas = () => {
     let filtradas = [...tareas];
 
     if (categoriaFiltro)
@@ -240,7 +239,7 @@ const Tareas = () => {
       );
 
     return filtradas;
-  }, [tareas, categoriaFiltro, estadoFiltro, asignadoAFiltro, fechaInicio, fechaFin]);
+  };
 
   const filtrarPorBusqueda = (tareas) => {
     if (!busqueda.trim()) return tareas;
@@ -256,12 +255,9 @@ const Tareas = () => {
     );
   };
 
-  const tareasFiltradas = filtrarPorBusqueda(filtrarTareas);
+  const tareasFiltradas = filtrarPorBusqueda(filtrarTareas());
 
-  const personasAsignadas = useMemo(
-    () => [...new Set(tareas.map((t) => t.asignadoA).filter(Boolean))],
-    [tareas]
-  );
+  const personasAsignadas = [...new Set(tareas.map((t) => t.asignadoA).filter(Boolean))];
 
   const colorCategoria = (cat) =>
     coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
@@ -411,11 +407,11 @@ Fecha: ${tarea.fecha || 'Sin fecha'}
 Hora: ${tarea.hora || 'Sin hora'}
 Categoría: ${tarea.categoria || 'Sin categoría'}
 Asignado a: ${tarea.asignadoA || 'No asignado'}
-${tarea.enlace ? `Enlace: ${tarea.enlace}` : ''}
-${tarea.nota ? `Nota: ${tarea.nota}` : ''}
-${tarea.subtareas?.length > 0 ? `
+${tarea.enlace ? \`Enlace: \${tarea.enlace}\` : ''}
+${tarea.nota ? \`Nota: \${tarea.nota}\` : ''}
+${tarea.subtareas?.length > 0 ? \`
 Subtareas:
-${tarea.subtareas.map((s) => `- [${s.completada ? 'x' : ' '}] ${s.texto}`).join('\n')}` : ''}
+\${tarea.subtareas.map((s) => \`- [\${s.completada ? 'x' : ' '}] \${s.texto}\`).join('\\n')}\` : ''}
     `);
     window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
   };
@@ -428,11 +424,11 @@ _Descripción_: ${tarea.descripcion || 'Sin descripción'}
 *Hora*: ${tarea.hora || 'Sin hora'}
 *Categoría*: ${tarea.categoria || 'Sin categoría'}
 *Asignado a*: ${tarea.asignadoA || 'No asignado'}
-${tarea.enlace ? `🔗 Enlace: ${tarea.enlace}` : ''}
-${tarea.nota ? `📝 Nota: ${tarea.nota}` : ''}
-${tarea.subtareas?.length > 0 ? `
+${tarea.enlace ? \`🔗 Enlace: \${tarea.enlace}\` : ''}
+${tarea.nota ? \`📝 Nota: \${tarea.nota}\` : ''}
+${tarea.subtareas?.length > 0 ? \`
 ✅ Subtareas:
-${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).join('\n')}` : ''}
+\${tarea.subtareas.map((s) => \`• \${s.completada ? '✔️' : '☐'} \${s.texto}\`).join('\\n')}\` : ''}
     `);
     window.open(`https://wa.me/?text=${texto}`, '_blank');
   };
@@ -452,29 +448,26 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
     });
   };
 
-  // Eventos para el calendario
-  const eventosCalendario = useMemo(
-    () =>
-      tareas
-        .filter((t) => t.fecha)
-        .map((t) => {
-          const start = t.fecha && t.hora
-            ? new Date(`${t.fecha}T${t.hora}`)
-            : new Date(`${t.fecha}T09:00:00`);
-          const end = new Date(start);
-          end.setHours(end.getHours() + 1);
-          return {
-            id: t._id,
-            title: t.titulo,
-            start,
-            end,
-            allDay: !t.hora,
-            resource: t,
-          };
-        }),
-    [tareas]
-  );
+  // Preparar eventos para el calendario
+  const eventosCalendario = tareas
+    .filter((t) => t.fecha)
+    .map((t) => {
+      const start = t.fecha && t.hora
+        ? new Date(`${t.fecha}T${t.hora}`)
+        : new Date(`${t.fecha}T09:00:00`);
+      const end = new Date(start);
+      end.setHours(end.getHours() + 1); // Duración de 1 hora
+      return {
+        id: t._id,
+        title: t.titulo,
+        start,
+        end,
+        allDay: !t.hora,
+        resource: t, // Guardamos la tarea completa
+      };
+    });
 
+  // Manejar clic en un día vacío del calendario
   const manejarClickEnDia = (slotInfo) => {
     const fecha = new Date(slotInfo.start);
     const fechaISO = fecha.toISOString().split('T')[0];
@@ -486,11 +479,6 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
     setModoEdicion(null);
     setExito('');
     setError('');
-  };
-
-  const manejarClickEvento = (event) => {
-    setTareaSeleccionada(event.resource);
-    actualizarTareasRecientes(event.resource._id);
   };
 
   return (
@@ -506,29 +494,35 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
         </div>
       )}
 
+      {/* Título */}
       <h1 className="text-2xl font-bold mb-6">Mis Tareas</h1>
 
       {/* Pestañas */}
       <div className="flex border-b border-gray-700 mb-6">
-        {['lista', 'kanban', 'calendario'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 font-semibold transition capitalize ${
-              activeTab === tab
-                ? 'text-cyan-400 border-b-2 border-cyan-400'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        <button
+          onClick={() => setActiveTab('lista')}
+          className={`px-6 py-3 font-semibold transition ${activeTab === 'lista' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'}`}
+        >
+          Lista
+        </button>
+        <button
+          onClick={() => setActiveTab('kanban')}
+          className={`px-6 py-3 font-semibold transition ${activeTab === 'kanban' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'}`}
+        >
+          Kanban
+        </button>
+        <button
+          onClick={() => setActiveTab('calendario')}
+          className={`px-6 py-3 font-semibold transition ${activeTab === 'calendario' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'}`}
+        >
+          Calendario
+        </button>
       </div>
 
-      {/* === PESTAÑA LISTA === */}
+      {/* === PESTAÑA: LISTA === */}
       {activeTab === 'lista' && (
         <div>
-          {/* Búsqueda */}
+          {/* Búsqueda global */}
           <div className="mb-4">
             <input
               type="text"
@@ -539,7 +533,7 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
             />
           </div>
 
-          {/* Filtros */}
+          {/* Filtros fijos */}
           <div className="sticky top-0 z-40 bg-gray-900 p-4 rounded-t-lg border-b border-gray-700 mb-6">
             <h2 className="text-xl font-semibold mb-4 text-white">Filtros</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
@@ -705,9 +699,7 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
               </div>
 
               {subtareas.length > 0 && (
-                <DragDropContext
-                  onDragEnd={(result) => onDragEndSubtareas(result, 'form')}
-                >
+                <DragDropContext onDragEnd={(result) => onDragEndSubtareas(result, 'form')}>
                   <Droppable droppableId="subtareas-form">
                     {(provided) => (
                       <ul
@@ -716,11 +708,7 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
                         className="list-none text-sm text-gray-300 space-y-1"
                       >
                         {subtareas.map((s, i) => (
-                          <Draggable
-                            key={`form-${i}`}
-                            draggableId={`form-${i}`}
-                            index={i}
-                          >
+                          <Draggable key={`form-${i}`} draggableId={`form-${i}`} index={i}>
                             {(provided) => (
                               <li
                                 ref={provided.innerRef}
@@ -848,7 +836,7 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
             </button>
           </div>
 
-          {/* Tareas recientes */}
+          {/* Tareas recientes (siempre visible) */}
           <div className="mt-6 p-4 bg-gray-800 rounded mb-6">
             <h3 className="text-lg font-semibold mb-2 text-white">🕒 Tareas recientes</h3>
             {tareasRecientes.length > 0 ? (
@@ -1121,65 +1109,67 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
         </div>
       )}
 
-      {/* === KANBAN === */}
+      {/* === PESTAÑA: KANBAN === */}
       {activeTab === 'kanban' && (
-        <DragDropContext onDragEnd={onDragEndKanban}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {['pendiente', 'completada'].map((estado) => (
-              <Droppable droppableId={estado} key={estado}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`bg-gray-800 rounded-lg p-4 shadow min-h-[200px] ${
-                      snapshot.isDraggingOver ? 'bg-gray-700' : ''
-                    }`}
-                  >
-                    <h3 className="text-lg font-semibold text-white mb-2">
-                      {estado === 'pendiente' ? 'Pendientes' : 'Completadas'}
-                    </h3>
-                    {tareas
-                      .filter((t) => t.estado === estado)
-                      .map((tarea, index) => (
-                        <Draggable key={tarea._id} draggableId={tarea._id} index={index}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(
-                                tarea.categoria
-                              )}`}
-                            >
-                              <h4 className="font-bold">{tarea.titulo}</h4>
-                              <p className="text-sm">{tarea.descripcion}</p>
-                              {tarea.asignadoA && (
-                                <p className="text-xs flex items-center gap-1">
-                                  <FaUser /> {tarea.asignadoA}
-                                </p>
-                              )}
-                              <p className="text-xs">
-                                📅 {tarea.fecha} ⏰ {tarea.hora}
-                              </p>
-                              {tarea.categoria && (
+        <div>
+          <DragDropContext onDragEnd={onDragEndKanban}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {['pendiente', 'completada'].map((estado) => (
+                <Droppable droppableId={estado} key={estado}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`bg-gray-800 rounded-lg p-4 shadow min-h-[200px] ${
+                        snapshot.isDraggingOver ? 'bg-gray-700' : ''
+                      }`}
+                    >
+                      <h3 className="text-lg font-semibold text-white mb-2">
+                        {estado === 'pendiente' ? 'Pendientes' : 'Completadas'}
+                      </h3>
+                      {tareas
+                        .filter((t) => t.estado === estado)
+                        .map((tarea, index) => (
+                          <Draggable key={tarea._id} draggableId={tarea._id} index={index}>
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(
+                                  tarea.categoria
+                                )}`}
+                              >
+                                <h4 className="font-bold">{tarea.titulo}</h4>
+                                <p className="text-sm">{tarea.descripcion}</p>
+                                {tarea.asignadoA && (
+                                  <p className="text-xs flex items-center gap-1">
+                                    <FaUser /> {tarea.asignadoA}
+                                  </p>
+                                )}
                                 <p className="text-xs">
-                                  <FaTag /> {tarea.categoria}
+                                  📅 {tarea.fecha} ⏰ {tarea.hora}
                                 </p>
-                              )}
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            ))}
-          </div>
-        </DragDropContext>
+                                {tarea.categoria && (
+                                  <p className="text-xs">
+                                    <FaTag /> {tarea.categoria}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              ))}
+            </div>
+          </DragDropContext>
+        </div>
       )}
 
-      {/* === CALENDARIO === */}
+      {/* === PESTAÑA: CALENDARIO === */}
       {activeTab === 'calendario' && (
         <div style={{ height: '70vh', marginTop: '1rem' }}>
           <BigCalendar
@@ -1194,6 +1184,37 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
             selectable
             resizable
             onEventDrop={async ({ event, start, end }) => {
+              const nuevaFecha = start.toISOString().split('T')[0];
+              const nuevaHora = start.toTimeString().slice(0, 5);
+              const tareaId = event.resource?._id;
+              if (!tareaId) return;
+
+              // Actualizar en el estado
+              setTareas((prev) =>
+                prev.map((t) =>
+                  t._id === tareaId
+                    ? { ...t, fecha: nuevaFecha, hora: nuevaHora }
+                    : t
+                )
+              );
+
+              // Guardar en el backend
+              const token = localStorage.getItem('token');
+              try {
+                await fetch(`${API}/api/tasks/${tareaId}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ fecha: nuevaFecha, hora: nuevaHora }),
+                });
+              } catch (error) {
+                console.error('Error al guardar en el servidor:', error);
+                obtenerTareas(); // Revertir si falla
+              }
+            }}
+            onEventResize={async ({ event, start, end }) => {
               const nuevaFecha = start.toISOString().split('T')[0];
               const nuevaHora = start.toTimeString().slice(0, 5);
               const tareaId = event.resource?._id;
@@ -1218,12 +1239,15 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
                   body: JSON.stringify({ fecha: nuevaFecha, hora: nuevaHora }),
                 });
               } catch (error) {
-                console.error('Error al actualizar en el servidor:', error);
+                console.error('Error al redimensionar:', error);
                 obtenerTareas();
               }
             }}
             onSelectSlot={manejarClickEnDia}
-            onSelectEvent={manejarClickEvento}
+            onSelectEvent={(event) => {
+              setTareaSeleccionada(event.resource);
+              actualizarTareasRecientes(event.resource._id);
+            }}
             messages={{
               next: 'Siguiente',
               previous: 'Anterior',
@@ -1234,9 +1258,11 @@ ${tarea.subtareas.map((s) => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`
             }}
             eventPropGetter={(event) => {
               const bgColor = colorCategoria(event.resource?.categoria);
-              const color = bgColor.replace('bg-', '').replace('-', ' ');
               return {
-                style: { backgroundColor: color, borderRadius: '6px' },
+                style: {
+                  backgroundColor: bgColor.replace('bg-', '').replace('-', ' '),
+                  borderRadius: '6px',
+                },
               };
             }}
           />
