@@ -23,15 +23,15 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
+import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import './Tareas.css'; // Para personalizar estilos si es necesario
 
-// Configurar localización y formato
+// Configuración del calendario
 moment.locale('es');
 const localizer = momentLocalizer(moment);
 
+// Colores por categoría
 const coloresPorCategoria = {
   trabajo: 'bg-blue-600',
   personal: 'bg-green-600',
@@ -40,6 +40,7 @@ const coloresPorCategoria = {
   otros: 'bg-gray-600'
 };
 
+// Prioridades
 const PRIORIDADES = {
   alta: { label: 'Alta', color: 'bg-red-600' },
   media: { label: 'Media', color: 'bg-yellow-500' },
@@ -75,10 +76,15 @@ const Tareas = () => {
   const [tareasRecientes, setTareasRecientes] = useState([]);
   const [comentario, setComentario] = useState('');
   const [prioridad, setPrioridad] = useState('media');
-  const [activeTab, setActiveTab] = useState('lista'); // Pestaña actual
+  const [activeTab, setActiveTab] = useState('lista'); // Pestaña activa
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
+
+  // Solicitar permiso para notificaciones
+  useEffect(() => {
+    Notification.requestPermission();
+  }, []);
 
   // Cargar tareas recientes desde localStorage
   useEffect(() => {
@@ -88,10 +94,7 @@ const Tareas = () => {
     }
   }, []);
 
-  useEffect(() => {
-    Notification.requestPermission();
-  }, []);
-
+  // Obtener tareas del backend
   const obtenerTareas = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -144,6 +147,7 @@ const Tareas = () => {
     obtenerTareas();
   }, [API, navigate]);
 
+  // Drag & Drop en Kanban
   const onDragEndKanban = async (result) => {
     if (!result.destination) return;
     const { source, destination } = result;
@@ -169,6 +173,7 @@ const Tareas = () => {
     }
   };
 
+  // Drag & Drop en subtareas
   const onDragEndSubtareas = (result, tareaId) => {
     if (!result.destination) return;
     const tarea = tareas.find(t => t._id === tareaId);
@@ -186,6 +191,7 @@ const Tareas = () => {
     }
   };
 
+  // Filtros
   const filtrarTareas = () => {
     let filtradas = [...tareas];
     if (categoriaFiltro) filtradas = filtradas.filter(t => t.categoria === categoriaFiltro);
@@ -213,6 +219,7 @@ const Tareas = () => {
   const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
   const colorCategoria = (cat) => coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
 
+  // Formulario
   const limpiarFormulario = () => {
     setTitulo('');
     setDescripcion('');
@@ -321,6 +328,7 @@ const Tareas = () => {
     }
   };
 
+  // Compartir
   const compartirPorCorreo = (tarea) => {
     const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
     const cuerpo = encodeURIComponent(
@@ -361,7 +369,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
     }
   };
 
-  // Actualizar tareas recientes con persistencia
+  // Tareas recientes con persistencia
   const actualizarTareasRecientes = (tareaId) => {
     setTareasRecientes(prev => {
       const nuevas = [tareaId, ...prev.filter(id => id !== tareaId)].slice(0, 5);
@@ -370,7 +378,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
     });
   };
 
-  // Preparar eventos para react-big-calendar
+  // Preparar eventos para el calendario
   const eventosCalendario = tareas
     .filter(t => t.fecha)
     .map(t => {
@@ -389,7 +397,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
         start,
         end,
         allDay: !t.hora,
-        resource: t // Guardamos toda la tarea para usarla al hacer clic
+        resource: t // Guardamos la tarea completa
       };
     });
 
@@ -434,7 +442,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
       {/* === PESTAÑA: LISTA === */}
       {activeTab === 'lista' && (
         <div>
-          {/* Búsqueda global */}
+          {/* Búsqueda */}
           <div className="mb-4">
             <input
               type="text"
@@ -445,7 +453,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
             />
           </div>
 
-          {/* Filtros fijos */}
+          {/* Filtros */}
           <div className="sticky top-0 z-40 bg-gray-900 p-4 rounded-t-lg border-b border-gray-700 mb-6">
             <h2 className="text-xl font-semibold mb-4 text-white">Filtros</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
@@ -490,6 +498,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
             </div>
             <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
             <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
+
             {/* Subtareas */}
             <div className="mb-2">
               <label className="block text-sm font-semibold mb-1 flex items-center gap-1 text-white">
@@ -869,7 +878,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
       {/* === PESTAÑA: CALENDARIO === */}
       {activeTab === 'calendario' && (
         <div style={{ height: '70vh', marginTop: '1rem' }}>
-          <Calendar
+          <BigCalendar
             localizer={localizer}
             events={eventosCalendario}
             startAccessor="start"
