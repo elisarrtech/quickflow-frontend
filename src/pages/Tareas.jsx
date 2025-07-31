@@ -10,6 +10,7 @@ import {
   FaCheckSquare,
   FaRegSquare,
   FaTimes,
+  FaEllipsisV,
   FaUser,
   FaShareAlt,
   FaEnvelope,
@@ -37,6 +38,7 @@ const Tareas = () => {
   const [hora, setHora] = useState('');
   const [categoria, setCategoria] = useState('');
   const [subtareas, setSubtareas] = useState([]);
+  const [nuevaSubtarea, setNuevaSubtarea] = useState(''); // Para subtareas
   const [archivo, setArchivo] = useState(null);
   const [enlace, setEnlace] = useState('');
   const [nota, setNota] = useState('');
@@ -52,7 +54,7 @@ const Tareas = () => {
   const [asignadoAFiltro, setAsignadoAFiltro] = useState('');
   const [asignadoA, setAsignadoA] = useState('');
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
-  const [tareaSeleccionada, setTareaSeleccionada] = useState(null); // ✅ Paso 1: Nuevo estado para el modal
+  const [tareaSeleccionada, setTareaSeleccionada] = useState(null); // Para el modal
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
@@ -153,6 +155,7 @@ const Tareas = () => {
   const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
   const colorCategoria = (cat) => coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
 
+  // Limpiar formulario
   const limpiarFormulario = () => {
     setTitulo('');
     setDescripcion('');
@@ -162,6 +165,7 @@ const Tareas = () => {
     setNota('');
     setEnlace('');
     setSubtareas([]);
+    setNuevaSubtarea(''); // Limpiar también el input de subtarea
     setArchivo(null);
     setAsignadoA('');
     setError('');
@@ -191,7 +195,7 @@ const Tareas = () => {
     formData.append('enlace', enlace);
     formData.append('asignadoA', asignadoA);
     formData.append('estado', 'pendiente');
-    formData.append('subtareas', JSON.stringify(subtareas));
+    formData.append('subtareas', JSON.stringify(subtareas)); // ✅ Se envían las subtareas
     if (archivo) formData.append('archivo', archivo);
 
     try {
@@ -347,6 +351,49 @@ Nota: ${tarea.nota}` : ''}`
         </div>
         <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
         <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
+
+        {/* Formulario de subtareas */}
+        <div className="mb-2">
+          <label className="block text-sm font-semibold mb-1">Subtareas</label>
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              placeholder="Escribe una subtarea"
+              value={nuevaSubtarea}
+              onChange={e => setNuevaSubtarea(e.target.value)}
+              className="input flex-1 bg-gray-800 text-white"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (nuevaSubtarea.trim()) {
+                  setSubtareas([...subtareas, nuevaSubtarea.trim()]);
+                  setNuevaSubtarea('');
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded"
+            >
+              + Agregar
+            </button>
+          </div>
+          {subtareas.length > 0 && (
+            <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
+              {subtareas.map((s, i) => (
+                <li key={i} className="flex items-center justify-between">
+                  {s}
+                  <button
+                    type="button"
+                    onClick={() => setSubtareas(subtareas.filter((_, idx) => idx !== i))}
+                    className="text-red-500 hover:text-red-700 text-xs"
+                  >
+                    Eliminar
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         <input type="file" onChange={e => setArchivo(e.target.files[0])} className="input w-full mb-2 bg-gray-800 text-white" />
         {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
         <button
@@ -432,6 +479,7 @@ Nota: ${tarea.nota}` : ''}`
                   setNota(t.nota);
                   setEnlace(t.enlace);
                   setAsignadoA(t.asignadoA || '');
+                  setSubtareas(t.subtareas || []); // Cargar subtareas si existen
                 }}
                 className="text-yellow-500 hover:text-yellow-600"
               >
@@ -467,7 +515,7 @@ Nota: ${tarea.nota}` : ''}`
               >
                 <FaTrashAlt /> Eliminar
               </button>
-              {/* ✅ Paso 2: Botón "Ver más" */}
+              {/* Botón "Ver más" */}
               <button
                 onClick={() => setTareaSeleccionada(t)}
                 className="text-sm text-cyan-400 hover:text-cyan-600 mt-3 underline"
@@ -518,7 +566,7 @@ Nota: ${tarea.nota}` : ''}`
         </div>
       </DragDropContext>
 
-      {/* ✅ Paso 3: Modal de detalle */}
+      {/* Modal de detalle de tarea */}
       {tareaSeleccionada && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
           <div className="bg-gray-900 p-6 rounded-lg shadow-xl max-w-lg w-full text-white relative">
@@ -530,12 +578,14 @@ Nota: ${tarea.nota}` : ''}`
             </button>
             <h2 className="text-2xl font-bold mb-2">{tareaSeleccionada.titulo}</h2>
             <p className="mb-2 text-gray-300">{tareaSeleccionada.descripcion}</p>
+
             {tareaSeleccionada.nota && (
               <div className="mb-2">
                 <p className="font-semibold">📝 Nota:</p>
                 <p className="whitespace-pre-line">{tareaSeleccionada.nota}</p>
               </div>
             )}
+
             {tareaSeleccionada.enlace && (
               <div className="mb-2">
                 <p className="font-semibold">🔗 Enlace:</p>
@@ -549,6 +599,7 @@ Nota: ${tarea.nota}` : ''}`
                 </a>
               </div>
             )}
+
             {tareaSeleccionada.archivoUrl && (
               <div className="mb-2">
                 <p className="font-semibold">📎 Archivo:</p>
@@ -562,6 +613,22 @@ Nota: ${tarea.nota}` : ''}`
                 </a>
               </div>
             )}
+
+            {/* Subtareas en el modal */}
+            {tareaSeleccionada.subtareas?.length > 0 && (
+              <div className="mb-2">
+                <p className="font-semibold mb-1">✅ Subtareas:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  {tareaSeleccionada.subtareas.map((sub, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <FaCheckSquare className="text-green-400" />
+                      <span>{sub}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="text-sm mt-4 text-gray-400">
               <p><strong>Fecha:</strong> {tareaSeleccionada.fecha}</p>
               <p><strong>Hora:</strong> {tareaSeleccionada.hora}</p>
