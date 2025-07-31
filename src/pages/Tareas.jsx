@@ -402,6 +402,25 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
       };
     });
 
+  // Estado para manejar la fecha seleccionada desde el calendario
+const [fechaSeleccionada, setFechaSeleccionada] = useState('');
+
+// Función para manejar el clic en un día vacío del calendario
+const manejarClickEnDia = (slotInfo) => {
+  const fecha = new Date(slotInfo.start);
+  const fechaISO = fecha.toISOString().split('T')[0];
+  setFechaSeleccionada(fechaISO);
+  setFecha(fechaISO); // Pre-llenar el formulario
+  setActiveTab('lista'); // Cambiar a la pestaña de lista
+  setTitulo(''); // Limpiar solo el título
+  setDescripcion('');
+  setHora('');
+  setCategoria('');
+  setSubtareas([]);
+  setModoEdicion(null);
+  setPrioridad('media');
+};
+  
   return (
     <div className="text-white p-4 sm:p-6 max-w-5xl mx-auto w-full">
       {exito && (
