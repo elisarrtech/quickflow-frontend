@@ -23,7 +23,7 @@
     "xlsx": "^0.18.5",
     "file-saver": "^2.0.5",
     "react-calendar": "^6.0.0",
-    "moment": "^2.29.4", // ⚠️ Asegúrate de tenerlo instalado
+    "moment": "^2.29.4",
     "react-big-calendar": "^1.19.4"
   },
   "devDependencies": {
