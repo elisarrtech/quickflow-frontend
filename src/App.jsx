@@ -9,6 +9,7 @@ import Estadisticas from './components/Estadisticas';
 import Perfil from './pages/Perfil';
 import Login from './pages/Login'; // Asegúrate de importarlo
 import Register from './pages/Register'; // Asegúrate de importarlo
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 function App() {
   return (
