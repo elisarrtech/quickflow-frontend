@@ -10,14 +10,13 @@ import {
   FaCheckSquare,
   FaRegSquare,
   FaTimes,
-  FaEllipsisV,
   FaUser,
   FaShareAlt,
   FaEnvelope,
   FaWhatsapp,
-  FaCalendarAlt,  // ✅ Añadido
-  FaClock,        // ✅ Añadido
-  FaStickyNote    // ✅ Añadido
+  FaCalendarAlt,
+  FaClock,
+  FaStickyNote
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -53,7 +52,7 @@ const Tareas = () => {
   const [asignadoAFiltro, setAsignadoAFiltro] = useState('');
   const [asignadoA, setAsignadoA] = useState('');
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
-
+  const [tareaSeleccionada, setTareaSeleccionada] = useState(null); // ✅ Paso 1: Nuevo estado para el modal
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
@@ -71,7 +70,6 @@ const Tareas = () => {
         setTimeout(() => navigate('/login'), 2000);
         return;
       }
-
       try {
         const res = await fetch(`${API}/api/tasks`, {
           method: 'GET',
@@ -80,7 +78,6 @@ const Tareas = () => {
             'Origin': 'https://peppy-starlight-fd4c37.netlify.app'
           }
         });
-
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
           if (res.status === 401) {
@@ -94,38 +91,30 @@ const Tareas = () => {
           }
           return;
         }
-
         const data = await res.json();
         console.log('✅ Tareas cargadas:', data);
-
         const tareasArray = Array.isArray(data) ? data : data.tareas || [];
         setTareas(tareasArray);
-
         const categorias = [...new Set(tareasArray.map(t => t.categoria).filter(Boolean))];
         setCategoriasExistentes(categorias);
-
       } catch (error) {
         console.error('🔴 Error de red al obtener tareas:', error);
         setError('No se pudo conectar con el servidor. Verifica tu conexión.');
       }
     };
-
     obtenerTareas();
   }, [API, navigate]);
 
   // Manejar drag & drop
   const onDragEnd = async (result) => {
     if (!result.destination) return;
-
     const { source, destination } = result;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
-
     const items = Array.from(tareas);
     const [movedItem] = items.splice(source.index, 1);
     const updatedItem = { ...movedItem, estado: destination.droppableId };
     items.splice(destination.index, 0, updatedItem);
     setTareas(items);
-
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API}/api/tasks/${movedItem._id}`, {
@@ -136,7 +125,6 @@ const Tareas = () => {
         },
         body: JSON.stringify({ estado: destination.droppableId })
       });
-
       if (!res.ok) {
         setTareas(tareas);
         console.error('Error al actualizar estado en el backend');
@@ -163,7 +151,6 @@ const Tareas = () => {
 
   const tareasFiltradas = filtrarTareas();
   const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
-
   const colorCategoria = (cat) => coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
 
   const limpiarFormulario = () => {
@@ -193,7 +180,6 @@ const Tareas = () => {
   // Crear nueva tarea
   const crearTarea = async () => {
     if (!titulo.trim()) return setError('El título es obligatorio');
-
     const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('titulo', titulo);
@@ -216,7 +202,6 @@ const Tareas = () => {
         },
         body: formData
       });
-
       const data = await res.json();
       if (res.ok) {
         setTareas(prev => [...prev, data]);
@@ -237,7 +222,6 @@ const Tareas = () => {
   // Editar tarea
   const guardarEdicion = async () => {
     if (!modoEdicion) return;
-
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
@@ -248,7 +232,6 @@ const Tareas = () => {
         },
         body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas })
       });
-
       const data = await res.json();
       if (res.ok) {
         setTareas(prev => prev.map(t => (t._id === modoEdicion ? { ...t, ...data } : t)));
@@ -267,15 +250,24 @@ const Tareas = () => {
   const compartirPorCorreo = (tarea) => {
     const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
     const cuerpo = encodeURIComponent(
-      `Hola,\n\n` +
-      `Título: ${tarea.titulo}\n` +
-      `Descripción: ${tarea.descripcion || 'Sin descripción'}\n` +
-      `Fecha: ${tarea.fecha || 'Sin fecha'}\n` +
-      `Hora: ${tarea.hora || 'Sin hora'}\n` +
-      `Categoría: ${tarea.categoria || 'Sin categoría'}\n` +
-      `Asignado a: ${tarea.asignadoA || 'No asignado'}\n` +
-      `${tarea.enlace ? `\nEnlace: ${tarea.enlace}` : ''}` +
-      `${tarea.nota ? `\nNota: ${tarea.nota}` : ''}`
+      `Hola,
+` +
+      `Título: ${tarea.titulo}
+` +
+      `Descripción: ${tarea.descripcion || 'Sin descripción'}
+` +
+      `Fecha: ${tarea.fecha || 'Sin fecha'}
+` +
+      `Hora: ${tarea.hora || 'Sin hora'}
+` +
+      `Categoría: ${tarea.categoria || 'Sin categoría'}
+` +
+      `Asignado a: ${tarea.asignadoA || 'No asignado'}
+` +
+      `${tarea.enlace ? `
+Enlace: ${tarea.enlace}` : ''}` +
+      `${tarea.nota ? `
+Nota: ${tarea.nota}` : ''}`
     );
     window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
   };
@@ -283,14 +275,22 @@ const Tareas = () => {
   // Compartir por WhatsApp
   const compartirPorWhatsApp = (tarea) => {
     const texto = encodeURIComponent(
-      `*Tarea: ${tarea.titulo}*\n` +
-      `Descripción: ${tarea.descripcion || 'Sin descripción'}\n` +
-      `Fecha: ${tarea.fecha || 'Sin fecha'}\n` +
-      `Hora: ${tarea.hora || 'Sin hora'}\n` +
-      `Categoría: ${tarea.categoria || 'Sin categoría'}\n` +
-      `Asignado a: ${tarea.asignadoA || 'No asignado'}\n` +
-      `${tarea.enlace ? `\nEnlace: ${tarea.enlace}` : ''}` +
-      `${tarea.nota ? `\nNota: ${tarea.nota}` : ''}`
+      `*Tarea: ${tarea.titulo}*
+` +
+      `Descripción: ${tarea.descripcion || 'Sin descripción'}
+` +
+      `Fecha: ${tarea.fecha || 'Sin fecha'}
+` +
+      `Hora: ${tarea.hora || 'Sin hora'}
+` +
+      `Categoría: ${tarea.categoria || 'Sin categoría'}
+` +
+      `Asignado a: ${tarea.asignadoA || 'No asignado'}
+` +
+      `${tarea.enlace ? `
+Enlace: ${tarea.enlace}` : ''}` +
+      `${tarea.nota ? `
+Nota: ${tarea.nota}` : ''}`
     );
     window.open(`https://wa.me/?text=${texto}`, '_blank');
   };
@@ -366,7 +366,7 @@ const Tareas = () => {
             </h3>
             <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
 
-            {/* Etiquetas con nuevos estilos */}
+            {/* Etiquetas */}
             <div className="flex flex-wrap gap-2 mt-2">
               {t.fecha && (
                 <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-purple-600">
@@ -405,7 +405,7 @@ const Tareas = () => {
               )}
             </div>
 
-            {/* Botones de acción con nuevos colores */}
+            {/* Botones de acción */}
             <div className="flex justify-end gap-3 mt-4">
               <div className="relative">
                 <button
@@ -421,7 +421,6 @@ const Tareas = () => {
                   </div>
                 )}
               </div>
-
               <button
                 onClick={() => {
                   setModoEdicion(t._id);
@@ -438,7 +437,6 @@ const Tareas = () => {
               >
                 <FaEdit /> Editar
               </button>
-
               <button
                 onClick={async () => {
                   const token = localStorage.getItem('token');
@@ -459,7 +457,6 @@ const Tareas = () => {
               >
                 <FaCheckCircle /> {t.estado === 'pendiente' ? 'Completar' : 'Pendiente'}
               </button>
-
               <button
                 onClick={async () => {
                   const token = localStorage.getItem('token');
@@ -469,6 +466,13 @@ const Tareas = () => {
                 className="text-red-500 hover:text-red-600"
               >
                 <FaTrashAlt /> Eliminar
+              </button>
+              {/* ✅ Paso 2: Botón "Ver más" */}
+              <button
+                onClick={() => setTareaSeleccionada(t)}
+                className="text-sm text-cyan-400 hover:text-cyan-600 mt-3 underline"
+              >
+                Ver más
               </button>
             </div>
           </div>
@@ -513,6 +517,60 @@ const Tareas = () => {
           ))}
         </div>
       </DragDropContext>
+
+      {/* ✅ Paso 3: Modal de detalle */}
+      {tareaSeleccionada && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-xl max-w-lg w-full text-white relative">
+            <button
+              onClick={() => setTareaSeleccionada(null)}
+              className="absolute top-2 right-3 text-white text-xl hover:text-red-400"
+            >
+              <FaTimes />
+            </button>
+            <h2 className="text-2xl font-bold mb-2">{tareaSeleccionada.titulo}</h2>
+            <p className="mb-2 text-gray-300">{tareaSeleccionada.descripcion}</p>
+            {tareaSeleccionada.nota && (
+              <div className="mb-2">
+                <p className="font-semibold">📝 Nota:</p>
+                <p className="whitespace-pre-line">{tareaSeleccionada.nota}</p>
+              </div>
+            )}
+            {tareaSeleccionada.enlace && (
+              <div className="mb-2">
+                <p className="font-semibold">🔗 Enlace:</p>
+                <a
+                  href={tareaSeleccionada.enlace}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 underline"
+                >
+                  {tareaSeleccionada.enlace}
+                </a>
+              </div>
+            )}
+            {tareaSeleccionada.archivoUrl && (
+              <div className="mb-2">
+                <p className="font-semibold">📎 Archivo:</p>
+                <a
+                  href={tareaSeleccionada.archivoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-400 underline"
+                >
+                  Descargar archivo
+                </a>
+              </div>
+            )}
+            <div className="text-sm mt-4 text-gray-400">
+              <p><strong>Fecha:</strong> {tareaSeleccionada.fecha}</p>
+              <p><strong>Hora:</strong> {tareaSeleccionada.hora}</p>
+              <p><strong>Categoría:</strong> {tareaSeleccionada.categoria}</p>
+              <p><strong>Asignado a:</strong> {tareaSeleccionada.asignadoA || 'No asignado'}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
