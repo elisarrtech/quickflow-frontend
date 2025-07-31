@@ -1,6 +1,6 @@
 /* src/pages/Tareas.css */
 
-/* Reset básico para el calendario */
+/* Reset general y contenedor principal */
 .rbc-calendar {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: #111827;
@@ -10,7 +10,7 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
 }
 
-/* Barra de herramientas (navegación y botones) */
+/* Barra de herramientas (navegación) */
 .rbc-toolbar {
   display: flex;
   justify-content: space-between;
@@ -60,30 +60,27 @@
   font-size: 0.875rem;
 }
 
-/* Celdas del mes */
+/* Vista mensual */
 .rbc-month-view {
   border: 1px solid #374151;
   border-radius: 0 0 12px 12px;
   background-color: #1f2937;
 }
 
+/* Celdas de días */
 .rbc-day-bg {
   min-height: 100px;
   border: 1px solid #374151;
   transition: background-color 0.2s;
 }
 
-.rbc-day-bg .rbc-off-range {
-  background-color: #111827;
-}
-
-/* Día actual destacado */
+/* Día actual */
 .rbc-today {
   background-color: #0c4a6e !important;
   font-weight: bold;
 }
 
-/* Contenedor de eventos en una celda */
+/* Contenedor de eventos con scroll vertical */
 .rbc-month-view .rbc-day-slot {
   height: 120px;
   overflow-y: auto;
@@ -91,6 +88,7 @@
   scrollbar-color: #6b7280 #1f2937;
 }
 
+/* Estilo del scrollbar */
 .rbc-month-view .rbc-day-slot::-webkit-scrollbar {
   width: 6px;
 }
@@ -117,13 +115,8 @@
   text-overflow: ellipsis;
   border: none;
   opacity: 0.95;
-  transition: all 0.2s ease;
   cursor: pointer;
-}
-
-/* Ajuste para eventos múltiples */
-.rbc-event {
-  margin-bottom: 2px;
+  transition: all 0.2s ease;
 }
 
 /* Hover sobre evento */
@@ -133,7 +126,12 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Estilos por categoría */
+/* Ajuste de margen para evitar superposición */
+.rbc-event {
+  margin-bottom: 2px;
+}
+
+/* Colores por categoría */
 .rbc-event.trabajo { background-color: #1d4ed8; }
 .rbc-event.personal { background-color: #059669; }
 .rbc-event.urgente { background-color: #dc2626; }
@@ -167,7 +165,7 @@
   font-size: 0.75rem;
 }
 
-/* Tooltip opcional (si usas react-overlays) */
+/* Tooltip opcional para más info */
 .rbc-overlay {
   background-color: #1f2937;
   border: 1px solid #4b5563;
@@ -192,7 +190,7 @@
   font-size: 0.875rem;
 }
 
-/* Responsive */
+/* Responsive para móviles */
 @media (max-width: 768px) {
   .rbc-toolbar {
     flex-direction: column;
