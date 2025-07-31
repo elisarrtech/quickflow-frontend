@@ -1,4 +1,3 @@
-// src/pages/Tareas.jsx
 import React, { useState, useEffect } from 'react';
 import {
   FaCheckCircle,
@@ -67,6 +66,7 @@ const Tareas = () => {
   const [tareasRecientes, setTareasRecientes] = useState([]);
   const [comentario, setComentario] = useState('');
   const [prioridad, setPrioridad] = useState('media');
+  const [activeTab, setActiveTab] = useState('lista'); // Nueva: pestaña activa
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -308,14 +308,33 @@ const Tareas = () => {
   const compartirPorCorreo = (tarea) => {
     const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
     const cuerpo = encodeURIComponent(
-      `Hola,\nTítulo: ${tarea.titulo}\nDescripción: ${tarea.descripcion || 'Sin descripción'}\nFecha: ${tarea.fecha || 'Sin fecha'}\nHora: ${tarea.hora || 'Sin hora'}\nCategoría: ${tarea.categoria || 'Sin categoría'}\nAsignado a: ${tarea.asignadoA || 'No asignado'}${tarea.enlace ? `\nEnlace: ${tarea.enlace}` : ''}${tarea.nota ? `\nNota: ${tarea.nota}` : ''}${tarea.subtareas?.length > 0 ? `\nSubtareas:\n${tarea.subtareas.map(s => `- [${s.completada ? 'x' : ' '}] ${s.texto}`).join('\n')}` : ''}`
+      `Hola,
+Título: ${tarea.titulo}
+Descripción: ${tarea.descripcion || 'Sin descripción'}
+Fecha: ${tarea.fecha || 'Sin fecha'}
+Hora: ${tarea.hora || 'Sin hora'}
+Categoría: ${tarea.categoria || 'Sin categoría'}
+Asignado a: ${tarea.asignadoA || 'No asignado'}${tarea.enlace ? `
+Enlace: ${tarea.enlace}` : ''}${tarea.nota ? `
+Nota: ${tarea.nota}` : ''}${tarea.subtareas?.length > 0 ? `
+Subtareas:
+${tarea.subtareas.map(s => `- [${s.completada ? 'x' : ' '}] ${s.texto}`).join('\n')}` : ''}`
     );
     window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
   };
 
   const compartirPorWhatsApp = (tarea) => {
     const texto = encodeURIComponent(
-      `*Tarea: ${tarea.titulo}*\nDescripción: ${tarea.descripcion || 'Sin descripción'}\nFecha: ${tarea.fecha || 'Sin fecha'}\nHora: ${tarea.hora || 'Sin hora'}\nCategoría: ${tarea.categoria || 'Sin categoría'}\nAsignado a: ${tarea.asignadoA || 'No asignado'}${tarea.enlace ? `\n🔗 Enlace: ${tarea.enlace}` : ''}${tarea.nota ? `\n📝 Nota: ${tarea.nota}` : ''}${tarea.subtareas?.length > 0 ? `\n✅ Subtareas:\n${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).join('\n')}` : ''}`
+      `*Tarea: ${tarea.titulo}*
+Descripción: ${tarea.descripcion || 'Sin descripción'}
+Fecha: ${tarea.fecha || 'Sin fecha'}
+Hora: ${tarea.hora || 'Sin hora'}
+Categoría: ${tarea.categoria || 'Sin categoría'}
+Asignado a: ${tarea.asignadoA || 'No asignado'}${tarea.enlace ? `
+🔗 Enlace: ${tarea.enlace}` : ''}${tarea.nota ? `
+📝 Nota: ${tarea.nota}` : ''}${tarea.subtareas?.length > 0 ? `
+✅ Subtareas:
+${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).join('\n')}` : ''}`
     );
     window.open(`https://wa.me/?text=${texto}`, '_blank');
   };
@@ -339,436 +358,473 @@ const Tareas = () => {
         </div>
       )}
 
-      {/* Búsqueda global */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="🔍 Buscar tareas..."
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
-          className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 text-sm"
-        />
-      </div>
+      {/* Título */}
+      <h1 className="text-2xl font-bold mb-6">Mis Tareas</h1>
 
-      {/* Filtros fijos */}
-      <div className="sticky top-0 z-40 bg-gray-900 p-4 rounded-t-lg border-b border-gray-700 mb-6">
-        <h2 className="text-xl font-semibold mb-4 text-white">Filtros</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-          <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm">
-            <option value="">Todas</option>
-            {categoriasExistentes.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-          <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm">
-            <option value="">Todos</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="completada">Completada</option>
-          </select>
-          <select value={asignadoAFiltro} onChange={e => setAsignadoAFiltro(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm">
-            <option value="">Todos</option>
-            {personasAsignadas.map(persona => (
-              <option key={persona} value={persona}>{persona}</option>
-            ))}
-          </select>
-          <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm" />
-          <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm" />
-        </div>
-        <button onClick={limpiarFiltros} className="mt-3 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">Limpiar filtros</button>
-      </div>
-
-      {/* Formulario */}
-      <div className="bg-gray-900 p-4 rounded mb-8">
-        <h2 className="text-xl font-bold mb-4 text-white">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
-        <input placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
-        <input placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
-          <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
-          <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
-          <input placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
-          <input placeholder="Enlace" value={enlace} onChange={e => setEnlace(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
-          <select value={prioridad} onChange={e => setPrioridad(e.target.value)} className="input bg-gray-800 text-white p-2 rounded">
-            {Object.entries(PRIORIDADES).map(([key, { label }]) => (
-              <option key={key} value={key}>Prioridad: {label}</option>
-            ))}
-          </select>
-        </div>
-        <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
-        <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
-        {/* Subtareas */}
-        <div className="mb-2">
-          <label className="block text-sm font-semibold mb-1 flex items-center gap-1 text-white">
-            Subtareas
-            <span className="text-xs text-gray-400">(doble clic o lápiz para editar)</span>
-          </label>
-          <div className="flex gap-2 mb-2">
-            <input
-              type="text"
-              placeholder="Escribe una subtarea"
-              value={nuevaSubtarea}
-              onChange={e => setNuevaSubtarea(e.target.value)}
-              className="input flex-1 bg-gray-800 text-white p-2 rounded"
-              onKeyPress={e => {
-                if (e.key === 'Enter' && nuevaSubtarea.trim()) {
-                  setSubtareas([...subtareas, { texto: nuevaSubtarea.trim(), completada: false }]);
-                  setNuevaSubtarea('');
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => {
-                if (nuevaSubtarea.trim()) {
-                  setSubtareas([...subtareas, { texto: nuevaSubtarea.trim(), completada: false }]);
-                  setNuevaSubtarea('');
-                }
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded"
-            >
-              + Agregar
-            </button>
-          </div>
-          {subtareas.length > 0 && (
-            <DragDropContext onDragEnd={(result) => onDragEndSubtareas(result, 'form')}>
-              <Droppable droppableId="subtareas-form">
-                {(provided) => (
-                  <ul ref={provided.innerRef} {...provided.droppableProps} className="list-none text-sm text-gray-300 space-y-1">
-                    {subtareas.map((s, i) => (
-                      <Draggable key={`form-${i}`} draggableId={`form-${i}`} index={i}>
-                        {(provided) => (
-                          <li
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="flex items-center justify-between bg-gray-800 p-2 rounded"
-                          >
-                            <div className="flex items-center gap-2 flex-1">
-                              <FaGripLines className="text-gray-500 cursor-move" />
-                              <input
-                                type="checkbox"
-                                checked={s.completada}
-                                onChange={() => {
-                                  const updated = [...subtareas];
-                                  updated[i] = { ...s, completada: !s.completada };
-                                  setSubtareas(updated);
-                                  if (s.completada === false) {
-                                    mostrarNotificacion('✅ Subtarea completada', `"${s.texto}" ha sido completada.`);
-                                  }
-                                }}
-                                className="text-green-500"
-                              />
-                              {editandoSubtarea?.index === i && editandoSubtarea?.origen === 'form' ? (
-                                <input
-                                  type="text"
-                                  value={editandoSubtarea.valor}
-                                  onChange={(e) =>
-                                    setEditandoSubtarea({ ...editandoSubtarea, valor: e.target.value })
-                                  }
-                                  onBlur={() => {
-                                    const updated = [...subtareas];
-                                    updated[i] = { ...s, texto: editandoSubtarea.valor.trim() || s.texto };
-                                    setSubtareas(updated);
-                                    setEditandoSubtarea(null);
-                                  }}
-                                  onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                      const updated = [...subtareas];
-                                      updated[i] = { ...s, texto: editandoSubtarea.valor.trim() || s.texto };
-                                      setSubtareas(updated);
-                                      setEditandoSubtarea(null);
-                                    }
-                                  }}
-                                  className="bg-gray-700 text-white text-sm px-1 rounded flex-1"
-                                  autoFocus
-                                />
-                              ) : (
-                                <span
-                                  className={`cursor-pointer ${s.completada ? 'line-through text-gray-400' : ''}`}
-                                  onDoubleClick={() => setEditandoSubtarea({ origen: 'form', index: i, valor: s.texto })}
-                                >
-                                  {s.texto}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex gap-1 ml-2">
-                              <button
-                                type="button"
-                                onClick={() => setEditandoSubtarea({ origen: 'form', index: i, valor: s.texto })}
-                                className="text-yellow-400 hover:text-yellow-600 text-xs"
-                                title="Editar subtarea"
-                              >
-                                <FaPencilAlt />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setSubtareas(subtareas.filter((_, idx) => idx !== i))}
-                                className="text-red-500 hover:text-red-700 text-xs"
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          </li>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </ul>
-                )}
-              </Droppable>
-            </DragDropContext>
-          )}
-        </div>
-        <input type="file" onChange={e => setArchivo(e.target.files[0])} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
-        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+      {/* Pestañas */}
+      <div className="flex border-b border-gray-700 mb-6">
         <button
-          onClick={modoEdicion ? guardarEdicion : crearTarea}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+          onClick={() => setActiveTab('lista')}
+          className={`px-6 py-3 font-semibold transition ${activeTab === 'lista' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'}`}
         >
-          {modoEdicion ? 'Guardar cambios' : 'Crear tarea'}
+          Lista
+        </button>
+        <button
+          onClick={() => setActiveTab('kanban')}
+          className={`px-6 py-3 font-semibold transition ${activeTab === 'kanban' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'}`}
+        >
+          Kanban
+        </button>
+        <button
+          onClick={() => setActiveTab('calendario')}
+          className={`px-6 py-3 font-semibold transition ${activeTab === 'calendario' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'}`}
+        >
+          Calendario (futuro)
         </button>
       </div>
 
-      {/* Tareas recientes */}
-      {tareasRecientes.length > 0 && (
-        <div className="mt-6 p-4 bg-gray-800 rounded">
-          <h3 className="text-lg font-semibold mb-2 text-white">🕒 Tareas recientes</h3>
-          <div className="flex flex-wrap gap-2">
-            {tareasRecientes.map(recienteId => {
-              const t = tareas.find(t => t._id === recienteId);
-              if (!t) return null;
-              return (
+      {/* Contenido dinámico por pestaña */}
+      {activeTab === 'lista' && (
+        <div>
+          {/* Búsqueda global */}
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="🔍 Buscar tareas..."
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 text-sm"
+            />
+          </div>
+
+          {/* Filtros fijos */}
+          <div className="sticky top-0 z-40 bg-gray-900 p-4 rounded-t-lg border-b border-gray-700 mb-6">
+            <h2 className="text-xl font-semibold mb-4 text-white">Filtros</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+              <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm">
+                <option value="">Todas</option>
+                {categoriasExistentes.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+              <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm">
+                <option value="">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="completada">Completada</option>
+              </select>
+              <select value={asignadoAFiltro} onChange={e => setAsignadoAFiltro(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm">
+                <option value="">Todos</option>
+                {personasAsignadas.map(persona => (
+                  <option key={persona} value={persona}>{persona}</option>
+                ))}
+              </select>
+              <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm" />
+              <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} className="input bg-gray-800 text-white p-2 rounded text-sm" />
+            </div>
+            <button onClick={limpiarFiltros} className="mt-3 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">Limpiar filtros</button>
+          </div>
+
+          {/* Formulario */}
+          <div className="bg-gray-900 p-4 rounded mb-8">
+            <h2 className="text-xl font-bold mb-4 text-white">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
+            <input placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
+            <input placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
+              <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
+              <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
+              <input placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
+              <input placeholder="Enlace" value={enlace} onChange={e => setEnlace(e.target.value)} className="input bg-gray-800 text-white p-2 rounded" />
+              <select value={prioridad} onChange={e => setPrioridad(e.target.value)} className="input bg-gray-800 text-white p-2 rounded">
+                {Object.entries(PRIORIDADES).map(([key, { label }]) => (
+                  <option key={key} value={key}>Prioridad: {label}</option>
+                ))}
+              </select>
+            </div>
+            <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
+            <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
+
+            {/* Subtareas */}
+            <div className="mb-2">
+              <label className="block text-sm font-semibold mb-1 flex items-center gap-1 text-white">
+                Subtareas
+                <span className="text-xs text-gray-400">(doble clic o lápiz para editar)</span>
+              </label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  placeholder="Escribe una subtarea"
+                  value={nuevaSubtarea}
+                  onChange={e => setNuevaSubtarea(e.target.value)}
+                  className="input flex-1 bg-gray-800 text-white p-2 rounded"
+                  onKeyPress={e => {
+                    if (e.key === 'Enter' && nuevaSubtarea.trim()) {
+                      setSubtareas([...subtareas, { texto: nuevaSubtarea.trim(), completada: false }]);
+                      setNuevaSubtarea('');
+                    }
+                  }}
+                />
                 <button
-                  key={t._id}
-                  onClick={() => setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t)}
-                  className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white"
+                  type="button"
+                  onClick={() => {
+                    if (nuevaSubtarea.trim()) {
+                      setSubtareas([...subtareas, { texto: nuevaSubtarea.trim(), completada: false }]);
+                      setNuevaSubtarea('');
+                    }
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded"
                 >
-                  {t.titulo.length > 20 ? `${t.titulo.slice(0, 20)}...` : t.titulo}
+                  + Agregar
                 </button>
-              );
-            })}
+              </div>
+              {subtareas.length > 0 && (
+                <DragDropContext onDragEnd={(result) => onDragEndSubtareas(result, 'form')}>
+                  <Droppable droppableId="subtareas-form">
+                    {(provided) => (
+                      <ul ref={provided.innerRef} {...provided.droppableProps} className="list-none text-sm text-gray-300 space-y-1">
+                        {subtareas.map((s, i) => (
+                          <Draggable key={`form-${i}`} draggableId={`form-${i}`} index={i}>
+                            {(provided) => (
+                              <li
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="flex items-center justify-between bg-gray-800 p-2 rounded"
+                              >
+                                <div className="flex items-center gap-2 flex-1">
+                                  <FaGripLines className="text-gray-500 cursor-move" />
+                                  <input
+                                    type="checkbox"
+                                    checked={s.completada}
+                                    onChange={() => {
+                                      const updated = [...subtareas];
+                                      updated[i] = { ...s, completada: !s.completada };
+                                      setSubtareas(updated);
+                                      if (s.completada === false) {
+                                        mostrarNotificacion('✅ Subtarea completada', `"${s.texto}" ha sido completada.`);
+                                      }
+                                    }}
+                                    className="text-green-500"
+                                  />
+                                  {editandoSubtarea?.index === i && editandoSubtarea?.origen === 'form' ? (
+                                    <input
+                                      type="text"
+                                      value={editandoSubtarea.valor}
+                                      onChange={(e) =>
+                                        setEditandoSubtarea({ ...editandoSubtarea, valor: e.target.value })
+                                      }
+                                      onBlur={() => {
+                                        const updated = [...subtareas];
+                                        updated[i] = { ...s, texto: editandoSubtarea.valor.trim() || s.texto };
+                                        setSubtareas(updated);
+                                        setEditandoSubtarea(null);
+                                      }}
+                                      onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                          const updated = [...subtareas];
+                                          updated[i] = { ...s, texto: editandoSubtarea.valor.trim() || s.texto };
+                                          setSubtareas(updated);
+                                          setEditandoSubtarea(null);
+                                        }
+                                      }}
+                                      className="bg-gray-700 text-white text-sm px-1 rounded flex-1"
+                                      autoFocus
+                                    />
+                                  ) : (
+                                    <span
+                                      className={`cursor-pointer ${s.completada ? 'line-through text-gray-400' : ''}`}
+                                      onDoubleClick={() => setEditandoSubtarea({ origen: 'form', index: i, valor: s.texto })}
+                                    >
+                                      {s.texto}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex gap-1 ml-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditandoSubtarea({ origen: 'form', index: i, valor: s.texto })}
+                                    className="text-yellow-400 hover:text-yellow-600 text-xs"
+                                    title="Editar subtarea"
+                                  >
+                                    <FaPencilAlt />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSubtareas(subtareas.filter((_, idx) => idx !== i))}
+                                    className="text-red-500 hover:text-red-700 text-xs"
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                              </li>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </ul>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+              )}
+            </div>
+            <input type="file" onChange={e => setArchivo(e.target.files[0])} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
+            {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+            <button
+              onClick={modoEdicion ? guardarEdicion : crearTarea}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+            >
+              {modoEdicion ? 'Guardar cambios' : 'Crear tarea'}
+            </button>
+          </div>
+
+          {/* Tareas recientes */}
+          {tareasRecientes.length > 0 && (
+            <div className="mt-6 p-4 bg-gray-800 rounded">
+              <h3 className="text-lg font-semibold mb-2 text-white">🕒 Tareas recientes</h3>
+              <div className="flex flex-wrap gap-2">
+                {tareasRecientes.map(recienteId => {
+                  const t = tareas.find(t => t._id === recienteId);
+                  if (!t) return null;
+                  return (
+                    <button
+                      key={t._id}
+                      onClick={() => setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t)}
+                      className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white"
+                    >
+                      {t.titulo.length > 20 ? `${t.titulo.slice(0, 20)}...` : t.titulo}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Lista de tareas */}
+          <div className="space-y-4 mt-6">
+            {tareasFiltradas.map(t => (
+              <div key={t._id} className={`p-3 sm:p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
+                <h3 className="text-base sm:text-lg font-bold flex items-center gap-2 text-white">
+                  {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {t.fecha && (
+                    <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-purple-600">
+                      <FaCalendarAlt className="inline mr-1" /> {t.fecha}
+                    </span>
+                  )}
+                  {t.hora && (
+                    <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-pink-500">
+                      <FaClock className="inline mr-1" /> {t.hora}
+                    </span>
+                  )}
+                  {t.categoria && (
+                    <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-blue-600">
+                      <FaTag className="inline mr-1" /> {t.categoria?.toUpperCase()}
+                    </span>
+                  )}
+                  {t.prioridad && (
+                    <span className={`px-2 py-1 rounded text-white text-xs font-semibold ${PRIORIDADES[t.prioridad].color}`}>
+                      <FaBell className="inline mr-1" /> {PRIORIDADES[t.prioridad].label}
+                    </span>
+                  )}
+                  {t.asignadoA && (
+                    <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-gray-600">
+                      <FaUser className="inline mr-1" /> {t.asignadoA}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <div className="relative">
+                    <button
+                      onClick={() => setCompartirMenuAbierto(compartirMenuAbierto === t._id ? null : t._id)}
+                      className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm min-h-10"
+                    >
+                      <FaShareAlt /> <span className="hidden sm:inline">Compartir</span>
+                    </button>
+                    {compartirMenuAbierto === t._id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
+                        <button onClick={() => { compartirPorCorreo(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaEnvelope /> Correo</button>
+                        <button onClick={() => { compartirPorWhatsApp(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaWhatsapp /> WhatsApp</button>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setModoEdicion(t._id);
+                      setTitulo(t.titulo);
+                      setDescripcion(t.descripcion);
+                      setFecha(t.fecha);
+                      setHora(t.hora);
+                      setCategoria(t.categoria);
+                      setNota(t.nota);
+                      setEnlace(t.enlace);
+                      setAsignadoA(t.asignadoA || '');
+                      setSubtareas(t.subtareas || []);
+                      setPrioridad(t.prioridad || 'media');
+                    }}
+                    className="flex items-center gap-1 bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded text-sm min-h-10"
+                  >
+                    <FaEdit /> <span className="hidden sm:inline">Editar</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const token = localStorage.getItem('token');
+                      const nuevoEstado = t.estado === 'pendiente' ? 'completada' : 'pendiente';
+                      const res = await fetch(`${API}/api/tasks/${t._id}`, {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ estado: nuevoEstado })
+                      });
+                      if (res.ok) setTareas(prev => prev.map(task => (task._id === t._id ? { ...task, estado: nuevoEstado } : task)));
+                    }}
+                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm min-h-10"
+                  >
+                    <FaCheckCircle /> <span className="hidden sm:inline">Completar</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const token = localStorage.getItem('token');
+                      const res = await fetch(`${API}/api/tasks/${t._id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                      if (res.ok) setTareas(prev => prev.filter(task => task._id !== t._id));
+                    }}
+                    className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm min-h-10"
+                  >
+                    <FaTrashAlt /> <span className="hidden sm:inline">Eliminar</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t);
+                      setTareasRecientes(prev => {
+                        const nuevas = prev.filter(id => id !== t._id);
+                        return [t._id, ...nuevas].slice(0, 5);
+                      });
+                    }}
+                    className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-2 rounded text-sm min-h-10"
+                  >
+                    <FaEye />
+                    <span>{tareaSeleccionada?._id === t._id ? 'Ver menos' : 'Ver más'}</span>
+                  </button>
+                </div>
+                {tareaSeleccionada?._id === t._id && (
+                  <div className="mt-4 pt-4 border-t border-gray-700 text-sm text-gray-300 animate-fadeIn">
+                    {t.nota && (
+                      <div className="mb-3">
+                        <p className="font-semibold text-white">📝 Nota:</p>
+                        <p className="whitespace-pre-line">{t.nota}</p>
+                      </div>
+                    )}
+                    {t.enlace && (
+                      <div className="mb-3">
+                        <p className="font-semibold text-white">🔗 Enlace:</p>
+                        <a href={t.enlace} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline break-all">
+                          {t.enlace}
+                        </a>
+                      </div>
+                    )}
+                    {t.archivoUrl && (
+                      <div className="mb-3">
+                        <p className="font-semibold text-white">📎 Archivo:</p>
+                        <a href={t.archivoUrl} target="_blank" rel="noopener noreferrer" className="text-green-400 underline">
+                          Descargar archivo
+                        </a>
+                      </div>
+                    )}
+                    {t.subtareas?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="font-semibold text-white">✅ Subtareas:</p>
+                        <ul className="list-disc list-inside space-y-1 mt-1">
+                          {t.subtareas.map((sub, idx) => (
+                            <li key={idx} className={sub.completada ? 'line-through text-gray-400' : ''}>
+                              {sub.texto}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {t.comentarios?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="font-semibold text-white">💬 Comentarios:</p>
+                        <ul className="space-y-2 mt-1 max-h-32 overflow-y-auto">
+                          {t.comentarios.map((c, i) => (
+                            <li key={i} className="bg-gray-800 p-2 rounded text-xs">
+                              <p>{c.texto}</p>
+                              <p className="text-gray-400">
+                                {c.autor} • {new Date(c.fecha).toLocaleString()}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <div className="mb-3">
+                      <p className="font-semibold text-white">📋 Historial:</p>
+                      <ul className="text-xs text-gray-400 space-y-1 max-h-24 overflow-y-auto">
+                        {(t.historial || []).sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).map((h, i) => (
+                          <li key={i}>{h.accion} • {new Date(h.fecha).toLocaleString()}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Lista de tareas */}
-      <div className="space-y-4 mt-6">
-        {tareasFiltradas.map(t => (
-          <div key={t._id} className={`p-3 sm:p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
-            <h3 className="text-base sm:text-lg font-bold flex items-center gap-2 text-white">
-              {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
-            </h3>
-            <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
-
-            {/* Etiquetas */}
-            <div className="flex flex-wrap gap-2 mt-2">
-              {t.fecha && (
-                <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-purple-600">
-                  <FaCalendarAlt className="inline mr-1" /> {t.fecha}
-                </span>
-              )}
-              {t.hora && (
-                <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-pink-500">
-                  <FaClock className="inline mr-1" /> {t.hora}
-                </span>
-              )}
-              {t.categoria && (
-                <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-blue-600">
-                  <FaTag className="inline mr-1" /> {t.categoria?.toUpperCase()}
-                </span>
-              )}
-              {t.prioridad && (
-                <span className={`px-2 py-1 rounded text-white text-xs font-semibold ${PRIORIDADES[t.prioridad].color}`}>
-                  <FaBell className="inline mr-1" /> {PRIORIDADES[t.prioridad].label}
-                </span>
-              )}
-              {t.asignadoA && (
-                <span className="px-2 py-1 rounded text-white text-xs font-semibold bg-gray-600">
-                  <FaUser className="inline mr-1" /> {t.asignadoA}
-                </span>
-              )}
-            </div>
-
-            {/* Botones de acción */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              <div className="relative">
-                <button
-                  onClick={() => setCompartirMenuAbierto(compartirMenuAbierto === t._id ? null : t._id)}
-                  className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm min-h-10"
-                >
-                  <FaShareAlt /> <span className="hidden sm:inline">Compartir</span>
-                </button>
-                {compartirMenuAbierto === t._id && (
-                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
-                    <button onClick={() => { compartirPorCorreo(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaEnvelope /> Correo</button>
-                    <button onClick={() => { compartirPorWhatsApp(t); setCompartirMenuAbierto(null); }} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700"><FaWhatsapp /> WhatsApp</button>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  setModoEdicion(t._id);
-                  setTitulo(t.titulo);
-                  setDescripcion(t.descripcion);
-                  setFecha(t.fecha);
-                  setHora(t.hora);
-                  setCategoria(t.categoria);
-                  setNota(t.nota);
-                  setEnlace(t.enlace);
-                  setAsignadoA(t.asignadoA || '');
-                  setSubtareas(t.subtareas || []);
-                  setPrioridad(t.prioridad || 'media');
-                }}
-                className="flex items-center gap-1 bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded text-sm min-h-10"
-              >
-                <FaEdit /> <span className="hidden sm:inline">Editar</span>
-              </button>
-              <button
-                onClick={async () => {
-                  const token = localStorage.getItem('token');
-                  const nuevoEstado = t.estado === 'pendiente' ? 'completada' : 'pendiente';
-                  const res = await fetch(`${API}/api/tasks/${t._id}`, {
-                    method: 'PUT',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ estado: nuevoEstado })
-                  });
-                  if (res.ok) setTareas(prev => prev.map(task => (task._id === t._id ? { ...task, estado: nuevoEstado } : task)));
-                }}
-                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm min-h-10"
-              >
-                <FaCheckCircle /> <span className="hidden sm:inline">Completar</span>
-              </button>
-              <button
-                onClick={async () => {
-                  const token = localStorage.getItem('token');
-                  const res = await fetch(`${API}/api/tasks/${t._id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-                  if (res.ok) setTareas(prev => prev.filter(task => task._id !== t._id));
-                }}
-                className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm min-h-10"
-              >
-                <FaTrashAlt /> <span className="hidden sm:inline">Eliminar</span>
-              </button>
-              <button
-                onClick={() => {
-                  setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t);
-                  setTareasRecientes(prev => {
-                    const nuevas = prev.filter(id => id !== t._id);
-                    return [t._id, ...nuevas].slice(0, 5);
-                  });
-                }}
-                className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-2 rounded text-sm min-h-10"
-              >
-                <FaEye />
-                <span>{tareaSeleccionada?._id === t._id ? 'Ver menos' : 'Ver más'}</span>
-              </button>
-            </div>
-
-            {/* Panel expandido */}
-            {tareaSeleccionada?._id === t._id && (
-              <div className="mt-4 pt-4 border-t border-gray-700 text-sm text-gray-300 animate-fadeIn">
-                {t.nota && (
-                  <div className="mb-3">
-                    <p className="font-semibold text-white">📝 Nota:</p>
-                    <p className="whitespace-pre-line">{t.nota}</p>
-                  </div>
-                )}
-                {t.enlace && (
-                  <div className="mb-3">
-                    <p className="font-semibold text-white">🔗 Enlace:</p>
-                    <a href={t.enlace} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline break-all">
-                      {t.enlace}
-                    </a>
-                  </div>
-                )}
-                {t.archivoUrl && (
-                  <div className="mb-3">
-                    <p className="font-semibold text-white">📎 Archivo:</p>
-                    <a href={t.archivoUrl} target="_blank" rel="noopener noreferrer" className="text-green-400 underline">
-                      Descargar archivo
-                    </a>
-                  </div>
-                )}
-                {t.subtareas?.length > 0 && (
-                  <div className="mb-3">
-                    <p className="font-semibold text-white">✅ Subtareas:</p>
-                    <ul className="list-disc list-inside space-y-1 mt-1">
-                      {t.subtareas.map((sub, idx) => (
-                        <li key={idx} className={sub.completada ? 'line-through text-gray-400' : ''}>
-                          {sub.texto}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {t.comentarios?.length > 0 && (
-                  <div className="mb-3">
-                    <p className="font-semibold text-white">💬 Comentarios:</p>
-                    <ul className="space-y-2 mt-1 max-h-32 overflow-y-auto">
-                      {t.comentarios.map((c, i) => (
-                        <li key={i} className="bg-gray-800 p-2 rounded text-xs">
-                          <p>{c.texto}</p>
-                          <p className="text-gray-400">
-                            {c.autor} • {new Date(c.fecha).toLocaleString()}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <div className="mb-3">
-                  <p className="font-semibold text-white">📋 Historial:</p>
-                  <ul className="text-xs text-gray-400 space-y-1 max-h-24 overflow-y-auto">
-                    {(t.historial || []).sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).map((h, i) => (
-                      <li key={i}>{h.accion} • {new Date(h.fecha).toLocaleString()}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
       {/* Vista Kanban */}
-      <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
-      <DragDropContext onDragEnd={onDragEndKanban}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {['pendiente', 'completada'].map(estado => (
-            <Droppable droppableId={estado} key={estado}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`bg-gray-800 rounded-lg p-4 shadow min-h-[200px] ${snapshot.isDraggingOver ? 'bg-gray-700' : ''}`}
-                >
-                  <h3 className="text-lg font-semibold text-white mb-2">{estado === 'pendiente' ? 'Pendientes' : 'Completadas'}</h3>
-                  {tareas.filter(t => t.estado === estado).map((tarea, index) => (
-                    <Draggable key={tarea._id} draggableId={tarea._id} index={index}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(tarea.categoria)}`}
-                        >
-                          <h4 className="font-bold">{tarea.titulo}</h4>
-                          <p className="text-sm">{tarea.descripcion}</p>
-                          {tarea.asignadoA && <p className="text-xs flex items-center gap-1"><FaUser /> {tarea.asignadoA}</p>}
-                          <p className="text-xs">📅 {tarea.fecha} ⏰ {tarea.hora}</p>
-                          {tarea.categoria && <p className="text-xs"><FaTag /> {tarea.categoria}</p>}
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          ))}
+      {activeTab === 'kanban' && (
+        <div>
+          <DragDropContext onDragEnd={onDragEndKanban}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {['pendiente', 'completada'].map(estado => (
+                <Droppable droppableId={estado} key={estado}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`bg-gray-800 rounded-lg p-4 shadow min-h-[200px] ${snapshot.isDraggingOver ? 'bg-gray-700' : ''}`}
+                    >
+                      <h3 className="text-lg font-semibold text-white mb-2">
+                        {estado === 'pendiente' ? 'Pendientes' : 'Completadas'}
+                      </h3>
+                      {tareas.filter(t => t.estado === estado).map((tarea, index) => (
+                        <Draggable key={tarea._id} draggableId={tarea._id} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(tarea.categoria)}`}
+                            >
+                              <h4 className="font-bold">{tarea.titulo}</h4>
+                              <p className="text-sm">{tarea.descripcion}</p>
+                              {tarea.asignadoA && <p className="text-xs flex items-center gap-1"><FaUser /> {tarea.asignadoA}</p>}
+                              <p className="text-xs">📅 {tarea.fecha} ⏰ {tarea.hora}</p>
+                              {tarea.categoria && <p className="text-xs"><FaTag /> {tarea.categoria}</p>}
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              ))}
+            </div>
+          </DragDropContext>
         </div>
-      </DragDropContext>
+      )}
+
+      {/* Vista Calendario (futura) */}
+      {activeTab === 'calendario' && (
+        <div className="text-center py-10 text-gray-500">
+          <p>📅 Vista de calendario en desarrollo</p>
+        </div>
+      )}
     </div>
   );
 };
