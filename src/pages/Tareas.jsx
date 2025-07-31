@@ -10,7 +10,6 @@ import {
   FaCheckSquare,
   FaRegSquare,
   FaTimes,
-  FaEllipsisV,
   FaUser,
   FaShareAlt,
   FaEnvelope,
@@ -20,7 +19,8 @@ import {
   FaStickyNote,
   FaGripLines,
   FaPencilAlt,
-  FaBell
+  FaBell,
+  FaEye
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -77,55 +77,56 @@ const Tareas = () => {
   }, []);
 
   useEffect(() => {
-    const obtenerTareas = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No estás autenticado. Redirigiendo al login...');
-        setTimeout(() => navigate('/login'), 2000);
-        return;
-      }
-      try {
-        const res = await fetch(`${API}/api/tasks`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Origin': 'https://peppy-starlight-fd4c37.netlify.app'
-          }
-        });
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          if (res.status === 401) {
-            setError('Sesión inválida. Redirigiendo al login...');
-            setTimeout(() => {
-              navigate('/login');
-              localStorage.removeItem('token');
-            }, 2000);
-          } else {
-            setError(`Error ${res.status}: ${errorData.error || 'No se pudieron cargar las tareas'}`);
-          }
-          return;
-        }
-        const data = await res.json();
-        const tareasArray = Array.isArray(data) ? data : data.tareas || [];
-        const tareasConSubtareas = tareasArray.map(t => ({
-          ...t,
-          subtareas: Array.isArray(t.subtareas)
-            ? t.subtareas.map(s => typeof s === 'string' ? { texto: s, completada: false } : s)
-            : [],
-          prioridad: t.prioridad || 'media',
-          comentarios: Array.isArray(t.comentarios) ? t.comentarios : [],
-          historial: Array.isArray(t.historial) ? t.historial : []
-        }));
-        setTareas(tareasConSubtareas);
-        const categorias = [...new Set(tareasConSubtareas.map(t => t.categoria).filter(Boolean))];
-        setCategoriasExistentes(categorias);
-      } catch (error) {
-        console.error('🔴 Error de red al obtener tareas:', error);
-        setError('No se pudo conectar con el servidor. Verifica tu conexión.');
-      }
-    };
     obtenerTareas();
   }, [API, navigate]);
+
+  const obtenerTareas = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('No estás autenticado. Redirigiendo al login...');
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/api/tasks`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Origin': 'https://peppy-starlight-fd4c37.netlify.app'
+        }
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          setError('Sesión inválida. Redirigiendo al login...');
+          setTimeout(() => {
+            navigate('/login');
+            localStorage.removeItem('token');
+          }, 2000);
+        } else {
+          setError(`Error ${res.status}: ${errorData.error || 'No se pudieron cargar las tareas'}`);
+        }
+        return;
+      }
+      const data = await res.json();
+      const tareasArray = Array.isArray(data) ? data : data.tareas || [];
+      const tareasConSubtareas = tareasArray.map(t => ({
+        ...t,
+        subtareas: Array.isArray(t.subtareas)
+          ? t.subtareas.map(s => typeof s === 'string' ? { texto: s, completada: false } : s)
+          : [],
+        prioridad: t.prioridad || 'media',
+        comentarios: Array.isArray(t.comentarios) ? t.comentarios : [],
+        historial: Array.isArray(t.historial) ? t.historial : []
+      }));
+      setTareas(tareasConSubtareas);
+      const categorias = [...new Set(tareasConSubtareas.map(t => t.categoria).filter(Boolean))];
+      setCategoriasExistentes(categorias);
+    } catch (error) {
+      console.error('🔴 Error de red al obtener tareas:', error);
+      setError('No se pudo conectar con el servidor. Verifica tu conexión.');
+    }
+  };
 
   const onDragEndKanban = async (result) => {
     if (!result.destination) return;
@@ -273,58 +274,39 @@ const Tareas = () => {
   };
 
   const guardarEdicion = async () => {
-  if (!modoEdicion) return;
-  const token = localStorage.getItem('token');
-  try {
-    const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      // Actualizar el estado local
-      const tareaActualizada = {
-        ...data,
-        subtareas: data.subtareas?.map(s => typeof s === 'string' ? { texto: s, completada: false } : s) || []
-      };
-      setTareas(prev => prev.map(t => (t._id === modoEdicion ? tareaActualizada : t)));
-
-      // Refrescar todas las tareas desde el backend
-      obtenerTareas();
-
-      setExito('✅ Tarea actualizada.');
-      limpiarFormulario();
-      setTimeout(() => setExito(''), 3000);
-    } else {
-      setError(data.error || 'Error al guardar');
+    if (!modoEdicion) return;
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/api/tasks/${modoEdicion}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas, prioridad })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const tareaActualizada = {
+          ...data,
+          subtareas: data.subtareas?.map(s => typeof s === 'string' ? { texto: s, completada: false } : s) || [],
+          prioridad: data.prioridad || 'media',
+          comentarios: data.comentarios || [],
+          historial: data.historial || []
+        };
+        setTareas(prev => prev.map(t => (t._id === modoEdicion ? tareaActualizada : t)));
+        setExito('✅ Tarea actualizada.');
+        limpiarFormulario();
+        setTimeout(() => setExito(''), 3000);
+        obtenerTareas(); // Refresca datos desde backend
+      } else {
+        setError(data.error || 'Error al guardar');
+      }
+    } catch (error) {
+      setError('Error de red al actualizar');
     }
-  } catch (error) {
-    setError('Error de red al actualizar');
-  }
-};
+  };
 
-  // Mostrar detalle de tarea
-{tareaSeleccionada && (
-  <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-    <div className="bg-gray-900 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-lg mx-4 sm:mx-auto text-white relative">
-      <button onClick={() => {
-    setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t);
-  }}
-    className="text-sm sm:text-base text-cyan-400 hover:text-cyan-600 mt-3 underline px-2 py-2"
->
-  {tareaSeleccionada?._id === t._id ? 'Ver menos' : 'Ver más'}
-    </button>
-      <h2 className="text-2xl font-bold mb-2">{tareaSeleccionada.titulo}</h2>
-      <p className="mb-2 text-gray-300">{tareaSeleccionada.descripcion}</p>
-      {/* ... resto del contenido */}
-    </div>
-  </div>
-)}
-  
   const compartirPorCorreo = (tarea) => {
     const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
     const cuerpo = encodeURIComponent(
@@ -347,7 +329,7 @@ const Tareas = () => {
   };
 
   return (
-    <div className="text-white p-6 max-w-5xl mx-auto">
+    <div className="text-white p-4 sm:p-6 max-w-5xl mx-auto w-full">
       {exito && (
         <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50">
           {exito}
@@ -572,10 +554,10 @@ const Tareas = () => {
       {/* Lista de tareas con expansión en línea */}
       <div className="space-y-4 mt-6">
         {tareasFiltradas.map(t => (
-  <div key={t._id} className={`p-3 sm:p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
-    <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
-      {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
-    </h3>
+          <div key={t._id} className={`p-3 sm:p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
+            <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
+              {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
+            </h3>
             <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
 
             {/* Etiquetas */}
@@ -606,15 +588,15 @@ const Tareas = () => {
                 </span>
               )}
             </div>
-              
+
             {/* Botones de acción */}
-            <div className="flex justify-end gap-3 mt-4">
+            <div className="flex flex-wrap gap-2 mt-4">
               <div className="relative">
                 <button
                   onClick={() => setCompartirMenuAbierto(compartirMenuAbierto === t._id ? null : t._id)}
-                  className="text-blue-400 hover:text-blue-600"
+                  className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm min-h-10"
                 >
-                  <FaShareAlt />
+                  <FaShareAlt /> <span className="hidden sm:inline">Compartir</span>
                 </button>
                 {compartirMenuAbierto === t._id && (
                   <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
@@ -637,9 +619,9 @@ const Tareas = () => {
                   setSubtareas(t.subtareas || []);
                   setPrioridad(t.prioridad || 'media');
                 }}
-                className="text-yellow-500 hover:text-yellow-600"
+                className="flex items-center gap-1 bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded text-sm min-h-10"
               >
-                <FaEdit /> Editar
+                <FaEdit /> <span className="hidden sm:inline">Editar</span>
               </button>
               <button
                 onClick={async () => {
@@ -655,9 +637,9 @@ const Tareas = () => {
                   });
                   if (res.ok) setTareas(prev => prev.map(task => (task._id === t._id ? { ...task, estado: nuevoEstado } : task)));
                 }}
-                className="text-green-500 hover:text-green-600"
+                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm min-h-10"
               >
-                <FaCheckCircle /> {t.estado === 'pendiente' ? 'Completar' : 'Pendiente'}
+                <FaCheckCircle /> <span className="hidden sm:inline">Completar</span>
               </button>
               <button
                 onClick={async () => {
@@ -665,9 +647,9 @@ const Tareas = () => {
                   const res = await fetch(`${API}/api/tasks/${t._id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
                   if (res.ok) setTareas(prev => prev.filter(task => task._id !== t._id));
                 }}
-                className="text-red-500 hover:text-red-600"
+                className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm min-h-10"
               >
-                <FaTrashAlt /> Eliminar
+                <FaTrashAlt /> <span className="hidden sm:inline">Eliminar</span>
               </button>
               <button
                 onClick={() => {
@@ -677,9 +659,10 @@ const Tareas = () => {
                     return [t._id, ...nuevas].slice(0, 5);
                   });
                 }}
-                className="text-sm text-cyan-400 hover:text-cyan-600 mt-3 underline"
+                className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-2 rounded text-sm min-h-10"
               >
-                {tareaSeleccionada?._id === t._id ? 'Ver menos' : 'Ver más'}
+                <FaEye />
+                <span>{tareaSeleccionada?._id === t._id ? 'Ver menos' : 'Ver más'}</span>
               </button>
             </div>
 
