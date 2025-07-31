@@ -1,1 +1,41 @@
-src/pages/Tareas.css
+/* Estilos generales para react-big-calendar */
+.react-big-calendar {
+  --rbc-bg-color: #111827;
+  --rbc-border-color: #374151;
+  --rbc-selected-bg: #1e40af;
+  --rbc-today-bg: #0c4a6e;
+  --rbc-off-range-bg: #1f2937;
+  --rbc-header-color: #e5e7eb;
+  --rbc-today-color: #ffffff;
+  --rbc-month-bg: #1f2937;
+}
+
+/* Contenedor principal del calendario */
+.rbc-calendar {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #111827;
+  color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+/* Encabezado (mes, semana, día, navegación) */
+.rbc-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #1f2937;
+  border-radius: 8px;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.rbc-toolbar button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border
