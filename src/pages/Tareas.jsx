@@ -888,45 +888,77 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
         </div>
       )}
 
-      {/* === PESTAÑA: CALENDARIO === */}
       {activeTab === 'calendario' && (
-        <div style={{ height: '70vh', marginTop: '1rem' }}>
-         
-          
-        
-<BigCalendar
-  localizer={localizer}
-  events={eventosCalendario}
-  startAccessor="start"
-  endAccessor="end"
-  style={{ height: '70vh', color: 'white' }}
-  views={['month', 'week', 'day']}
-  step={30}
-  timeslots={2}
-  selectable
-  onSelectSlot={manejarClickEnDia}
-  onSelectEvent={(event) => {
-    setTareaSeleccionada(event.resource);
-  }}
-  messages={{
-    next: 'Siguiente',
-    previous: 'Anterior',
-    today: 'Hoy',
-    month: 'Mes',
-    week: 'Semana',
-    day: 'Día'
-  }}
-  eventPropGetter={(event) => {
-    const bgColor = colorCategoria(event.resource.categoria); // Usa la función colorCategoria
-    return {
-      style: { backgroundColor: bgColor.replace('bg-', '').replace('-', ' '), borderRadius: '6px' }
-    };
-  }}
-/>
-        </div>
-      )}
-    </div>
-  );
-};
+  <div style={{ height: '70vh', marginTop: '1rem' }}>
+    <BigCalendar
+      localizer={localizer}
+      events={eventosCalendario}
+      startAccessor="start"
+      endAccessor="end"
+      style={{ height: '100%', color: 'white' }}
+      views={['month', 'week', 'day']}
+      step={30}
+      timeslots={2}
+      selectable
+      resizable
+      onEventDrop={async ({ event, start, end, allDay }) => {
+        const nuevaFecha = start.toISOString().split('T')[0];
+        const nuevaHora = start.toTimeString().slice(0, 5);
+        const tareaId = event.resource._id;
+
+        // Actualizar en el estado
+        setTareas(prev =>
+          prev.map(t =>
+            t._id === tareaId
+              ? {
+                  ...t,
+                  fecha: nuevaFecha,
+                  hora: nuevaHora
+                }
+              : t
+          )
+        );
+
+        // Actualizar en el backend
+        const token = localStorage.getItem('token');
+        try {
+          await fetch(`${API}/api/tasks/${tareaId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              fecha: nuevaFecha,
+              hora: nuevaHora
+            })
+          });
+        } catch (error) {
+          console.error('Error al actualizar la tarea en el servidor:', error);
+          // Si falla, revertimos el cambio
+          obtenerTareas(); // Recargar desde el servidor
+        }
+      }}
+      onSelectSlot={manejarClickEnDia}
+      onSelectEvent={(event) => {
+        setTareaSeleccionada(event.resource);
+      }}
+      messages={{
+        next: 'Siguiente',
+        previous: 'Anterior',
+        today: 'Hoy',
+        month: 'Mes',
+        week: 'Semana',
+        day: 'Día'
+      }}
+      eventPropGetter={(event) => {
+        const bgColor = colorCategoria(event.resource.categoria);
+        return {
+          style: { backgroundColor: bgColor.replace('bg-', '').replace('-', ' '), borderRadius: '6px' }
+        };
+      }}
+    />
+  </div>
+)}
 
 export default Tareas;
