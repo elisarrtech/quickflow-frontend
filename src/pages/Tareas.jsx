@@ -1,3 +1,4 @@
+// src/pages/Tareas.jsx
 import React, { useState, useEffect } from 'react';
 import {
   FaCheckCircle,
@@ -22,10 +23,14 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
-import './Tareas.css'; // Para personalizar el estilo del calendario si es necesario
+import { Calendar, momentLocalizer } from 'react-big-calendar';
+import moment from 'moment';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import './Tareas.css'; // Para personalizar estilos si es necesario
 
+// Configurar localización y formato
+moment.locale('es');
+const localizer = momentLocalizer(moment);
 
 const coloresPorCategoria = {
   trabajo: 'bg-blue-600',
@@ -70,10 +75,18 @@ const Tareas = () => {
   const [tareasRecientes, setTareasRecientes] = useState([]);
   const [comentario, setComentario] = useState('');
   const [prioridad, setPrioridad] = useState('media');
-  const [activeTab, setActiveTab] = useState('lista'); // Nueva: pestaña activa
+  const [activeTab, setActiveTab] = useState('lista'); // Pestaña actual
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
+
+  // Cargar tareas recientes desde localStorage
+  useEffect(() => {
+    const guardadas = localStorage.getItem('tareasRecientes');
+    if (guardadas) {
+      setTareasRecientes(JSON.parse(guardadas));
+    }
+  }, []);
 
   useEffect(() => {
     Notification.requestPermission();
@@ -197,7 +210,6 @@ const Tareas = () => {
   };
 
   const tareasFiltradas = filtrarPorBusqueda(filtrarTareas());
-
   const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
   const colorCategoria = (cat) => coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
 
@@ -349,6 +361,38 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
     }
   };
 
+  // Actualizar tareas recientes con persistencia
+  const actualizarTareasRecientes = (tareaId) => {
+    setTareasRecientes(prev => {
+      const nuevas = [tareaId, ...prev.filter(id => id !== tareaId)].slice(0, 5);
+      localStorage.setItem('tareasRecientes', JSON.stringify(nuevas));
+      return nuevas;
+    });
+  };
+
+  // Preparar eventos para react-big-calendar
+  const eventosCalendario = tareas
+    .filter(t => t.fecha)
+    .map(t => {
+      const start = t.fecha && t.hora
+        ? new Date(`${t.fecha}T${t.hora}`)
+        : t.fecha
+        ? new Date(`${t.fecha}T09:00:00`)
+        : new Date();
+
+      const end = new Date(start);
+      end.setHours(end.getHours() + 1); // Duración de 1 hora
+
+      return {
+        id: t._id,
+        title: t.titulo,
+        start,
+        end,
+        allDay: !t.hora,
+        resource: t // Guardamos toda la tarea para usarla al hacer clic
+      };
+    });
+
   return (
     <div className="text-white p-4 sm:p-6 max-w-5xl mx-auto w-full">
       {exito && (
@@ -383,11 +427,11 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
           onClick={() => setActiveTab('calendario')}
           className={`px-6 py-3 font-semibold transition ${activeTab === 'calendario' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'}`}
         >
-          Calendario (futuro)
+          Calendario
         </button>
       </div>
 
-      {/* Contenido dinámico por pestaña */}
+      {/* === PESTAÑA: LISTA === */}
       {activeTab === 'lista' && (
         <div>
           {/* Búsqueda global */}
@@ -446,7 +490,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
             </div>
             <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
             <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white p-2 rounded" />
-
             {/* Subtareas */}
             <div className="mb-2">
               <label className="block text-sm font-semibold mb-1 flex items-center gap-1 text-white">
@@ -580,10 +623,10 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
             </button>
           </div>
 
-          {/* Tareas recientes */}
-          {tareasRecientes.length > 0 && (
-            <div className="mt-6 p-4 bg-gray-800 rounded">
-              <h3 className="text-lg font-semibold mb-2 text-white">🕒 Tareas recientes</h3>
+          {/* Tareas recientes (siempre visible) */}
+          <div className="mt-6 p-4 bg-gray-800 rounded mb-6">
+            <h3 className="text-lg font-semibold mb-2 text-white">🕒 Tareas recientes</h3>
+            {tareasRecientes.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {tareasRecientes.map(recienteId => {
                   const t = tareas.find(t => t._id === recienteId);
@@ -591,7 +634,10 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                   return (
                     <button
                       key={t._id}
-                      onClick={() => setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t)}
+                      onClick={() => {
+                        setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t);
+                        actualizarTareasRecientes(t._id);
+                      }}
                       className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white"
                     >
                       {t.titulo.length > 20 ? `${t.titulo.slice(0, 20)}...` : t.titulo}
@@ -599,8 +645,10 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                   );
                 })}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-gray-500 text-sm">No has visto ninguna tarea recientemente.</p>
+            )}
+          </div>
 
           {/* Lista de tareas */}
           <div className="space-y-4 mt-6">
@@ -701,10 +749,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                   <button
                     onClick={() => {
                       setTareaSeleccionada(tareaSeleccionada?._id === t._id ? null : t);
-                      setTareasRecientes(prev => {
-                        const nuevas = prev.filter(id => id !== t._id);
-                        return [t._id, ...nuevas].slice(0, 5);
-                      });
+                      actualizarTareasRecientes(t._id);
                     }}
                     className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-2 rounded text-sm min-h-10"
                   >
@@ -779,7 +824,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
         </div>
       )}
 
-      {/* Vista Kanban */}
+      {/* === PESTAÑA: KANBAN === */}
       {activeTab === 'kanban' && (
         <div>
           <DragDropContext onDragEnd={onDragEndKanban}>
@@ -792,9 +837,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                       {...provided.droppableProps}
                       className={`bg-gray-800 rounded-lg p-4 shadow min-h-[200px] ${snapshot.isDraggingOver ? 'bg-gray-700' : ''}`}
                     >
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        {estado === 'pendiente' ? 'Pendientes' : 'Completadas'}
-                      </h3>
+                      <h3 className="text-lg font-semibold text-white mb-2">{estado === 'pendiente' ? 'Pendientes' : 'Completadas'}</h3>
                       {tareas.filter(t => t.estado === estado).map((tarea, index) => (
                         <Draggable key={tarea._id} draggableId={tarea._id} index={index}>
                           {(provided) => (
@@ -823,10 +866,36 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
         </div>
       )}
 
-      {/* Vista Calendario (futura) */}
+      {/* === PESTAÑA: CALENDARIO === */}
       {activeTab === 'calendario' && (
-        <div className="text-center py-10 text-gray-500">
-          <p>📅 Vista de calendario en desarrollo</p>
+        <div style={{ height: '70vh', marginTop: '1rem' }}>
+          <Calendar
+            localizer={localizer}
+            events={eventosCalendario}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: '100%', color: 'white' }}
+            views={['month', 'week', 'day']}
+            step={30}
+            timeslots={2}
+            onSelectEvent={(event) => {
+              setTareaSeleccionada(event.resource);
+            }}
+            messages={{
+              next: 'Siguiente',
+              previous: 'Anterior',
+              today: 'Hoy',
+              month: 'Mes',
+              week: 'Semana',
+              day: 'Día'
+            }}
+            eventPropGetter={(event) => {
+              const bgColor = colorCategoria(event.resource.categoria);
+              return {
+                style: { backgroundColor: bgColor.replace('bg-', '').replace('-', ' '), borderRadius: '6px' }
+              };
+            }}
+          />
         </div>
       )}
     </div>
