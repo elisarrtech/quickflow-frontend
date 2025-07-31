@@ -18,7 +18,9 @@ import {
   FaCalendarAlt,
   FaClock,
   FaStickyNote,
-  FaGripLines
+  FaGripLines,
+  FaPencilAlt,
+  FaBell
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -38,7 +40,7 @@ const Tareas = () => {
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [categoria, setCategoria] = useState('');
-  const [subtareas, setSubtareas] = useState([]); // [{ texto, completada }]
+  const [subtareas, setSubtareas] = useState([]);
   const [nuevaSubtarea, setNuevaSubtarea] = useState('');
   const [archivo, setArchivo] = useState(null);
   const [enlace, setEnlace] = useState('');
@@ -55,7 +57,8 @@ const Tareas = () => {
   const [asignadoAFiltro, setAsignadoAFiltro] = useState('');
   const [asignadoA, setAsignadoA] = useState('');
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
-  const [tareaSeleccionada, setTareaSeleccionada] = useState(null); // Para el modal
+  const [tareaSeleccionada, setTareaSeleccionada] = useState(null);
+  const [editandoSubtarea, setEditandoSubtarea] = useState(null); // { origen: 'form' | 'modal', index, valor }
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
@@ -97,7 +100,6 @@ const Tareas = () => {
         const data = await res.json();
         console.log('✅ Tareas cargadas:', data);
         const tareasArray = Array.isArray(data) ? data : data.tareas || [];
-        // Asegurar que subtareas sea un array de objetos {texto, completada}
         const tareasConSubtareas = tareasArray.map(t => ({
           ...t,
           subtareas: Array.isArray(t.subtareas)
@@ -155,8 +157,12 @@ const Tareas = () => {
     newSubtareas.splice(result.destination.index, 0, reordered);
     const updatedTarea = { ...tarea, subtareas: newSubtareas };
     setTareas(prev => prev.map(t => (t._id === tareaId ? updatedTarea : t)));
-    setSubtareas(newSubtareas); // Si estamos editando
-    setTareaSeleccionada(prev => prev?._id === tareaId ? updatedTarea : prev);
+    if (modoEdicion && tareaId === modoEdicion) {
+      setSubtareas(newSubtareas);
+    }
+    if (tareaSeleccionada?._id === tareaId) {
+      setTareaSeleccionada(updatedTarea);
+    }
   };
 
   // Filtrar tareas
@@ -339,6 +345,13 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
     window.open(`https://wa.me/?text=${texto}`, '_blank');
   };
 
+  // Mostrar notificación del navegador
+  const mostrarNotificacion = (titulo, cuerpo) => {
+    if (Notification.permission === 'granted') {
+      new Notification(titulo, { body: cuerpo, icon: '/favicon.ico' });
+    }
+  };
+
   return (
     <div className="text-white p-6 max-w-5xl mx-auto">
       {/* Mensajes */}
@@ -392,9 +405,12 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
         <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
         <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
 
-        {/* Formulario de subtareas con checkbox y edición */}
+        {/* Formulario de subtareas con edición */}
         <div className="mb-2">
-          <label className="block text-sm font-semibold mb-1">Subtareas</label>
+          <label className="block text-sm font-semibold mb-1 flex items-center gap-1">
+            Subtareas
+            <span className="text-xs text-gray-400">(doble clic o lápiz para editar)</span>
+          </label>
           <div className="flex gap-2 mb-2">
             <input
               type="text"
@@ -446,20 +462,62 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                                   const updated = [...subtareas];
                                   updated[i] = { ...s, completada: !s.completada };
                                   setSubtareas(updated);
+                                  if (s.completada === false) {
+                                    mostrarNotificacion('✅ Subtarea completada', `"${s.texto}" ha sido completada.`);
+                                  }
                                 }}
                                 className="text-green-500"
                               />
-                              <span className={s.completada ? 'line-through text-gray-400' : ''}>
-                                {s.texto}
-                              </span>
+                              {editandoSubtarea?.index === i && editandoSubtarea?.origen === 'form' ? (
+                                <input
+                                  type="text"
+                                  value={editandoSubtarea.valor}
+                                  onChange={(e) =>
+                                    setEditandoSubtarea({ ...editandoSubtarea, valor: e.target.value })
+                                  }
+                                  onBlur={() => {
+                                    const updated = [...subtareas];
+                                    updated[i] = { ...s, texto: editandoSubtarea.valor.trim() || s.texto };
+                                    setSubtareas(updated);
+                                    setEditandoSubtarea(null);
+                                  }}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      const updated = [...subtareas];
+                                      updated[i] = { ...s, texto: editandoSubtarea.valor.trim() || s.texto };
+                                      setSubtareas(updated);
+                                      setEditandoSubtarea(null);
+                                    }
+                                  }}
+                                  className="bg-gray-700 text-white text-sm px-1 rounded flex-1"
+                                  autoFocus
+                                />
+                              ) : (
+                                <span
+                                  className={`cursor-pointer ${s.completada ? 'line-through text-gray-400' : ''}`}
+                                  onDoubleClick={() => setEditandoSubtarea({ origen: 'form', index: i, valor: s.texto })}
+                                >
+                                  {s.texto}
+                                </span>
+                              )}
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => setSubtareas(subtareas.filter((_, idx) => idx !== i))}
-                              className="text-red-500 hover:text-red-700 text-xs ml-2"
-                            >
-                              Eliminar
-                            </button>
+                            <div className="flex gap-1 ml-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditandoSubtarea({ origen: 'form', index: i, valor: s.texto })}
+                                className="text-yellow-400 hover:text-yellow-600 text-xs"
+                                title="Editar subtarea"
+                              >
+                                <FaPencilAlt />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSubtareas(subtareas.filter((_, idx) => idx !== i))}
+                                className="text-red-500 hover:text-red-700 text-xs"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
                           </li>
                         )}
                       </Draggable>
@@ -593,7 +651,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
               >
                 <FaTrashAlt /> Eliminar
               </button>
-              {/* Botón "Ver más" */}
               <button
                 onClick={() => setTareaSeleccionada(t)}
                 className="text-sm text-cyan-400 hover:text-cyan-600 mt-3 underline"
@@ -693,10 +750,12 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                 </div>
               )}
 
-              {/* Subtareas en el modal con checkbox y drag */}
               {tareaSeleccionada.subtareas?.length > 0 && (
                 <div className="mb-2">
-                  <p className="font-semibold mb-1">✅ Subtareas:</p>
+                  <p className="font-semibold mb-1 flex items-center gap-1">
+                    ✅ Subtareas
+                    <span className="text-xs text-gray-400">(editar con lápiz)</span>
+                  </p>
                   <Droppable droppableId="subtareas-modal">
                     {(provided) => (
                       <ul ref={provided.innerRef} {...provided.droppableProps} className="list-none space-y-1">
@@ -717,12 +776,52 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                                     const updated = [...tareaSeleccionada.subtareas];
                                     updated[idx] = { ...sub, completada: !sub.completada };
                                     setTareaSeleccionada({ ...tareaSeleccionada, subtareas: updated });
+                                    if (sub.completada === false) {
+                                      mostrarNotificacion('✅ Subtarea completada', `"${sub.texto}" ha sido completada.`);
+                                    }
                                   }}
                                   className="text-green-500"
                                 />
-                                <span className={sub.completada ? 'line-through text-gray-400' : ''}>
-                                  {sub.texto}
-                                </span>
+                                {editandoSubtarea?.index === idx && editandoSubtarea?.origen === 'modal' ? (
+                                  <input
+                                    type="text"
+                                    value={editandoSubtarea.valor}
+                                    onChange={(e) =>
+                                      setEditandoSubtarea({ ...editandoSubtarea, valor: e.target.value })
+                                    }
+                                    onBlur={() => {
+                                      const updated = [...tareaSeleccionada.subtareas];
+                                      updated[idx] = { ...sub, texto: editandoSubtarea.valor.trim() || sub.texto };
+                                      setTareaSeleccionada({ ...tareaSeleccionada, subtareas: updated });
+                                      setEditandoSubtarea(null);
+                                    }}
+                                    onKeyPress={(e) => {
+                                      if (e.key === 'Enter') {
+                                        const updated = [...tareaSeleccionada.subtareas];
+                                        updated[idx] = { ...sub, texto: editandoSubtarea.valor.trim() || sub.texto };
+                                        setTareaSeleccionada({ ...tareaSeleccionada, subtareas: updated });
+                                        setEditandoSubtarea(null);
+                                      }
+                                    }}
+                                    className="bg-gray-700 text-white text-sm px-1 rounded flex-1"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <span
+                                    className={`cursor-pointer ${sub.completada ? 'line-through text-gray-400' : ''}`}
+                                    onDoubleClick={() => setEditandoSubtarea({ origen: 'modal', index: idx, valor: sub.texto })}
+                                  >
+                                    {sub.texto}
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setEditandoSubtarea({ origen: 'modal', index: idx, valor: sub.texto })}
+                                  className="text-yellow-400 hover:text-yellow-600 text-xs ml-1"
+                                  title="Editar subtarea"
+                                >
+                                  <FaPencilAlt />
+                                </button>
                               </li>
                             )}
                           </Draggable>
