@@ -455,7 +455,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
       {/* === PESTAÑA: LISTA === */}
       {activeTab === 'lista' && (
         <div>
-          {/* Búsqueda */}
+          {/* Búsqueda global */}
           <div className="mb-4">
             <input
               type="text"
@@ -466,7 +466,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
             />
           </div>
 
-          {/* Filtros */}
+          {/* Filtros fijos */}
           <div className="sticky top-0 z-40 bg-gray-900 p-4 rounded-t-lg border-b border-gray-700 mb-6">
             <h2 className="text-xl font-semibold mb-4 text-white">Filtros</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
