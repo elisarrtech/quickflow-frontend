@@ -33,6 +33,12 @@ const coloresPorCategoria = {
   otros: 'bg-gray-600'
 };
 
+const PRIORIDADES = {
+  alta: { label: 'Alta', color: 'bg-red-600' },
+  media: { label: 'Media', color: 'bg-yellow-500' },
+  baja: { label: 'Baja', color: 'bg-green-600' }
+};
+
 const Tareas = () => {
   const [tareas, setTareas] = useState([]);
   const [titulo, setTitulo] = useState('');
@@ -58,16 +64,19 @@ const Tareas = () => {
   const [asignadoA, setAsignadoA] = useState('');
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
   const [tareaSeleccionada, setTareaSeleccionada] = useState(null);
-  const [editandoSubtarea, setEditandoSubtarea] = useState(null); // { origen: 'form' | 'modal', index, valor }
+  const [editandoSubtarea, setEditandoSubtarea] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [tareasRecientes, setTareasRecientes] = useState([]);
+  const [comentario, setComentario] = useState('');
+  const [prioridad, setPrioridad] = useState('media');
+
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
-  // Solicitar permiso para notificaciones
   useEffect(() => {
     Notification.requestPermission();
   }, []);
 
-  // Cargar tareas desde el backend
   useEffect(() => {
     const obtenerTareas = async () => {
       const token = localStorage.getItem('token');
@@ -98,13 +107,15 @@ const Tareas = () => {
           return;
         }
         const data = await res.json();
-        console.log('✅ Tareas cargadas:', data);
         const tareasArray = Array.isArray(data) ? data : data.tareas || [];
         const tareasConSubtareas = tareasArray.map(t => ({
           ...t,
           subtareas: Array.isArray(t.subtareas)
             ? t.subtareas.map(s => typeof s === 'string' ? { texto: s, completada: false } : s)
-            : []
+            : [],
+          prioridad: t.prioridad || 'media',
+          comentarios: Array.isArray(t.comentarios) ? t.comentarios : [],
+          historial: Array.isArray(t.historial) ? t.historial : []
         }));
         setTareas(tareasConSubtareas);
         const categorias = [...new Set(tareasConSubtareas.map(t => t.categoria).filter(Boolean))];
@@ -117,7 +128,6 @@ const Tareas = () => {
     obtenerTareas();
   }, [API, navigate]);
 
-  // Manejar drag & drop (kanban)
   const onDragEndKanban = async (result) => {
     if (!result.destination) return;
     const { source, destination } = result;
@@ -139,15 +149,12 @@ const Tareas = () => {
       });
       if (!res.ok) {
         setTareas(tareas);
-        console.error('Error al actualizar estado en el backend');
       }
     } catch (error) {
       setTareas(tareas);
-      console.error('Error de red al actualizar tarea:', error);
     }
   };
 
-  // Drag & drop para subtareas
   const onDragEndSubtareas = (result, tareaId) => {
     if (!result.destination) return;
     const tarea = tareas.find(t => t._id === tareaId);
@@ -165,7 +172,6 @@ const Tareas = () => {
     }
   };
 
-  // Filtrar tareas
   const filtrarTareas = () => {
     let filtradas = [...tareas];
     if (categoriaFiltro) filtradas = filtradas.filter(t => t.categoria === categoriaFiltro);
@@ -173,17 +179,27 @@ const Tareas = () => {
     if (asignadoAFiltro) filtradas = filtradas.filter(t => t.asignadoA?.toLowerCase().includes(asignadoAFiltro.toLowerCase()));
     if (fechaInicio && !fechaFin) filtradas = filtradas.filter(t => t.fecha === fechaInicio);
     if (fechaInicio && fechaFin) filtradas = filtradas.filter(t => new Date(t.fecha) >= new Date(fechaInicio) && new Date(t.fecha) <= new Date(fechaFin));
-    return filtradas.sort((a, b) => {
-      if (a.estado !== b.estado) return a.estado === 'pendiente' ? -1 : 1;
-      return new Date(a.fecha) - new Date(b.fecha);
-    });
+    return filtradas;
   };
 
-  const tareasFiltradas = filtrarTareas();
+  const filtrarPorBusqueda = (tareas) => {
+    if (!busqueda.trim()) return tareas;
+    const busq = busqueda.toLowerCase();
+    return tareas.filter(t =>
+      t.titulo.toLowerCase().includes(busq) ||
+      t.descripcion?.toLowerCase().includes(busq) ||
+      t.nota?.toLowerCase().includes(busq) ||
+      t.categoria?.toLowerCase().includes(busq) ||
+      t.asignadoA?.toLowerCase().includes(busq) ||
+      t.subtareas.some(s => s.texto.toLowerCase().includes(busq))
+    );
+  };
+
+  const tareasFiltradas = filtrarPorBusqueda(filtrarTareas());
+
   const personasAsignadas = [...new Set(tareas.map(t => t.asignadoA).filter(Boolean))];
   const colorCategoria = (cat) => coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
 
-  // Limpiar formulario
   const limpiarFormulario = () => {
     setTitulo('');
     setDescripcion('');
@@ -199,6 +215,7 @@ const Tareas = () => {
     setError('');
     setExito('');
     setModoEdicion(null);
+    setPrioridad('media');
   };
 
   const limpiarFiltros = () => {
@@ -207,9 +224,9 @@ const Tareas = () => {
     setFechaInicio('');
     setFechaFin('');
     setAsignadoAFiltro('');
+    setBusqueda('');
   };
 
-  // Crear nueva tarea
   const crearTarea = async () => {
     if (!titulo.trim()) return setError('El título es obligatorio');
     const token = localStorage.getItem('token');
@@ -224,8 +241,8 @@ const Tareas = () => {
     formData.append('asignadoA', asignadoA);
     formData.append('estado', 'pendiente');
     formData.append('subtareas', JSON.stringify(subtareas));
+    formData.append('prioridad', prioridad);
     if (archivo) formData.append('archivo', archivo);
-
     try {
       const res = await fetch(`${API}/api/tasks`, {
         method: 'POST',
@@ -238,7 +255,10 @@ const Tareas = () => {
       if (res.ok) {
         const tareaConSubtareas = {
           ...data,
-          subtareas: data.subtareas?.map(s => typeof s === 'string' ? { texto: s, completada: false } : s) || []
+          subtareas: data.subtareas?.map(s => typeof s === 'string' ? { texto: s, completada: false } : s) || [],
+          prioridad: data.prioridad || 'media',
+          comentarios: data.comentarios || [],
+          historial: data.historial || []
         };
         setTareas(prev => [...prev, tareaConSubtareas]);
         setExito('✅ Tarea creada con éxito.');
@@ -255,7 +275,6 @@ const Tareas = () => {
     }
   };
 
-  // Editar tarea
   const guardarEdicion = async () => {
     if (!modoEdicion) return;
     const token = localStorage.getItem('token');
@@ -266,13 +285,16 @@ const Tareas = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas })
+        body: JSON.stringify({ titulo, descripcion, fecha, hora, categoria, nota, enlace, asignadoA, subtareas, prioridad })
       });
       const data = await res.json();
       if (res.ok) {
         const tareaActualizada = {
           ...data,
-          subtareas: data.subtareas?.map(s => typeof s === 'string' ? { texto: s, completada: false } : s) || []
+          subtareas: data.subtareas?.map(s => typeof s === 'string' ? { texto: s, completada: false } : s) || [],
+          prioridad: data.prioridad || 'media',
+          comentarios: data.comentarios || [],
+          historial: data.historial || []
         };
         setTareas(prev => prev.map(t => (t._id === modoEdicion ? tareaActualizada : t)));
         setExito('✅ Tarea actualizada.');
@@ -286,66 +308,21 @@ const Tareas = () => {
     }
   };
 
-  // Compartir por correo
   const compartirPorCorreo = (tarea) => {
     const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
     const cuerpo = encodeURIComponent(
-      `Hola,
-` +
-      `Título: ${tarea.titulo}
-` +
-      `Descripción: ${tarea.descripcion || 'Sin descripción'}
-` +
-      `Fecha: ${tarea.fecha || 'Sin fecha'}
-` +
-      `Hora: ${tarea.hora || 'Sin hora'}
-` +
-      `Categoría: ${tarea.categoria || 'Sin categoría'}
-` +
-      `Asignado a: ${tarea.asignadoA || 'No asignado'}
-` +
-      `${tarea.enlace ? `
-Enlace: ${tarea.enlace}` : ''}` +
-      `${tarea.nota ? `
-Nota: ${tarea.nota}` : ''}` +
-      (tarea.subtareas?.length > 0
-        ? `
-Subtareas:
-${tarea.subtareas.map(s => `- [${s.completada ? 'x' : ' '}] ${s.texto}`).join('\n')}`
-        : '')
+      `Hola,\nTítulo: ${tarea.titulo}\nDescripción: ${tarea.descripcion || 'Sin descripción'}\nFecha: ${tarea.fecha || 'Sin fecha'}\nHora: ${tarea.hora || 'Sin hora'}\nCategoría: ${tarea.categoria || 'Sin categoría'}\nAsignado a: ${tarea.asignadoA || 'No asignado'}${tarea.enlace ? `\nEnlace: ${tarea.enlace}` : ''}${tarea.nota ? `\nNota: ${tarea.nota}` : ''}${tarea.subtareas?.length > 0 ? `\nSubtareas:\n${tarea.subtareas.map(s => `- [${s.completada ? 'x' : ' '}] ${s.texto}`).join('\n')}` : ''}`
     );
     window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
   };
 
-  // Compartir por WhatsApp
   const compartirPorWhatsApp = (tarea) => {
     const texto = encodeURIComponent(
-      `*Tarea: ${tarea.titulo}*
-` +
-      `Descripción: ${tarea.descripcion || 'Sin descripción'}
-` +
-      `Fecha: ${tarea.fecha || 'Sin fecha'}
-` +
-      `Hora: ${tarea.hora || 'Sin hora'}
-` +
-      `Categoría: ${tarea.categoria || 'Sin categoría'}
-` +
-      `Asignado a: ${tarea.asignadoA || 'No asignado'}
-` +
-      `${tarea.enlace ? `
-🔗 Enlace: ${tarea.enlace}` : ''}` +
-      `${tarea.nota ? `
-📝 Nota: ${tarea.nota}` : ''}` +
-      (tarea.subtareas?.length > 0
-        ? `
-✅ Subtareas:
-${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).join('\n')}`
-        : '')
+      `*Tarea: ${tarea.titulo}*\nDescripción: ${tarea.descripcion || 'Sin descripción'}\nFecha: ${tarea.fecha || 'Sin fecha'}\nHora: ${tarea.hora || 'Sin hora'}\nCategoría: ${tarea.categoria || 'Sin categoría'}\nAsignado a: ${tarea.asignadoA || 'No asignado'}${tarea.enlace ? `\n🔗 Enlace: ${tarea.enlace}` : ''}${tarea.nota ? `\n📝 Nota: ${tarea.nota}` : ''}${tarea.subtareas?.length > 0 ? `\n✅ Subtareas:\n${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).join('\n')}` : ''}`
     );
     window.open(`https://wa.me/?text=${texto}`, '_blank');
   };
 
-  // Mostrar notificación del navegador
   const mostrarNotificacion = (titulo, cuerpo) => {
     if (Notification.permission === 'granted') {
       new Notification(titulo, { body: cuerpo, icon: '/favicon.ico' });
@@ -354,7 +331,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
 
   return (
     <div className="text-white p-6 max-w-5xl mx-auto">
-      {/* Mensajes */}
       {exito && (
         <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50">
           {exito}
@@ -366,7 +342,16 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
         </div>
       )}
 
-      {/* Filtros */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="🔍 Buscar tareas..."
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+          className="input w-full bg-gray-800 text-white placeholder-gray-400"
+        />
+      </div>
+
       <h2 className="text-xl font-semibold mb-4">Filtros</h2>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <select value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)} className="input bg-gray-800 text-white">
@@ -391,21 +376,24 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
       </div>
       <button onClick={limpiarFiltros} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded mb-4">Limpiar filtros</button>
 
-      {/* Formulario */}
       <div className="bg-gray-900 p-4 rounded mb-8">
         <h2 className="text-xl font-bold mb-4">{modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
         <input placeholder="Título" value={titulo} onChange={e => setTitulo(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
         <input placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
           <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="input bg-gray-800 text-white" />
           <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="input bg-gray-800 text-white" />
           <input placeholder="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)} className="input bg-gray-800 text-white" />
           <input placeholder="Enlace" value={enlace} onChange={e => setEnlace(e.target.value)} className="input bg-gray-800 text-white" />
+          <select value={prioridad} onChange={e => setPrioridad(e.target.value)} className="input bg-gray-800 text-white">
+            {Object.entries(PRIORIDADES).map(([key, { label }]) => (
+              <option key={key} value={key}>Prioridad: {label}</option>
+            ))}
+          </select>
         </div>
         <input placeholder="Asignar a" value={asignadoA} onChange={e => setAsignadoA(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
         <textarea placeholder="Nota" value={nota} onChange={e => setNota(e.target.value)} className="input w-full mb-2 bg-gray-800 text-white" />
 
-        {/* Formulario de subtareas con edición */}
         <div className="mb-2">
           <label className="block text-sm font-semibold mb-1 flex items-center gap-1">
             Subtareas
@@ -438,7 +426,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
               + Agregar
             </button>
           </div>
-
           {subtareas.length > 0 && (
             <DragDropContext onDragEnd={(result) => onDragEndSubtareas(result, 'form')}>
               <Droppable droppableId="subtareas-form">
@@ -529,7 +516,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
             </DragDropContext>
           )}
         </div>
-
         <input type="file" onChange={e => setArchivo(e.target.files[0])} className="input w-full mb-2 bg-gray-800 text-white" />
         {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
         <button
@@ -540,7 +526,27 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
         </button>
       </div>
 
-      {/* Lista de tareas */}
+      {tareasRecientes.length > 0 && (
+        <div className="mt-6 p-4 bg-gray-800 rounded">
+          <h3 className="text-lg font-semibold mb-2">🕒 Tareas recientes</h3>
+          <div className="flex flex-wrap gap-2">
+            {tareasRecientes.map(recienteId => {
+              const t = tareas.find(t => t._id === recienteId);
+              if (!t) return null;
+              return (
+                <button
+                  key={t._id}
+                  onClick={() => setTareaSeleccionada(t)}
+                  className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded"
+                >
+                  {t.titulo.length > 20 ? `${t.titulo.slice(0, 20)}...` : t.titulo}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4 mt-6">
         {tareasFiltradas.map(t => (
           <div key={t._id} className={`p-4 rounded border ${t.estado === 'completada' ? 'border-green-600 bg-green-900/20' : 'border-yellow-500 bg-yellow-900/10'}`}>
@@ -548,8 +554,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
               {t.estado === 'completada' ? <FaCheckCircle className="text-green-400" /> : <FaRegSquare className="text-yellow-300" />} {t.titulo}
             </h3>
             <p className="text-sm text-gray-400 mt-1">{t.descripcion}</p>
-
-            {/* Etiquetas */}
             <div className="flex flex-wrap gap-2 mt-2">
               {t.fecha && (
                 <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-purple-600">
@@ -564,6 +568,11 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
               {t.categoria && (
                 <span className="px-2 py-1 rounded text-white text-sm font-semibold bg-blue-600">
                   <FaTag className="inline mr-1" /> {t.categoria?.toUpperCase()}
+                </span>
+              )}
+              {t.prioridad && (
+                <span className={`px-2 py-1 rounded text-white text-sm font-semibold ${PRIORIDADES[t.prioridad].color}`}>
+                  <FaBell className="inline mr-1" /> {PRIORIDADES[t.prioridad].label}
                 </span>
               )}
               {t.asignadoA && (
@@ -587,8 +596,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                 </span>
               )}
             </div>
-
-            {/* Botones de acción */}
             <div className="flex justify-end gap-3 mt-4">
               <div className="relative">
                 <button
@@ -616,6 +623,7 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                   setEnlace(t.enlace);
                   setAsignadoA(t.asignadoA || '');
                   setSubtareas(t.subtareas || []);
+                  setPrioridad(t.prioridad || 'media');
                 }}
                 className="text-yellow-500 hover:text-yellow-600"
               >
@@ -652,7 +660,13 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                 <FaTrashAlt /> Eliminar
               </button>
               <button
-                onClick={() => setTareaSeleccionada(t)}
+                onClick={() => {
+                  setTareaSeleccionada(t);
+                  setTareasRecientes(prev => {
+                    const nuevas = prev.filter(id => id !== t._id);
+                    return [t._id, ...nuevas].slice(0, 5);
+                  });
+                }}
                 className="text-sm text-cyan-400 hover:text-cyan-600 mt-3 underline"
               >
                 Ver más
@@ -662,7 +676,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
         ))}
       </div>
 
-      {/* Vista Kanban */}
       <h2 className="text-2xl font-bold text-white mt-8 mb-4">Vista Kanban</h2>
       <DragDropContext onDragEnd={onDragEndKanban}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -701,7 +714,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
         </div>
       </DragDropContext>
 
-      {/* Modal de detalle de tarea */}
       {tareaSeleccionada && (
         <DragDropContext onDragEnd={(result) => onDragEndSubtareas(result, tareaSeleccionada._id)}>
           <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
@@ -714,14 +726,12 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
               </button>
               <h2 className="text-2xl font-bold mb-2">{tareaSeleccionada.titulo}</h2>
               <p className="mb-2 text-gray-300">{tareaSeleccionada.descripcion}</p>
-
               {tareaSeleccionada.nota && (
                 <div className="mb-2">
                   <p className="font-semibold">📝 Nota:</p>
                   <p className="whitespace-pre-line">{tareaSeleccionada.nota}</p>
                 </div>
               )}
-
               {tareaSeleccionada.enlace && (
                 <div className="mb-2">
                   <p className="font-semibold">🔗 Enlace:</p>
@@ -735,7 +745,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                   </a>
                 </div>
               )}
-
               {tareaSeleccionada.archivoUrl && (
                 <div className="mb-2">
                   <p className="font-semibold">📎 Archivo:</p>
@@ -749,7 +758,6 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                   </a>
                 </div>
               )}
-
               {tareaSeleccionada.subtareas?.length > 0 && (
                 <div className="mb-2">
                   <p className="font-semibold mb-1 flex items-center gap-1">
@@ -772,12 +780,24 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                                 <input
                                   type="checkbox"
                                   checked={sub.completada}
-                                  onChange={() => {
+                                  onChange={async () => {
                                     const updated = [...tareaSeleccionada.subtareas];
-                                    updated[idx] = { ...sub, completada: !sub.completada };
+                                    const completada = !sub.completada;
+                                    updated[idx] = { ...sub, completada };
                                     setTareaSeleccionada({ ...tareaSeleccionada, subtareas: updated });
-                                    if (sub.completada === false) {
-                                      mostrarNotificacion('✅ Subtarea completada', `"${sub.texto}" ha sido completada.`);
+
+                                    const token = localStorage.getItem('token');
+                                    try {
+                                      await fetch(`${API}/api/tasks/${tareaSeleccionada._id}`, {
+                                        method: 'PUT',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({ subtareas: updated })
+                                      });
+                                    } catch (error) {
+                                      console.error('Error al sincronizar subtarea en modal:', error);
                                     }
                                   }}
                                   className="text-green-500"
@@ -832,12 +852,107 @@ ${tarea.subtareas.map(s => `• ${s.completada ? '✔️' : '☐'} ${s.texto}`).
                   </Droppable>
                 </div>
               )}
-
               <div className="text-sm mt-4 text-gray-400">
                 <p><strong>Fecha:</strong> {tareaSeleccionada.fecha}</p>
                 <p><strong>Hora:</strong> {tareaSeleccionada.hora}</p>
                 <p><strong>Categoría:</strong> {tareaSeleccionada.categoria}</p>
+                <p><strong>Prioridad:</strong> {PRIORIDADES[tareaSeleccionada.prioridad]?.label || 'Media'}</p>
                 <p><strong>Asignado a:</strong> {tareaSeleccionada.asignadoA || 'No asignado'}</p>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-700">
+                <h4 className="font-semibold mb-2">💬 Comentarios</h4>
+                {tareaSeleccionada.comentarios?.length > 0 ? (
+                  <ul className="space-y-2 max-h-32 overflow-y-auto text-sm">
+                    {tareaSeleccionada.comentarios.map((c, i) => (
+                      <li key={i} className="bg-gray-800 p-2 rounded">
+                        <p>{c.texto}</p>
+                        <p className="text-xs text-gray-400">
+                          {c.autor} • {new Date(c.fecha).toLocaleString()}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 text-sm">Sin comentarios</p>
+                )}
+                <div className="mt-2 flex gap-1">
+                  <input
+                    type="text"
+                    placeholder="Añadir comentario..."
+                    value={comentario}
+                    onChange={e => setComentario(e.target.value)}
+                    className="input flex-1 bg-gray-800 text-white text-sm"
+                    onKeyPress={async (e) => {
+                      if (e.key === 'Enter' && comentario.trim()) {
+                        const nuevoComentario = {
+                          texto: comentario.trim(),
+                          autor: 'Usuario',
+                          fecha: new Date().toISOString()
+                        };
+                        const actualizados = [...tareaSeleccionada.comentarios, nuevoComentario];
+                        setTareaSeleccionada({ ...tareaSeleccionada, comentarios: actualizados });
+                        setComentario('');
+
+                        const token = localStorage.getItem('token');
+                        try {
+                          await fetch(`${API}/api/tasks/${tareaSeleccionada._id}/comentarios`, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(nuevoComentario)
+                          });
+                        } catch (error) {
+                          console.error('Error al guardar comentario');
+                        }
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (comentario.trim()) {
+                        const nuevoComentario = {
+                          texto: comentario.trim(),
+                          autor: 'Usuario',
+                          fecha: new Date().toISOString()
+                        };
+                        const actualizados = [...tareaSeleccionada.comentarios, nuevoComentario];
+                        setTareaSeleccionada({ ...tareaSeleccionada, comentarios: actualizados });
+                        setComentario('');
+
+                        const token = localStorage.getItem('token');
+                        try {
+                          await fetch(`${API}/api/tasks/${tareaSeleccionada._id}/comentarios`, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(nuevoComentario)
+                          });
+                        } catch (error) {
+                          console.error('Error al guardar comentario');
+                        }
+                      }
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded text-sm"
+                  >
+                    Enviar
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-700">
+                <h4 className="font-semibold mb-2">📋 Historial</h4>
+                <ul className="text-xs text-gray-400 space-y-1 max-h-24 overflow-y-auto">
+                  {(tareaSeleccionada.historial || []).sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).map((h, i) => (
+                    <li key={i}>
+                      {h.accion} • {new Date(h.fecha).toLocaleString()}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
