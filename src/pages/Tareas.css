@@ -62,26 +62,9 @@
   background-color: #1f2937;
 }
 
+/* ✅ Corregido: Evitar duplicado y mejorar scroll */
 .rbc-month-view .rbc-day-slot {
-  height: 120px; /* Ajusta este valor según sea necesario */
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #6b7280 #1f2937;
-}
-
-.rbc-day-bg {
-  min-height: 100px;
-  border: 1px solid #374151;
-  transition: background-color 0.2s;
-}
-
-.rbc-today {
-  background-color: #0c4a6e !important;
-  font-weight: bold;
-}
-
-.rbc-month-view .rbc-day-slot {
-  height: 120px; /* Ajusta esta altura según sea necesario */
+  height: 120px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #6b7280 #1f2937;
@@ -100,8 +83,15 @@
   border-radius: 3px;
 }
 
+/* Ajuste de hoy */
+.rbc-today {
+  background-color: #0c4a6e !important;
+  font-weight: bold;
+}
+
+/* Eventos */
 .rbc-event {
-  background-color: #3b82f6; /* Color predeterminado */
+  background-color: #3b82f6;
   color: white;
   border-radius: 6px;
   padding: 0.25rem 0.5rem;
@@ -122,16 +112,14 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.rbc-event {
-  margin-bottom: 2px;
-}
-
+/* Colores por categoría (usando data o clases personalizadas) */
 .rbc-event.trabajo { background-color: #1d4ed8; }
 .rbc-event.personal { background-color: #059669; }
 .rbc-event.urgente { background-color: #dc2626; }
 .rbc-event.estudio { background-color: #7c3aed; }
 .rbc-event.otros { background-color: #4b5563; }
 
+/* Vista de tiempo (semana/día) */
 .rbc-time-view {
   border: 1px solid #374151;
   border-radius: 12px;
@@ -158,6 +146,7 @@
   font-size: 0.75rem;
 }
 
+/* Overlay (evento emergente) */
 .rbc-overlay {
   background-color: #1f2937;
   border: 1px solid #4b5563;
@@ -182,6 +171,7 @@
   font-size: 0.875rem;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .rbc-toolbar {
     flex-direction: column;
@@ -203,6 +193,7 @@
   }
 }
 
+/* Animaciones */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
