@@ -75,7 +75,6 @@ const Tareas = () => {
   const [editandoSubtarea, setEditandoSubtarea] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [tareasRecientes, setTareasRecientes] = useState([]);
-  const [comentario, setComentario] = useState('');
   const [prioridad, setPrioridad] = useState('media');
   const [activeTab, setActiveTab] = useState('lista');
 
@@ -397,58 +396,64 @@ const Tareas = () => {
   };
 
   // Compartir
- const compartirPorCorreo = (tarea) => {
-  let cuerpo = `Hola,\n`;
-  cuerpo += `Título: ${tarea.titulo}\n`;
-  cuerpo += `Descripción: ${tarea.descripcion || 'Sin descripción'}\n`;
-  cuerpo += `Fecha: ${tarea.fecha || 'Sin fecha'}\n`;
-  cuerpo += `Hora: ${tarea.hora || 'Sin hora'}\n`;
-  cuerpo += `Categoría: ${tarea.categoria || 'Sin categoría'}\n`;
-  cuerpo += `Asignado a: ${tarea.asignadoA || 'No asignado'}\n`;
+  const compartirPorCorreo = (tarea) => {
+    let cuerpo = `Hola,\n`;
+    cuerpo += `Título: ${tarea.titulo}\n`;
+    cuerpo += `Descripción: ${tarea.descripcion || 'Sin descripción'}\n`;
+    cuerpo += `Fecha: ${tarea.fecha || 'Sin fecha'}\n`;
+    cuerpo += `Hora: ${tarea.hora || 'Sin hora'}\n`;
+    cuerpo += `Categoría: ${tarea.categoria || 'Sin categoría'}\n`;
+    cuerpo += `Asignado a: ${tarea.asignadoA || 'No asignado'}\n`;
 
-  if (tarea.enlace) {
-    cuerpo += `Enlace: ${tarea.enlace}\n`;
-  }
-  if (tarea.nota) {
-    cuerpo += `Nota: ${tarea.nota}\n`;
-  }
-  if (tarea.subtareas?.length > 0) {
-    cuerpo += `Subtareas:\n`;
-    tarea.subtareas.forEach(s => {
-      cuerpo += `- [${s.completada ? 'x' : ' '}] ${s.texto}\n`;
-    });
-  }
+    if (tarea.enlace) {
+      cuerpo += `Enlace: ${tarea.enlace}\n`;
+    }
+    if (tarea.nota) {
+      cuerpo += `Nota: ${tarea.nota}\n`;
+    }
+    if (tarea.subtareas?.length > 0) {
+      cuerpo += `Subtareas:\n`;
+      tarea.subtareas.forEach(s => {
+        cuerpo += `- [${s.completada ? 'x' : ' '}] ${s.texto}\n`;
+      });
+    }
 
-  const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
-  const cuerpoCodificado = encodeURIComponent(cuerpo.trim());
+    const asunto = encodeURIComponent(`Tarea: ${tarea.titulo}`);
+    const cuerpoCodificado = encodeURIComponent(cuerpo.trim());
 
-  window.location.href = `mailto:?subject=${asunto}&body=${cuerpoCodificado}`;
-};
+    window.location.href = `mailto:?subject=${asunto}&body=${cuerpoCodificado}`;
+  };
 
-const compartirPorWhatsApp = (tarea) => {
-  let texto = `*Tarea: ${tarea.titulo}*\n`;
-  texto += `_Descripción_: ${tarea.descripcion || 'Sin descripción'}\n`;
-  texto += `*Fecha*: ${tarea.fecha || 'Sin fecha'}\n`;
-  texto += `*Hora*: ${tarea.hora || 'Sin hora'}\n`;
-  texto += `*Categoría*: ${tarea.categoria || 'Sin categoría'}\n`;
-  texto += `*Asignado a*: ${tarea.asignadoA || 'No asignado'}\n`;
+  const compartirPorWhatsApp = (tarea) => {
+    let texto = `*Tarea: ${tarea.titulo}*\n`;
+    texto += `_Descripción_: ${tarea.descripcion || 'Sin descripción'}\n`;
+    texto += `*Fecha*: ${tarea.fecha || 'Sin fecha'}\n`;
+    texto += `*Hora*: ${tarea.hora || 'Sin hora'}\n`;
+    texto += `*Categoría*: ${tarea.categoria || 'Sin categoría'}\n`;
+    texto += `*Asignado a*: ${tarea.asignadoA || 'No asignado'}\n`;
 
-  if (tarea.enlace) {
-    texto += `🔗 Enlace: ${tarea.enlace}\n`;
-  }
-  if (tarea.nota) {
-    texto += `📝 Nota: ${tarea.nota}\n`;
-  }
-  if (tarea.subtareas?.length > 0) {
-    texto += `✅ Subtareas:\n`;
-    tarea.subtareas.forEach(s => {
-      texto += `• ${s.completada ? '✔️' : '☐'} ${s.texto}\n`;
-    });
-  }
+    if (tarea.enlace) {
+      texto += `🔗 Enlace: ${tarea.enlace}\n`;
+    }
+    if (tarea.nota) {
+      texto += `📝 Nota: ${tarea.nota}\n`;
+    }
+    if (tarea.subtareas?.length > 0) {
+      texto += `✅ Subtareas:\n`;
+      tarea.subtareas.forEach(s => {
+        texto += `• ${s.completada ? '✔️' : '☐'} ${s.texto}\n`;
+      });
+    }
 
-  const textoCodificado = encodeURIComponent(texto.trim());
-  window.open(`https://wa.me/?text=${textoCodificado}`, '_blank');
-};
+    const textoCodificado = encodeURIComponent(texto.trim());
+    window.open(`https://wa.me/?text=${textoCodificado}`, '_blank');
+  };
+
+  const mostrarNotificacion = (titulo, cuerpo) => {
+    if (Notification.permission === 'granted') {
+      new Notification(titulo, { body: cuerpo, icon: '/favicon.ico' });
+    }
+  };
 
   // Tareas recientes con persistencia
   const actualizarTareasRecientes = (tareaId) => {
@@ -474,7 +479,7 @@ const compartirPorWhatsApp = (tarea) => {
         start,
         end,
         allDay: !t.hora,
-        resource: t, // Guardamos la tarea completa
+        resource: t,
       };
     });
 
@@ -505,35 +510,29 @@ const compartirPorWhatsApp = (tarea) => {
         </div>
       )}
 
-      {/* Título */}
       <h1 className="text-2xl font-bold mb-6">Mis Tareas</h1>
 
       {/* Pestañas */}
       <div className="flex border-b border-gray-700 mb-6">
-        <button
-          onClick={() => setActiveTab('lista')}
-          className={`px-6 py-3 font-semibold transition ${activeTab === 'lista' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'}`}
-        >
-          Lista
-        </button>
-        <button
-          onClick={() => setActiveTab('kanban')}
-          className={`px-6 py-3 font-semibold transition ${activeTab === 'kanban' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'}`}
-        >
-          Kanban
-        </button>
-        <button
-          onClick={() => setActiveTab('calendario')}
-          className={`px-6 py-3 font-semibold transition ${activeTab === 'calendario' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white'}`}
-        >
-          Calendario
-        </button>
+        {['lista', 'kanban', 'calendario'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-6 py-3 font-semibold transition capitalize ${
+              activeTab === tab
+                ? 'text-cyan-400 border-b-2 border-cyan-400'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      {/* === PESTAÑA: LISTA === */}
+      {/* === LISTA === */}
       {activeTab === 'lista' && (
         <div>
-          {/* Búsqueda global */}
+          {/* Búsqueda */}
           <div className="mb-4">
             <input
               type="text"
@@ -544,7 +543,7 @@ const compartirPorWhatsApp = (tarea) => {
             />
           </div>
 
-          {/* Filtros fijos */}
+          {/* Filtros */}
           <div className="sticky top-0 z-40 bg-gray-900 p-4 rounded-t-lg border-b border-gray-700 mb-6">
             <h2 className="text-xl font-semibold mb-4 text-white">Filtros</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
@@ -710,7 +709,9 @@ const compartirPorWhatsApp = (tarea) => {
               </div>
 
               {subtareas.length > 0 && (
-                <DragDropContext onDragEnd={(result) => onDragEndSubtareas(result, 'form')}>
+                <DragDropContext
+                  onDragEnd={(result) => onDragEndSubtareas(result, 'form')}
+                >
                   <Droppable droppableId="subtareas-form">
                     {(provided) => (
                       <ul
@@ -719,7 +720,11 @@ const compartirPorWhatsApp = (tarea) => {
                         className="list-none text-sm text-gray-300 space-y-1"
                       >
                         {subtareas.map((s, i) => (
-                          <Draggable key={`form-${i}`} draggableId={`form-${i}`} index={i}>
+                          <Draggable
+                            key={`form-${i}`}
+                            draggableId={`form-${i}`}
+                            index={i}
+                          >
                             {(provided) => (
                               <li
                                 ref={provided.innerRef}
@@ -847,7 +852,7 @@ const compartirPorWhatsApp = (tarea) => {
             </button>
           </div>
 
-          {/* Tareas recientes (siempre visible) */}
+          {/* Tareas recientes */}
           <div className="mt-6 p-4 bg-gray-800 rounded mb-6">
             <h3 className="text-lg font-semibold mb-2 text-white">🕒 Tareas recientes</h3>
             {tareasRecientes.length > 0 ? (
@@ -1120,67 +1125,65 @@ const compartirPorWhatsApp = (tarea) => {
         </div>
       )}
 
-      {/* === PESTAÑA: KANBAN === */}
+      {/* === KANBAN === */}
       {activeTab === 'kanban' && (
-        <div>
-          <DragDropContext onDragEnd={onDragEndKanban}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {['pendiente', 'completada'].map((estado) => (
-                <Droppable droppableId={estado} key={estado}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`bg-gray-800 rounded-lg p-4 shadow min-h-[200px] ${
-                        snapshot.isDraggingOver ? 'bg-gray-700' : ''
-                      }`}
-                    >
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        {estado === 'pendiente' ? 'Pendientes' : 'Completadas'}
-                      </h3>
-                      {tareas
-                        .filter((t) => t.estado === estado)
-                        .map((tarea, index) => (
-                          <Draggable key={tarea._id} draggableId={tarea._id} index={index}>
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(
-                                  tarea.categoria
-                                )}`}
-                              >
-                                <h4 className="font-bold">{tarea.titulo}</h4>
-                                <p className="text-sm">{tarea.descripcion}</p>
-                                {tarea.asignadoA && (
-                                  <p className="text-xs flex items-center gap-1">
-                                    <FaUser /> {tarea.asignadoA}
-                                  </p>
-                                )}
-                                <p className="text-xs">
-                                  📅 {tarea.fecha} ⏰ {tarea.hora}
+        <DragDropContext onDragEnd={onDragEndKanban}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {['pendiente', 'completada'].map((estado) => (
+              <Droppable droppableId={estado} key={estado}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`bg-gray-800 rounded-lg p-4 shadow min-h-[200px] ${
+                      snapshot.isDraggingOver ? 'bg-gray-700' : ''
+                    }`}
+                  >
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      {estado === 'pendiente' ? 'Pendientes' : 'Completadas'}
+                    </h3>
+                    {tareas
+                      .filter((t) => t.estado === estado)
+                      .map((tarea, index) => (
+                        <Draggable key={tarea._id} draggableId={tarea._id} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`p-3 rounded mb-2 shadow text-white ${colorCategoria(
+                                tarea.categoria
+                              )}`}
+                            >
+                              <h4 className="font-bold">{tarea.titulo}</h4>
+                              <p className="text-sm">{tarea.descripcion}</p>
+                              {tarea.asignadoA && (
+                                <p className="text-xs flex items-center gap-1">
+                                  <FaUser /> {tarea.asignadoA}
                                 </p>
-                                {tarea.categoria && (
-                                  <p className="text-xs">
-                                    <FaTag /> {tarea.categoria}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              ))}
-            </div>
-          </DragDropContext>
-        </div>
+                              )}
+                              <p className="text-xs">
+                                📅 {tarea.fecha} ⏰ {tarea.hora}
+                              </p>
+                              {tarea.categoria && (
+                                <p className="text-xs">
+                                  <FaTag /> {tarea.categoria}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            ))}
+          </div>
+        </DragDropContext>
       )}
 
-      {/* === PESTAÑA: CALENDARIO === */}
+      {/* === CALENDARIO === */}
       {activeTab === 'calendario' && (
         <div style={{ height: '70vh', marginTop: '1rem' }}>
           <BigCalendar
@@ -1200,7 +1203,6 @@ const compartirPorWhatsApp = (tarea) => {
               const tareaId = event.resource?._id;
               if (!tareaId) return;
 
-              // Actualizar en el estado
               setTareas((prev) =>
                 prev.map((t) =>
                   t._id === tareaId
@@ -1209,7 +1211,6 @@ const compartirPorWhatsApp = (tarea) => {
                 )
               );
 
-              // Guardar en el backend
               const token = localStorage.getItem('token');
               try {
                 await fetch(`${API}/api/tasks/${tareaId}`, {
@@ -1222,7 +1223,7 @@ const compartirPorWhatsApp = (tarea) => {
                 });
               } catch (error) {
                 console.error('Error al guardar en el servidor:', error);
-                obtenerTareas(); // Revertir si falla
+                obtenerTareas();
               }
             }}
             onEventResize={async ({ event, start, end }) => {
