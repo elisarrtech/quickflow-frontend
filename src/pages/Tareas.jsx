@@ -20,6 +20,7 @@ import {
   FaPencilAlt,
   FaBell,
   FaEye,
+  FaUsers,
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -70,6 +71,7 @@ const Tareas = () => {
   const [categoriasExistentes, setCategoriasExistentes] = useState([]);
   const [asignadoAFiltro, setAsignadoAFiltro] = useState('');
   const [asignadoA, setAsignadoA] = useState('');
+  const [compartidoCon, setCompartidoCon] = useState(''); // Nuevo estado
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
   const [tareaSeleccionada, setTareaSeleccionada] = useState(null);
   const [editandoSubtarea, setEditandoSubtarea] = useState(null);
@@ -143,6 +145,7 @@ const Tareas = () => {
         prioridad: t.prioridad || 'media',
         comentarios: Array.isArray(t.comentarios) ? t.comentarios : [],
         historial: Array.isArray(t.historial) ? t.historial : [],
+        compartido_con: Array.isArray(t.compartido_con) ? t.compartido_con : [],
       }));
 
       setTareas(tareasConSubtareas);
@@ -274,6 +277,7 @@ const Tareas = () => {
     setNuevaSubtarea('');
     setArchivo(null);
     setAsignadoA('');
+    setCompartidoCon('');
     setError('');
     setExito('');
     setModoEdicion(null);
@@ -305,6 +309,12 @@ const Tareas = () => {
     formData.append('estado', 'pendiente');
     formData.append('subtareas', JSON.stringify(subtareas));
     formData.append('prioridad', prioridad);
+    formData.append('compartido_con', JSON.stringify(
+      compartidoCon
+        .split(',')
+        .map(e => e.trim())
+        .filter(e => e)
+    ));
     if (archivo) formData.append('archivo', archivo);
 
     try {
@@ -327,6 +337,7 @@ const Tareas = () => {
           prioridad: data.prioridad || 'media',
           comentarios: data.comentarios || [],
           historial: data.historial || [],
+          compartido_con: data.compartido_con || [],
         };
         setTareas((prev) => [...prev, tareaConSubtareas]);
         setExito('✅ Tarea creada con éxito.');
@@ -366,6 +377,10 @@ const Tareas = () => {
           asignadoA,
           subtareas,
           prioridad,
+          compartido_con: compartidoCon
+            .split(',')
+            .map(e => e.trim())
+            .filter(e => e)
         }),
       });
 
@@ -380,6 +395,7 @@ const Tareas = () => {
           prioridad: data.prioridad || 'media',
           comentarios: data.comentarios || [],
           historial: data.historial || [],
+          compartido_con: data.compartido_con || [],
         };
         setTareas((prev) =>
           prev.map((t) => (t._id === modoEdicion ? tareaActualizada : t))
@@ -659,6 +675,12 @@ const Tareas = () => {
               placeholder="Asignar a"
               value={asignadoA}
               onChange={(e) => setAsignadoA(e.target.value)}
+              className="w-full mb-2 bg-gray-800 text-white p-2 rounded"
+            />
+            <input
+              placeholder="Compartir con (email@email.com, otro@email.com)"
+              value={compartidoCon}
+              onChange={(e) => setCompartidoCon(e.target.value)}
               className="w-full mb-2 bg-gray-800 text-white p-2 rounded"
             />
             <textarea
@@ -984,6 +1006,7 @@ const Tareas = () => {
                       setAsignadoA(t.asignadoA || '');
                       setSubtareas(t.subtareas || []);
                       setPrioridad(t.prioridad || 'media');
+                      setCompartidoCon(t.compartido_con?.join(', ') || '');
                     }}
                     className="flex items-center gap-1 bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded text-sm min-h-10"
                   >
@@ -1090,6 +1113,18 @@ const Tareas = () => {
                         </ul>
                       </div>
                     )}
+                    {Array.isArray(t.compartido_con) && t.compartido_con.length > 0 && (
+                      <div className="mb-3">
+                        <p className="font-semibold text-white">👥 Compartido con:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {t.compartido_con.map((email, i) => (
+                            <span key={i} className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
+                              {email}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {t.comentarios?.length > 0 && (
                       <div className="mb-3">
                         <p className="font-semibold text-white">💬 Comentarios:</p>
@@ -1160,6 +1195,11 @@ const Tareas = () => {
                               {tarea.asignadoA && (
                                 <p className="text-xs flex items-center gap-1">
                                   <FaUser /> {tarea.asignadoA}
+                                </p>
+                              )}
+                              {Array.isArray(tarea.compartido_con) && tarea.compartido_con.length > 0 && (
+                                <p className="text-xs flex items-center gap-1">
+                                  <FaUsers /> {tarea.compartido_con.join(', ')}
                                 </p>
                               )}
                               <p className="text-xs">
