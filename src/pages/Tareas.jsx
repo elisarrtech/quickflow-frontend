@@ -71,7 +71,7 @@ const Tareas = () => {
   const [categoriasExistentes, setCategoriasExistentes] = useState([]);
   const [asignadoAFiltro, setAsignadoAFiltro] = useState('');
   const [asignadoA, setAsignadoA] = useState('');
-  const [compartidoCon, setCompartidoCon] = useState(''); // Nuevo estado
+  const [compartidoCon, setCompartidoCon] = useState('');
   const [compartirMenuAbierto, setCompartirMenuAbierto] = useState(null);
   const [tareaSeleccionada, setTareaSeleccionada] = useState(null);
   const [editandoSubtarea, setEditandoSubtarea] = useState(null);
@@ -83,25 +83,21 @@ const Tareas = () => {
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
-  // Solicitar permiso para notificaciones
   useEffect(() => {
     Notification.requestPermission();
   }, []);
 
-  // Cargar tareas recientes desde localStorage
   useEffect(() => {
     const guardadas = localStorage.getItem('tareasRecientes');
     if (guardadas) {
       try {
         setTareasRecientes(JSON.parse(guardadas));
       } catch (e) {
-        console.error('Error al parsear tareas recientes:', e);
         localStorage.removeItem('tareasRecientes');
       }
     }
   }, []);
 
-  // Obtener tareas del backend
   const obtenerTareas = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -163,7 +159,6 @@ const Tareas = () => {
     obtenerTareas();
   }, [API, navigate]);
 
-  // Drag & Drop en Kanban
   const onDragEndKanban = async (result) => {
     if (!result.destination) return;
     const { source, destination } = result;
@@ -192,11 +187,10 @@ const Tareas = () => {
       if (!res.ok) throw new Error('Error al actualizar estado');
     } catch (error) {
       console.error('Error al actualizar estado en el servidor:', error);
-      obtenerTareas(); // Revertir si falla
+      obtenerTareas();
     }
   };
 
-  // Drag & Drop en subtareas
   const onDragEndSubtareas = (result, tareaId) => {
     if (!result.destination) return;
     const tarea = tareas.find((t) => t._id === tareaId);
@@ -219,7 +213,6 @@ const Tareas = () => {
     }
   };
 
-  // Filtros
   const filtrarTareas = () => {
     let filtradas = [...tareas];
 
@@ -264,7 +257,6 @@ const Tareas = () => {
   const colorCategoria = (cat) =>
     coloresPorCategoria[cat?.toLowerCase()] || 'bg-gray-600';
 
-  // Formulario
   const limpiarFormulario = () => {
     setTitulo('');
     setDescripcion('');
@@ -330,10 +322,9 @@ const Tareas = () => {
       if (res.ok) {
         const tareaConSubtareas = {
           ...data,
-          subtareas:
-            data.subtareas?.map((s) =>
-              typeof s === 'string' ? { texto: s, completada: false } : s
-            ) || [],
+          subtareas: data.subtareas?.map(s =>
+            typeof s === 'string' ? { texto: s, completada: false } : s
+          ) || [],
           prioridad: data.prioridad || 'media',
           comentarios: data.comentarios || [],
           historial: data.historial || [],
@@ -388,10 +379,9 @@ const Tareas = () => {
       if (res.ok) {
         const tareaActualizada = {
           ...data,
-          subtareas:
-            data.subtareas?.map((s) =>
-              typeof s === 'string' ? { texto: s, completada: false } : s
-            ) || [],
+          subtareas: data.subtareas?.map(s =>
+            typeof s === 'string' ? { texto: s, completada: false } : s
+          ) || [],
           prioridad: data.prioridad || 'media',
           comentarios: data.comentarios || [],
           historial: data.historial || [],
@@ -411,7 +401,6 @@ const Tareas = () => {
     }
   };
 
-  // Compartir
   const compartirPorCorreo = (tarea) => {
     let cuerpo = `Hola,\n`;
     cuerpo += `Título: ${tarea.titulo}\n`;
@@ -471,7 +460,6 @@ const Tareas = () => {
     }
   };
 
-  // Tareas recientes con persistencia
   const actualizarTareasRecientes = (tareaId) => {
     setTareasRecientes((prev) => {
       const nuevas = [tareaId, ...prev.filter((id) => id !== tareaId)].slice(0, 5);
@@ -480,7 +468,6 @@ const Tareas = () => {
     });
   };
 
-  // Preparar eventos para el calendario
   const eventosCalendario = tareas
     .filter((t) => t.fecha)
     .map((t) => {
@@ -488,7 +475,7 @@ const Tareas = () => {
         ? new Date(`${t.fecha}T${t.hora}`)
         : new Date(`${t.fecha}T09:00:00`);
       const end = new Date(start);
-      end.setHours(end.getHours() + 1); // Duración de 1 hora
+      end.setHours(end.getHours() + 1);
       return {
         id: t._id,
         title: t.titulo,
@@ -499,7 +486,6 @@ const Tareas = () => {
       };
     });
 
-  // Manejar clic en un día vacío del calendario
   const manejarClickEnDia = (slotInfo) => {
     const fecha = new Date(slotInfo.start);
     const fechaISO = fecha.toISOString().split('T')[0];
@@ -528,7 +514,6 @@ const Tareas = () => {
 
       <h1 className="text-2xl font-bold mb-6">Mis Tareas</h1>
 
-      {/* Pestañas */}
       <div className="flex border-b border-gray-700 mb-6">
         {['lista', 'kanban', 'calendario'].map((tab) => (
           <button
@@ -545,10 +530,8 @@ const Tareas = () => {
         ))}
       </div>
 
-      {/* === LISTA === */}
       {activeTab === 'lista' && (
         <div>
-          {/* Búsqueda */}
           <div className="mb-4">
             <input
               type="text"
@@ -559,7 +542,6 @@ const Tareas = () => {
             />
           </div>
 
-          {/* Filtros */}
           <div className="sticky top-0 z-40 bg-gray-900 p-4 rounded-t-lg border-b border-gray-700 mb-6">
             <h2 className="text-xl font-semibold mb-4 text-white">Filtros</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
@@ -617,7 +599,6 @@ const Tareas = () => {
             </button>
           </div>
 
-          {/* Formulario */}
           <div className="bg-gray-900 p-4 rounded mb-8">
             <h2 className="text-xl font-bold mb-4 text-white">
               {modoEdicion ? 'Editar Tarea' : 'Nueva Tarea'}
@@ -690,7 +671,6 @@ const Tareas = () => {
               className="w-full mb-2 bg-gray-800 text-white p-2 rounded"
             />
 
-            {/* Subtareas */}
             <div className="mb-2">
               <label className="block text-sm font-semibold mb-1 flex items-center gap-1 text-white">
                 Subtareas
@@ -731,9 +711,7 @@ const Tareas = () => {
               </div>
 
               {subtareas.length > 0 && (
-                <DragDropContext
-                  onDragEnd={(result) => onDragEndSubtareas(result, 'form')}
-                >
+                <DragDropContext onDragEnd={(result) => onDragEndSubtareas(result, 'form')}>
                   <Droppable droppableId="subtareas-form">
                     {(provided) => (
                       <ul
@@ -742,11 +720,7 @@ const Tareas = () => {
                         className="list-none text-sm text-gray-300 space-y-1"
                       >
                         {subtareas.map((s, i) => (
-                          <Draggable
-                            key={`form-${i}`}
-                            draggableId={`form-${i}`}
-                            index={i}
-                          >
+                          <Draggable key={`form-${i}`} draggableId={`form-${i}`} index={i}>
                             {(provided) => (
                               <li
                                 ref={provided.innerRef}
@@ -874,7 +848,6 @@ const Tareas = () => {
             </button>
           </div>
 
-          {/* Tareas recientes */}
           <div className="mt-6 p-4 bg-gray-800 rounded mb-6">
             <h3 className="text-lg font-semibold mb-2 text-white">🕒 Tareas recientes</h3>
             {tareasRecientes.length > 0 ? (
@@ -907,7 +880,6 @@ const Tareas = () => {
             )}
           </div>
 
-          {/* Lista de tareas */}
           <div className="space-y-4 mt-6">
             {tareasFiltradas.map((t) => (
               <div
@@ -1160,7 +1132,6 @@ const Tareas = () => {
         </div>
       )}
 
-      {/* === KANBAN === */}
       {activeTab === 'kanban' && (
         <DragDropContext onDragEnd={onDragEndKanban}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1223,7 +1194,6 @@ const Tareas = () => {
         </DragDropContext>
       )}
 
-      {/* === CALENDARIO === */}
       {activeTab === 'calendario' && (
         <div style={{ height: '70vh', marginTop: '1rem' }}>
           <BigCalendar
